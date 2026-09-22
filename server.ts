@@ -8,6 +8,7 @@ import { ExcelProvider } from './server/providers/ExcelProvider.js';
 import { CSVProvider } from './server/providers/CSVProvider.js';
 import { ZebraZPLGenerator } from './server/zebra/zplGenerator.js';
 import fs from 'fs';
+import { apiSecurity } from './server/security/apiSecurity.js';
 
 const app = express();
 const PORT = 3000;
@@ -17,7 +18,10 @@ const jobsRunner = new ScheduledJobsRunner(db);
 const productionEngine = new ProductionDataProvider(db);
 
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.disable('x-powered-by');
+// Every /api route is classified here. Unknown routes fail closed.
+app.use('/api', apiSecurity);
 
 // ----------------------------------------------------
 // Health & Diagnostic API
