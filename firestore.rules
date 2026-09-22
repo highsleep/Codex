@@ -1,0 +1,285 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net: Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common Helper Functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Role-Based Access Control (RBAC)
+    // Supported Roles: SUPER_ADMIN, PLANT_MANAGER, QUALITY_MANAGER, CUSTOMER_SERVICE, PRODUCTION, VIEWER
+    function getEmailRole(email) {
+      return (email == 'malamoudi@sleephigh.com' || email == 'wsb@sleephigh.com' || email == 'highsleepwarranty@gmail.com' || email == 'sleepyqualitydept@gmail.com') ? 'SUPER_ADMIN' :
+        (email == 'quality.eg@sleephigh.com') ? 'QUALITY_MANAGER' :
+        (email == 'msharaf@sleephigh.com') ? 'PLANT_MANAGER' :
+        (email == 'production.eg@sleephigh.com') ? 'PRODUCTION' :
+        (email == 'm.hassan@sleephigh.com') ? 'CUSTOMER_SERVICE' :
+        (email == 'hossam@sleephigh.com') ? 'VIEWER' : 'VIEWER';
+    }
+
+    function getUserRole() {
+      return isSignedIn()
+        ? (exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+            ? get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role
+            : getEmailRole(request.auth.token.email))
+        : 'NONE';
+    }
+
+    function hasRole(roleList) {
+      return isSignedIn() && (
+        getUserRole() in roleList ||
+        ((request.auth.token.email in ['malamoudi@sleephigh.com', 'wsb@sleephigh.com', 'highsleepwarranty@gmail.com', 'sleepyqualitydept@gmail.com']) && request.auth.token.email_verified == true)
+      );
+    }
+
+    function isSuperAdmin() {
+      return hasRole(['SUPER_ADMIN']);
+    }
+
+    function canManageProducts() {
+      return hasRole(['SUPER_ADMIN', 'PLANT_MANAGER', 'PRODUCTION']);
+    }
+
+    function canManageClaims() {
+      return hasRole(['SUPER_ADMIN', 'PLANT_MANAGER', 'QUALITY_MANAGER', 'CUSTOMER_SERVICE']);
+    }
+
+    function canInspectClaims() {
+      return hasRole(['SUPER_ADMIN', 'QUALITY_MANAGER', 'TECHNICIAN', 'PLANT_MANAGER']);
+    }
+
+    function canApproveReplacement() {
+      return hasRole(['SUPER_ADMIN', 'QUALITY_MANAGER', 'PLANT_MANAGER']);
+    }
+
+    function canViewInternal() {
+      return hasRole(['SUPER_ADMIN', 'PLANT_MANAGER', 'QUALITY_MANAGER', 'CUSTOMER_SERVICE', 'PRODUCTION', 'TECHNICIAN', 'VIEWER']);
+    }
+
+    // Entity Validations
+    function isValidProduct(data) {
+      return data.keys().hasAll(['serial_number', 'model', 'size', 'warranty_years']) &&
+        data.serial_number is string && data.serial_number.size() > 0 && data.serial_number.size() <= 64 &&
+        data.model is string && data.model.size() > 0 && data.model.size() <= 128 &&
+        data.size is string && data.size.size() > 0 && data.size.size() <= 64 &&
+        data.warranty_years is number && data.warranty_years > 0 && data.warranty_years <= 50;
+    }
+
+    function isValidWarrantyActivation(data) {
+      return data.keys().hasAll([
+        'warranty_id', 'serial_number', 'customer_name', 'phone',
+        'governorate', 'invoice_number', 'purchase_date', 'expiry_date'
+      ]) &&
+        data.warranty_id is string && data.warranty_id.size() > 0 && data.warranty_id.size() <= 64 &&
+        data.serial_number is string && data.serial_number.size() > 0 && data.serial_number.size() <= 64 &&
+        data.customer_name is string && data.customer_name.size() > 0 && data.customer_name.size() <= 128 &&
+        data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 32 &&
+        data.governorate is string && data.governorate.size() > 0 && data.governorate.size() <= 64 &&
+        data.invoice_number is string && data.invoice_number.size() > 0 && data.invoice_number.size() <= 64 &&
+        data.purchase_date is string && data.purchase_date.size() > 0 && data.purchase_date.size() <= 32 &&
+        data.expiry_date is string && data.expiry_date.size() > 0 && data.expiry_date.size() <= 64;
+    }
+
+    function isValidWarrantyClaim(data) {
+      return data.keys().hasAll([
+        'claim_id', 'warranty_id', 'serial_number', 'customer_name',
+        'phone', 'complaint_type', 'claim_status'
+      ]) &&
+        data.claim_id is string && data.claim_id.size() > 0 && data.claim_id.size() <= 64 &&
+        data.warranty_id is string && data.warranty_id.size() > 0 && data.warranty_id.size() <= 64 &&
+        data.serial_number is string && data.serial_number.size() > 0 && data.serial_number.size() <= 64 &&
+        data.customer_name is string && data.customer_name.size() > 0 && data.customer_name.size() <= 128 &&
+        data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 32 &&
+        data.complaint_type in ['Spring Collapse', 'Foam Collapse', 'Fabric Defect', 'Noise', 'Manufacturing Defect', 'Other'] &&
+        data.claim_status in ['Open', 'Under Inspection', 'Approved', 'Rejected', 'Closed'];
+    }
+
+    function isValidReplacement(data) {
+      return data.keys().hasAll([
+        'replacement_id', 'old_serial_number', 'new_serial_number',
+        'old_warranty_id', 'replacement_reason', 'approved_by'
+      ]) &&
+        data.replacement_id is string && data.replacement_id.size() > 0 && data.replacement_id.size() <= 64 &&
+        data.old_serial_number is string && data.old_serial_number.size() > 0 && data.old_serial_number.size() <= 64 &&
+        data.new_serial_number is string && data.new_serial_number.size() > 0 && data.new_serial_number.size() <= 64 &&
+        data.old_warranty_id is string && data.old_warranty_id.size() > 0 && data.old_warranty_id.size() <= 64 &&
+        data.replacement_reason is string && data.replacement_reason.size() > 0 && data.replacement_reason.size() <= 512 &&
+        data.approved_by is string && data.approved_by.size() > 0 && data.approved_by.size() <= 128;
+    }
+
+    function isValidActivationLog(data) {
+      return data.keys().hasAll(['action', 'created_at']) &&
+        data.action is string && data.action.size() > 0 && data.action.size() <= 512 &&
+        data.created_at is string && data.created_at.size() > 0 && data.created_at.size() <= 64;
+    }
+
+    function isValidProductLifecycle(data) {
+      return data.keys().hasAll(['lifecycle_id', 'serial_number', 'event_type', 'event_date', 'performed_by', 'created_at']) &&
+        data.lifecycle_id is string && data.lifecycle_id.size() > 0 && data.lifecycle_id.size() <= 64 &&
+        data.serial_number is string && data.serial_number.size() > 0 && data.serial_number.size() <= 64 &&
+        data.event_type in [
+          'Produced', 'Quality Approved', 'Packed', 'Shipped', 'Delivered', 'Sold',
+          'Warranty Activated', 'Claim Opened', 'Inspection Scheduled', 'Inspection Completed',
+          'Repair Approved', 'Repair Completed', 'Replacement Approved', 'Replacement Completed',
+          'Warranty Expired', 'Archived'
+        ] &&
+        data.event_date is string && data.event_date.size() > 0 && data.event_date.size() <= 64 &&
+        data.performed_by is string && data.performed_by.size() > 0 && data.performed_by.size() <= 128 &&
+        data.created_at is string && data.created_at.size() > 0 && data.created_at.size() <= 64;
+    }
+
+    function isValidAttachment(data) {
+      return data.keys().hasAll(['attachment_id', 'entity_type', 'entity_id', 'file_name', 'file_type', 'file_size', 'uploaded_by', 'uploaded_at', 'storage_url']) &&
+        data.attachment_id is string && data.attachment_id.size() > 0 && data.attachment_id.size() <= 64 &&
+        data.entity_type in ['Product', 'Warranty', 'Claim', 'Replacement', 'ServiceVisit'] &&
+        data.entity_id is string && data.entity_id.size() > 0 && data.entity_id.size() <= 64 &&
+        data.file_name is string && data.file_name.size() > 0 && data.file_name.size() <= 256 &&
+        data.file_type is string && data.file_type.size() > 0 && data.file_type.size() <= 128 &&
+        data.file_size is number && data.file_size >= 0 &&
+        data.uploaded_by is string && data.uploaded_by.size() > 0 && data.uploaded_by.size() <= 128 &&
+        data.uploaded_at is string && data.uploaded_at.size() > 0 && data.uploaded_at.size() <= 64 &&
+        data.storage_url is string && data.storage_url.size() > 0 && data.storage_url.size() <= 4096;
+    }
+
+    // -------------------------------------------------------------------------
+    // Products Collection (Mattress Catalog)
+    // -------------------------------------------------------------------------
+    match /products/{productId} {
+      allow get: if isValidId(productId);
+      allow list: if true;
+
+      // Role-based product catalog management
+      allow create: if isValidId(productId) && canManageProducts() && isValidProduct(incoming());
+      allow update: if isValidId(productId) && canManageProducts() && isValidProduct(incoming());
+      allow delete: if isValidId(productId) && isSuperAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // Warranty Activations Collection
+    // -------------------------------------------------------------------------
+    match /warranty_activations/{activationId} {
+      allow get: if isValidId(activationId);
+      allow list: if canViewInternal();
+
+      // Before Create WarrantyActivation:
+      // 1. Check: serial_number exists?
+      // 2. If warranty already exists: Reject Request
+      // 3. Else: Create Warranty
+      allow create: if isValidId(activationId) &&
+        isValidWarrantyActivation(incoming()) &&
+        exists(/databases/$(database)/documents/products/$(incoming().serial_number)) &&
+        !exists(/databases/$(database)/documents/warranty_activations/$(activationId)) &&
+        !exists(/databases/$(database)/documents/warranty_activations/$(incoming().serial_number));
+
+      allow update: if isValidId(activationId) && isSuperAdmin() && isValidWarrantyActivation(incoming());
+      allow delete: if isValidId(activationId) && isSuperAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // Warranty Claims Collection
+    // -------------------------------------------------------------------------
+    match /warranty_claims/{claimId} {
+      // Look up individual claim ticket (Customer or Staff)
+      allow get: if isValidId(claimId);
+      // Listing claims is restricted to authorized internal staff
+      allow list: if canViewInternal();
+
+      // Customer or staff can submit a claim for an existing mattress/warranty
+      allow create: if isValidId(claimId) && isValidWarrantyClaim(incoming());
+
+      // Staff with claim management or inspection roles can update claim workflow
+      allow update: if isValidId(claimId) &&
+        (canManageClaims() || canInspectClaims()) &&
+        isValidWarrantyClaim(incoming());
+
+      // Only Super Admin can delete claims
+      allow delete: if isValidId(claimId) && isSuperAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // Replacements Collection
+    // -------------------------------------------------------------------------
+    match /replacements/{replacementId} {
+      allow get: if isValidId(replacementId);
+      allow list: if canViewInternal();
+
+      // Authorized managers can approve and create replacement records
+      allow create: if isValidId(replacementId) &&
+        canApproveReplacement() &&
+        isValidReplacement(incoming());
+
+      allow update: if isValidId(replacementId) && canApproveReplacement() && isValidReplacement(incoming());
+      allow delete: if isValidId(replacementId) && isSuperAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // Activation & Verification Logs (Immutable Audit Trail)
+    // -------------------------------------------------------------------------
+    match /activation_logs/{logId} {
+      allow get, list: if canViewInternal();
+      allow create: if isValidId(logId) && isValidActivationLog(incoming());
+      allow update, delete: if false; // Strictly Immutable
+    }
+
+    // -------------------------------------------------------------------------
+    // RBAC Users / Admins Collection
+    // -------------------------------------------------------------------------
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && (request.auth.uid == adminId || canViewInternal());
+      allow list: if canViewInternal();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // Product Lifecycle Tracking (Strictly Immutable Events)
+    // -------------------------------------------------------------------------
+    match /product_lifecycle/{lifecycleId} {
+      // Readable by both public verification/customer 360 and staff
+      allow get, list: if true;
+      // Creation allowed with valid lifecycle milestone schema
+      allow create: if isValidId(lifecycleId) && isValidProductLifecycle(incoming());
+      // Absolutely immutable: no updates or deletions allowed under any circumstance
+      allow update, delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Attachments & Document Center
+    // -------------------------------------------------------------------------
+    match /attachments/{attachmentId} {
+      // Readable by customer and internal staff
+      allow get, list: if true;
+
+      // Creation allowed with valid attachment schema
+      allow create: if isValidId(attachmentId) && isValidAttachment(incoming());
+
+      // Files cannot be modified in-place
+      allow update: if false;
+
+      // Strict deletion rule: Never allow deleting approved claim documents
+      allow delete: if isValidId(attachmentId) &&
+        (isSuperAdmin() || canManageClaims()) &&
+        !(existing().entity_type == 'Claim' &&
+          exists(/databases/$(database)/documents/warranty_claims/$(existing().entity_id)) &&
+          get(/databases/$(database)/documents/warranty_claims/$(existing().entity_id)).data.claim_status in ['Approved', 'Closed']);
+    }
+  }
+}

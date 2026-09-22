@@ -1,0 +1,484 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Registered mattress product manufactured by Sleepee with unique serial number and manufacturing details",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier or serial number key"
+        },
+        "serial_number": {
+          "type": "string",
+          "description": "Unique mattress serial number on the printed label",
+          "pattern": "^[A-Z0-9\\-]+$",
+          "maxLength": 64
+        },
+        "model": {
+          "type": "string",
+          "description": "Mattress model name",
+          "maxLength": 128
+        },
+        "size": {
+          "type": "string",
+          "description": "Dimensions of the mattress (e.g. 180 x 200 cm)",
+          "maxLength": 64
+        },
+        "warranty_years": {
+          "type": "number",
+          "description": "Number of warranty coverage years (typically 10)"
+        },
+        "production_date": {
+          "type": "string",
+          "description": "Production date in ISO format",
+          "maxLength": 32
+        },
+        "production_order": {
+          "type": "string",
+          "description": "Factory production order reference",
+          "maxLength": 64
+        },
+        "batch_no": {
+          "type": "string",
+          "description": "Production batch number",
+          "maxLength": 64
+        },
+        "image_url": {
+          "type": "string",
+          "description": "Photo of the mattress model",
+          "maxLength": 512
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Timestamp when the product was cataloged",
+          "maxLength": 64
+        }
+      },
+      "required": ["serial_number", "model", "size", "warranty_years"]
+    },
+    "WarrantyActivation": {
+      "title": "WarrantyActivation",
+      "description": "Consumer warranty activation document establishing coverage validity, customer data and invoice record",
+      "type": "object",
+      "properties": {
+        "warranty_id": {
+          "type": "string",
+          "description": "Official certified warranty certificate ID (e.g. SLP-WRN-2609-XXXX)",
+          "pattern": "^[A-Z0-9\\-]+$",
+          "maxLength": 64
+        },
+        "serial_number": {
+          "type": "string",
+          "description": "Linked mattress serial number",
+          "pattern": "^[A-Z0-9\\-]+$",
+          "maxLength": 64
+        },
+        "customer_name": {
+          "type": "string",
+          "description": "Full name of the purchaser",
+          "maxLength": 128
+        },
+        "phone": {
+          "type": "string",
+          "description": "Verified Egyptian or international mobile phone number",
+          "maxLength": 32
+        },
+        "governorate": {
+          "type": "string",
+          "description": "Egyptian governorate where purchased/delivered",
+          "maxLength": 64
+        },
+        "city": {
+          "type": "string",
+          "description": "City or district",
+          "maxLength": 64
+        },
+        "invoice_number": {
+          "type": "string",
+          "description": "Purchase invoice or receipt reference number",
+          "maxLength": 64
+        },
+        "purchase_date": {
+          "type": "string",
+          "description": "Date of purchase in YYYY-MM-DD format",
+          "maxLength": 32
+        },
+        "activation_date": {
+          "type": "string",
+          "description": "ISO timestamp when the warranty was activated online",
+          "maxLength": 64
+        },
+        "expiry_date": {
+          "type": "string",
+          "description": "ISO or YYYY-MM-DD warranty expiration date",
+          "maxLength": 64
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Record creation timestamp",
+          "maxLength": 64
+        }
+      },
+      "required": ["warranty_id", "serial_number", "customer_name", "phone", "governorate", "invoice_number", "purchase_date", "expiry_date"]
+    },
+    "ActivationLog": {
+      "title": "ActivationLog",
+      "description": "Audit and activity log tracking all system events, activations, and verifications",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Log record ID"
+        },
+        "warranty_id": {
+          "type": "string",
+          "description": "Referenced warranty certificate ID",
+          "maxLength": 64
+        },
+        "serial_number": {
+          "type": "string",
+          "description": "Referenced product serial number",
+          "maxLength": 64
+        },
+        "action": {
+          "type": "string",
+          "description": "Description of action performed",
+          "maxLength": 256
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Log event timestamp",
+          "maxLength": 64
+        }
+      },
+      "required": ["action", "created_at"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Authorized administrator user profile with full management privileges",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Administrator email address",
+          "maxLength": 128
+        },
+        "role": {
+          "type": "string",
+          "description": "Assigned administrative role (SUPER_ADMIN, PLANT_MANAGER, QUALITY_MANAGER, CUSTOMER_SERVICE, PRODUCTION, TECHNICIAN, VIEWER)",
+          "maxLength": 32
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the team member",
+          "maxLength": 128
+        },
+        "department": {
+          "type": "string",
+          "description": "Organizational department",
+          "maxLength": 64
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Account registration timestamp",
+          "maxLength": 64
+        }
+      },
+      "required": ["email", "role"]
+    },
+    "WarrantyClaim": {
+      "title": "WarrantyClaim",
+      "description": "Customer warranty defect claim and service inspection ticket",
+      "type": "object",
+      "properties": {
+        "claim_id": {
+          "type": "string",
+          "description": "Unique claim identifier (e.g. CLM-2026-101)",
+          "maxLength": 64
+        },
+        "warranty_id": {
+          "type": "string",
+          "description": "Linked warranty certificate ID",
+          "maxLength": 64
+        },
+        "serial_number": {
+          "type": "string",
+          "description": "Mattress serial number",
+          "maxLength": 64
+        },
+        "customer_name": {
+          "type": "string",
+          "description": "Customer full name",
+          "maxLength": 128
+        },
+        "phone": {
+          "type": "string",
+          "description": "Customer contact phone",
+          "maxLength": 32
+        },
+        "complaint_type": {
+          "type": "string",
+          "description": "Complaint category (Spring Collapse, Foam Collapse, Fabric Defect, Noise, Manufacturing Defect, Other)",
+          "maxLength": 64
+        },
+        "complaint_description": {
+          "type": "string",
+          "description": "Customer description of the defect",
+          "maxLength": 2048
+        },
+        "claim_status": {
+          "type": "string",
+          "description": "Ticket status (Open, Under Inspection, Approved, Rejected, Closed)",
+          "maxLength": 32
+        },
+        "assigned_to": {
+          "type": "string",
+          "description": "Assigned technician or engineer name"
+        },
+        "inspection_date": {
+          "type": "string",
+          "description": "Date inspection was performed"
+        },
+        "inspection_result": {
+          "type": "string",
+          "description": "Technical findings and assessment"
+        },
+        "resolution": {
+          "type": "string",
+          "description": "Final resolution (Replacement approved, Repaired, Not covered, Closed)"
+        },
+        "resolution_date": {
+          "type": "string",
+          "description": "Date resolution was finalized"
+        },
+        "images": {
+          "type": "array",
+          "description": "Customer and inspection defect photos",
+          "items": { "type": "string" }
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Timestamp when claim was submitted"
+        }
+      },
+      "required": ["claim_id", "warranty_id", "serial_number", "customer_name", "phone", "complaint_type", "claim_status"]
+    },
+    "Replacement": {
+      "title": "Replacement",
+      "description": "Official mattress replacement record linking old and new serialized units",
+      "type": "object",
+      "properties": {
+        "replacement_id": {
+          "type": "string",
+          "description": "Unique replacement voucher ID (e.g. REP-2026-001)",
+          "maxLength": 64
+        },
+        "old_serial_number": {
+          "type": "string",
+          "description": "Defective mattress serial number being replaced",
+          "maxLength": 64
+        },
+        "new_serial_number": {
+          "type": "string",
+          "description": "New replacement mattress serial number",
+          "maxLength": 64
+        },
+        "old_warranty_id": {
+          "type": "string",
+          "description": "Original warranty certificate ID",
+          "maxLength": 64
+        },
+        "replacement_reason": {
+          "type": "string",
+          "description": "Approved reason for replacement",
+          "maxLength": 512
+        },
+        "approval_date": {
+          "type": "string",
+          "description": "Date replacement was approved",
+          "maxLength": 64
+        },
+        "approved_by": {
+          "type": "string",
+          "description": "Quality manager or authority who approved",
+          "maxLength": 128
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional logistical and replacement notes",
+          "maxLength": 1024
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Timestamp when replacement record was created",
+          "maxLength": 64
+        }
+      },
+      "required": ["replacement_id", "old_serial_number", "new_serial_number", "old_warranty_id", "replacement_reason", "approved_by"]
+    },
+    "ProductLifecycle": {
+      "title": "ProductLifecycle",
+      "description": "Immutable chronological product lifecycle milestone tracking from factory production to warranty expiration",
+      "type": "object",
+      "properties": {
+        "lifecycle_id": {
+          "type": "string",
+          "description": "Unique lifecycle event identifier",
+          "maxLength": 64
+        },
+        "serial_number": {
+          "type": "string",
+          "description": "Mattress serial number",
+          "maxLength": 64
+        },
+        "event_type": {
+          "type": "string",
+          "description": "Standardized lifecycle milestone name",
+          "enum": [
+            "Produced",
+            "Quality Approved",
+            "Packed",
+            "Shipped",
+            "Delivered",
+            "Sold",
+            "Warranty Activated",
+            "Claim Opened",
+            "Inspection Scheduled",
+            "Inspection Completed",
+            "Repair Approved",
+            "Repair Completed",
+            "Replacement Approved",
+            "Replacement Completed",
+            "Warranty Expired",
+            "Archived"
+          ],
+          "maxLength": 64
+        },
+        "event_date": {
+          "type": "string",
+          "description": "Date or ISO timestamp of the event",
+          "maxLength": 64
+        },
+        "performed_by": {
+          "type": "string",
+          "description": "User or department who initiated/recorded the event",
+          "maxLength": 128
+        },
+        "notes": {
+          "type": "string",
+          "description": "Contextual notes, measurements, or logistical comments",
+          "maxLength": 2048
+        },
+        "reference_id": {
+          "type": "string",
+          "description": "Linked claim, warranty, order, or replacement reference ID",
+          "maxLength": 64
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Immutable event creation timestamp",
+          "maxLength": 64
+        }
+      },
+      "required": ["lifecycle_id", "serial_number", "event_type", "event_date", "performed_by", "created_at"]
+    },
+    "Attachment": {
+      "title": "Attachment",
+      "description": "Enterprise media, documentation, invoices, and inspection reports attached to products, warranties, claims, or replacements",
+      "type": "object",
+      "properties": {
+        "attachment_id": {
+          "type": "string",
+          "description": "Unique attachment identifier",
+          "maxLength": 64
+        },
+        "entity_type": {
+          "type": "string",
+          "description": "Parent entity classification",
+          "enum": ["Product", "Warranty", "Claim", "Replacement", "ServiceVisit"],
+          "maxLength": 32
+        },
+        "entity_id": {
+          "type": "string",
+          "description": "Referenced entity primary key or serial number",
+          "maxLength": 64
+        },
+        "file_name": {
+          "type": "string",
+          "description": "Original file name",
+          "maxLength": 256
+        },
+        "file_type": {
+          "type": "string",
+          "description": "MIME type (e.g. image/jpeg, application/pdf)",
+          "maxLength": 128
+        },
+        "file_size": {
+          "type": "number",
+          "description": "File size in bytes"
+        },
+        "uploaded_by": {
+          "type": "string",
+          "description": "User who uploaded the attachment",
+          "maxLength": 128
+        },
+        "uploaded_at": {
+          "type": "string",
+          "description": "Timestamp when the file was uploaded",
+          "maxLength": 64
+        },
+        "storage_url": {
+          "type": "string",
+          "description": "Firebase Storage download URL or data URL",
+          "maxLength": 2048
+        },
+        "description": {
+          "type": "string",
+          "description": "Document description or caption",
+          "maxLength": 1024
+        },
+        "category": {
+          "type": "string",
+          "description": "Specific functional document category",
+          "maxLength": 64
+        }
+      },
+      "required": ["attachment_id", "entity_type", "entity_id", "file_name", "file_type", "file_size", "uploaded_by", "uploaded_at", "storage_url"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Mattress catalog indexed by product id or serial number"
+    },
+    "/warranty_activations/{activationId}": {
+      "schema": "WarrantyActivation",
+      "description": "Activated warranty documents indexed by warranty ID or serial number"
+    },
+    "/warranty_claims/{claimId}": {
+      "schema": "WarrantyClaim",
+      "description": "Customer warranty claims and service inspection lifecycle"
+    },
+    "/replacements/{replacementId}": {
+      "schema": "Replacement",
+      "description": "Official replacement records linking old and new mattresses"
+    },
+    "/activation_logs/{logId}": {
+      "schema": "ActivationLog",
+      "description": "Immutable audit trail of warranty activations, claims, verifications and replacements"
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Authorized RBAC users and quality control personnel"
+    },
+    "/product_lifecycle/{lifecycleId}": {
+      "schema": "ProductLifecycle",
+      "description": "Immutable lifecycle timeline milestone events"
+    },
+    "/attachments/{attachmentId}": {
+      "schema": "Attachment",
+      "description": "Enterprise document and media center attachments"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "نظام إدارة ضمان مراتب سليبي | Sleepee Warranty",
+  "description": "نظام متكامل لإدارة وتفعيل وتوثيق شهادات ضمان مراتب سليبي Sleepee مع التحقق بالباركود ورمز QR وبوابة العملاء والإدارة.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,136 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Prevent public bucket access by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Auth & Role Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'highsleepwarranty@gmail.com' ||
+        request.auth.token.email == 'sleepyqualitydept@gmail.com' ||
+        request.auth.token.role == 'SUPER_ADMIN' ||
+        (firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) &&
+         firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role == 'SUPER_ADMIN')
+      );
+    }
+
+    function isPlantManager() {
+      return isSignedIn() && (
+        request.auth.token.role == 'PLANT_MANAGER' ||
+        (firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) &&
+         firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role == 'PLANT_MANAGER')
+      );
+    }
+
+    function hasAdminPrivileges() {
+      return isSuperAdmin() || isPlantManager();
+    }
+
+    function isQualityManager() {
+      return isSignedIn() && (
+        hasAdminPrivileges() ||
+        request.auth.token.role == 'QUALITY_MANAGER' ||
+        (firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) &&
+         firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role == 'QUALITY_MANAGER')
+      );
+    }
+
+    function isCustomerService() {
+      return isSignedIn() && (
+        hasAdminPrivileges() ||
+        request.auth.token.role == 'CUSTOMER_SERVICE' ||
+        (firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) &&
+         firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role == 'CUSTOMER_SERVICE')
+      );
+    }
+
+    function isTechnician() {
+      return isSignedIn() && (
+        request.auth.token.role == 'TECHNICIAN' ||
+        (firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) &&
+         firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role == 'TECHNICIAN')
+      );
+    }
+
+    // 1. Products folder (products/{serialNumber}/{fileName})
+    // Catalog images and quality certificates
+    match /products/{serialNumber}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if hasAdminPrivileges() || isQualityManager();
+    }
+
+    // 2. Warranties folder (warranties/{warrantyId}/{fileName})
+    // Requirement: Customers can access only their own warranty files.
+    // Customer Service can access warranty documents.
+    // Plant Manager and Super Admin have full access.
+    match /warranties/{warrantyId}/{fileName} {
+      allow read: if hasAdminPrivileges() ||
+                     isCustomerService() ||
+                     (isSignedIn() && (
+                       request.auth.uid == resource.metadata.customer_uid ||
+                       request.auth.token.email == resource.metadata.customer_email ||
+                       request.auth.token.phone_number == resource.metadata.customer_phone
+                     ));
+      allow write: if hasAdminPrivileges() ||
+                      isCustomerService() ||
+                      (isSignedIn() && (
+                        request.auth.uid == request.resource.metadata.customer_uid ||
+                        request.auth.token.email == request.resource.metadata.customer_email ||
+                        request.auth.token.phone_number == request.resource.metadata.customer_phone
+                      ));
+      allow delete: if hasAdminPrivileges();
+    }
+
+    // 3. Claims folder (claims/{claimId}/{fileName})
+    // Requirement: Technicians can access assigned claim files.
+    // Quality Manager can access inspection files.
+    // Plant Manager and Super Admin have full access.
+    match /claims/{claimId}/{fileName} {
+      allow read: if hasAdminPrivileges() ||
+                     isQualityManager() ||
+                     (isTechnician() && (
+                       resource.metadata.assigned_to == request.auth.uid ||
+                       resource.metadata.assigned_email == request.auth.token.email
+                     )) ||
+                     (isSignedIn() && (
+                       request.auth.uid == resource.metadata.customer_uid ||
+                       request.auth.token.email == resource.metadata.customer_email
+                     ));
+      allow write: if hasAdminPrivileges() ||
+                      isQualityManager() ||
+                      (isTechnician() && (
+                        request.resource.metadata.assigned_to == request.auth.uid ||
+                        request.resource.metadata.assigned_email == request.auth.token.email
+                      )) ||
+                      (isSignedIn() && (
+                        request.auth.uid == request.resource.metadata.customer_uid ||
+                        request.auth.token.email == request.resource.metadata.customer_email
+                      ));
+      allow delete: if hasAdminPrivileges();
+    }
+
+    // 4. Replacements folder (replacements/{replacementId}/{fileName})
+    // Replacement authorization and handover documents
+    match /replacements/{replacementId}/{fileName} {
+      allow read: if hasAdminPrivileges() || isCustomerService() || isQualityManager();
+      allow write: if hasAdminPrivileges() || isQualityManager();
+      allow delete: if hasAdminPrivileges();
+    }
+
+    // 5. Service visits folder (service-visits/{visitId}/{fileName})
+    // Maintenance and inspection visit reports
+    match /service-visits/{visitId}/{fileName} {
+      allow read: if hasAdminPrivileges() || isQualityManager() || isTechnician() || isCustomerService();
+      allow write: if hasAdminPrivileges() || isTechnician() || isQualityManager();
+      allow delete: if hasAdminPrivileges();
+    }
+  }
+}

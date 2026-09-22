@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-red: #D62828;
+  --color-brand-dark-red: #B71C1C;
+  --color-brand-black: #111111;
+  --color-brand-white: #FFFFFF;
+  --color-brand-light-gray: #F5F5F5;
+  --color-brand-medium-gray: #E5E7EB;
+  --color-brand-gold: #D4AF37;
+}
+
+:root {
+  --sleepee-red: #D62828;
+  --sleepee-dark-red: #B71C1C;
+  --sleepee-black: #111111;
+  --sleepee-white: #FFFFFF;
+  --sleepee-light-gray: #F5F5F5;
+  --sleepee-medium-gray: #E5E7EB;
+  --sleepee-gold: #D4AF37;
+}
+
+@layer base {
+  body {
+    font-family: 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #F5F5F5;
+    color: #111111;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Luxury card with subtle border and soft elevation */
+.luxury-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px -2px rgba(17, 17, 17, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.luxury-card:hover {
+  box-shadow: 0 8px 30px -4px rgba(214, 40, 40, 0.08);
+}
+
+/* Primary Brand Button */
+.btn-brand-primary {
+  background-color: #D62828;
+  color: #FFFFFF;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.5rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.btn-brand-primary:hover {
+  background-color: #B71C1C;
+  box-shadow: 0 4px 14px rgba(214, 40, 40, 0.35);
+  transform: translateY(-1px);
+}
+.btn-brand-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary Brand Button */
+.btn-brand-secondary {
+  background-color: #FFFFFF;
+  color: #D62828;
+  border: 1px solid #D62828;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.5rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.btn-brand-secondary:hover {
+  background-color: #F5F5F5;
+  border-color: #B71C1C;
+  color: #B71C1C;
+}
+
+/* Luxury navigation item */
+.nav-pill {
+  transition: all 0.2s ease;
+  border-radius: 0.75rem;
+}
+.nav-pill.active {
+  background-color: #D62828;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(214, 40, 40, 0.25);
+}
+.nav-pill:not(.active):hover {
+  border-color: #D62828;
+  box-shadow: 0 0 14px rgba(214, 40, 40, 0.16);
+  color: #D62828;
+}
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .certificate-print-area {
+    box-shadow: none !important;
+    border: 3px double #D4AF37 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background-color: #ffffff !important;
+  }
+}

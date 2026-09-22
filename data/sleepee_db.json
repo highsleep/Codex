@@ -1,0 +1,2360 @@
+{
+  "products": [
+    {
+      "id": 14,
+      "serial_number": "SLP-SAP-7934-02",
+      "model": "سليبي سوبر ميموري فوم (Super Memory Foam)",
+      "size": "160 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-09-17",
+      "status": "جاهز للضمان",
+      "production_order": "ORD-SAP-7934",
+      "batch_no": "BATCH-SAP-79",
+      "image_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-09-17T09:29:37.939Z",
+      "production_status": "Produced",
+      "source_system": "SAP",
+      "sap_production_order": "ORD-SAP-7934",
+      "sap_batch_number": "BATCH-SAP-79",
+      "sap_material_code": "MAT-سلي",
+      "sap_last_sync": "2026-09-17T09:29:37.938Z",
+      "production_line": "SAP Line 2 - Foam Unit",
+      "shift": "Morning Shift",
+      "operator": "SAP Operator Auto",
+      "remarks": "Confirmed via SAP S/4HANA OData ProductionOrder API"
+    },
+    {
+      "id": 13,
+      "serial_number": "SLP-SAP-7934-01",
+      "model": "سليبي رويال بوكيت سبرينج (Royal Pocket)",
+      "size": "180 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-09-17",
+      "status": "جاهز للضمان",
+      "production_order": "ORD-SAP-7934",
+      "batch_no": "BATCH-SAP-79",
+      "image_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-09-17T09:29:37.934Z",
+      "production_status": "Produced",
+      "source_system": "SAP",
+      "sap_production_order": "ORD-SAP-7934",
+      "sap_batch_number": "BATCH-SAP-79",
+      "sap_material_code": "MAT-سلي",
+      "sap_last_sync": "2026-09-17T09:29:37.934Z",
+      "production_line": "SAP Line 1 - Tenth of Ramadan",
+      "shift": "Morning Shift",
+      "operator": "SAP Operator Auto",
+      "remarks": "Confirmed via SAP S/4HANA OData ProductionOrder API"
+    },
+    {
+      "id": 12,
+      "serial_number": "SLP-SAP-7173-02",
+      "model": "سليبي سوبر ميموري فوم (Super Memory Foam)",
+      "size": "160 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-09-17",
+      "status": "جاهز للضمان",
+      "production_order": "ORD-SAP-7173",
+      "batch_no": "BATCH-SAP-71",
+      "image_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-09-17T09:28:37.176Z",
+      "production_status": "Produced",
+      "source_system": "SAP",
+      "sap_production_order": "ORD-SAP-7173",
+      "sap_batch_number": "BATCH-SAP-71",
+      "sap_material_code": "MAT-سلي",
+      "sap_last_sync": "2026-09-17T09:28:37.176Z",
+      "production_line": "SAP Line 2 - Foam Unit",
+      "shift": "Morning Shift",
+      "operator": "SAP Operator Auto",
+      "remarks": "Confirmed via SAP S/4HANA OData ProductionOrder API"
+    },
+    {
+      "id": 11,
+      "serial_number": "SLP-SAP-7173-01",
+      "model": "سليبي رويال بوكيت سبرينج (Royal Pocket)",
+      "size": "180 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-09-17",
+      "status": "جاهز للضمان",
+      "production_order": "ORD-SAP-7173",
+      "batch_no": "BATCH-SAP-71",
+      "image_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-09-17T09:28:37.173Z",
+      "production_status": "Produced",
+      "source_system": "SAP",
+      "sap_production_order": "ORD-SAP-7173",
+      "sap_batch_number": "BATCH-SAP-71",
+      "sap_material_code": "MAT-سلي",
+      "sap_last_sync": "2026-09-17T09:28:37.173Z",
+      "production_line": "SAP Line 1 - Tenth of Ramadan",
+      "shift": "Morning Shift",
+      "operator": "SAP Operator Auto",
+      "remarks": "Confirmed via SAP S/4HANA OData ProductionOrder API"
+    },
+    {
+      "id": 10,
+      "serial_number": "SLP-OD-5029-02",
+      "model": "سليبي أورثوبيديك الطبية (Orthopedic Comfort)",
+      "size": "120 × 200 سم",
+      "warranty_years": 5,
+      "production_date": "2026-09-17",
+      "status": "جاهز للضمان",
+      "production_order": "ORD-OD-5029",
+      "batch_no": "BATCH-OD-02",
+      "image_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-09-17T09:28:35.033Z",
+      "production_status": "Produced",
+      "source_system": "OneDrive",
+      "sap_production_order": "ORD-OD-5029",
+      "sap_batch_number": "BATCH-OD-02",
+      "sap_material_code": "MAT-سلي",
+      "sap_last_sync": "2026-09-17T09:28:35.033Z",
+      "production_line": "خط التجميع الطبي",
+      "shift": "وردية بعد الظهر",
+      "operator": "إبراهيم علي",
+      "remarks": "دعامات جانبية صلبة وشاسيه طبي مكفول 5 سنوات"
+    },
+    {
+      "id": 9,
+      "serial_number": "SLP-OD-5029-01",
+      "model": "سليبي سوبر ميموري فوم (Super Memory Foam)",
+      "size": "160 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-09-17",
+      "status": "جاهز للضمان",
+      "production_order": "ORD-OD-5029",
+      "batch_no": "BATCH-OD-02",
+      "image_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-09-17T09:28:35.029Z",
+      "production_status": "Produced",
+      "source_system": "OneDrive",
+      "sap_production_order": "ORD-OD-5029",
+      "sap_batch_number": "BATCH-OD-02",
+      "sap_material_code": "MAT-سلي",
+      "sap_last_sync": "2026-09-17T09:28:35.029Z",
+      "production_line": "خط صب الفوم والقص الهيدروليكي",
+      "shift": "وردية بعد الظهر",
+      "operator": "حسام حسن",
+      "remarks": "فحص كثافة الفوم (30 كجم/م3) معتمد"
+    },
+    {
+      "id": 8,
+      "serial_number": "SLP-SP-9429-02",
+      "model": "سليبي كلاود بيلو توب الفاخرة (Cloud Pillow Top)",
+      "size": "200 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-09-17",
+      "status": "جاهز للضمان",
+      "production_order": "ORD-SP-9429",
+      "batch_no": "BATCH-SP-01",
+      "image_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-09-17T09:28:29.433Z",
+      "production_status": "Produced",
+      "source_system": "SharePoint",
+      "sap_production_order": "ORD-SP-9429",
+      "sap_batch_number": "BATCH-SP-01",
+      "sap_material_code": "MAT-سلي",
+      "sap_last_sync": "2026-09-17T09:28:29.433Z",
+      "production_line": "خط التقفيل والتبطين",
+      "shift": "الوردية الأولى",
+      "operator": "مصطفى كمال",
+      "remarks": "تغليف ثلاثي الطبقات جاهز للنقل"
+    },
+    {
+      "id": 7,
+      "serial_number": "SLP-SP-9429-01",
+      "model": "سليبي رويال بوكيت سبرينج (Royal Pocket)",
+      "size": "180 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-09-17",
+      "status": "جاهز للضمان",
+      "production_order": "ORD-SP-9429",
+      "batch_no": "BATCH-SP-01",
+      "image_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-09-17T09:28:29.430Z",
+      "production_status": "Produced",
+      "source_system": "SharePoint",
+      "sap_production_order": "ORD-SP-9429",
+      "sap_batch_number": "BATCH-SP-01",
+      "sap_material_code": "MAT-سلي",
+      "sap_last_sync": "2026-09-17T09:28:29.430Z",
+      "production_line": "خط الشاسيهات 1",
+      "shift": "الوردية الأولى",
+      "operator": "أحمد محمود",
+      "remarks": "تم التحقق من ضبط الجودة واختبار ارتداد السوست"
+    },
+    {
+      "id": 6,
+      "serial_number": "SLP-TEST-9901",
+      "model": "مرتبة تجريبية سليبي",
+      "size": "180 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-09-16",
+      "status": "جاهز للضمان",
+      "production_order": "ORD-BULK-2026",
+      "batch_no": "BATCH-26",
+      "image_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-09-16T13:53:19.948Z",
+      "production_status": "Produced",
+      "source_system": "Excel"
+    },
+    {
+      "id": 1,
+      "serial_number": "SLP-2026-9081",
+      "model": "سليبي رويال بوكيت سبرينج (Royal Pocket)",
+      "size": "180 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-01-15",
+      "production_order": "ORD-2026-041",
+      "batch_no": "BATCH-88A",
+      "image_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-01-15T08:30:00Z"
+    },
+    {
+      "id": 2,
+      "serial_number": "SLP-2026-9082",
+      "model": "سليبي سوبر ميموري فوم (Super Memory Foam)",
+      "size": "160 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-02-01",
+      "production_order": "ORD-2026-052",
+      "batch_no": "BATCH-88A",
+      "image_url": "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-02-01T09:15:00Z"
+    },
+    {
+      "id": 3,
+      "serial_number": "SLP-2026-9083",
+      "model": "سليبي أورثوبيديك الطبية (Orthopedic Comfort)",
+      "size": "120 × 200 سم",
+      "warranty_years": 5,
+      "production_date": "2026-02-10",
+      "production_order": "ORD-2026-063",
+      "batch_no": "BATCH-89B",
+      "image_url": "https://images.unsplash.com/photo-1540518614846-7ede433c4ef0?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-02-10T11:00:00Z"
+    },
+    {
+      "id": 4,
+      "serial_number": "SLP-2026-9084",
+      "model": "سليبي كلاود بيلو توب الفاخرة (Cloud Pillow Top)",
+      "size": "200 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-02-18",
+      "production_order": "ORD-2026-077",
+      "batch_no": "BATCH-90A",
+      "image_url": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-02-18T14:20:00Z"
+    },
+    {
+      "id": 5,
+      "serial_number": "SLP-2026-9085",
+      "model": "سليبي هايبريد لاتكس الطبيعي (Hybrid Latex)",
+      "size": "160 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2026-03-01",
+      "production_order": "ORD-2026-091",
+      "batch_no": "BATCH-91C",
+      "image_url": "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2026-03-01T10:00:00Z"
+    },
+    {
+      "id": 99,
+      "serial_number": "SLP-2015-7001",
+      "model": "سليبي كلاسيك بلس (Classic Plus)",
+      "size": "160 × 200 سم",
+      "warranty_years": 10,
+      "production_date": "2015-01-10",
+      "status": "منتهي الضمان",
+      "production_order": "ORD-2015-012",
+      "batch_no": "BATCH-15X",
+      "image_url": "https://images.unsplash.com/photo-1540518614846-7ede433c4ef0?auto=format&fit=crop&w=800&q=80",
+      "created_at": "2015-01-10T08:00:00Z"
+    }
+  ],
+  "warranty_activations": [
+    {
+      "id": 3,
+      "warranty_id": "SLP-WRN-2609-5291",
+      "serial_number": "SLP-2026-9083",
+      "customer_name": "سارة عبدالله",
+      "phone": "01234567890",
+      "governorate": "الجيزة",
+      "city": "الشيخ زايد",
+      "invoice_number": "INV-77112",
+      "purchase_date": "2026-03-01",
+      "activation_date": "2026-09-15T07:44:45.617Z",
+      "expiry_date": "2031-03-01",
+      "created_at": "2026-09-15T07:44:45.617Z"
+    },
+    {
+      "id": 2,
+      "warranty_id": "SLP-WRN-2609-6437",
+      "serial_number": "SLP-2026-9082",
+      "customer_name": "كريم عبد العزيز",
+      "phone": "01099887766",
+      "governorate": "الإسكندرية",
+      "city": "سموحة",
+      "invoice_number": "INV-2026-104",
+      "purchase_date": "2026-03-01",
+      "activation_date": "2026-09-15T07:07:05.816Z",
+      "expiry_date": "2036-03-01",
+      "created_at": "2026-09-15T07:07:05.816Z"
+    },
+    {
+      "id": 1,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "customer_name": "أحمد محمود القاضي",
+      "phone": "01012345678",
+      "governorate": "القاهرة",
+      "city": "التجمع الخامس",
+      "invoice_number": "INV-99410",
+      "purchase_date": "2026-02-10",
+      "activation_date": "2026-02-11T14:30:00Z",
+      "expiry_date": "2036-02-10",
+      "created_at": "2026-02-11T14:30:00Z"
+    },
+    {
+      "id": 99,
+      "warranty_id": "SLP-WRN-1501-1099",
+      "serial_number": "SLP-2015-7001",
+      "customer_name": "طارق حسني مصطفى",
+      "phone": "01122334455",
+      "governorate": "القاهرة",
+      "city": "المعادي",
+      "invoice_number": "INV-2015-881",
+      "purchase_date": "2015-01-15",
+      "activation_date": "2015-01-16T10:00:00Z",
+      "expiry_date": "2025-01-15",
+      "created_at": "2015-01-16T10:00:00Z"
+    }
+  ],
+  "warranty_claims": [
+    {
+      "id": 1,
+      "claim_id": "CLM-2026-101",
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "customer_name": "أحمد محمود القاضي",
+      "phone": "01012345678",
+      "complaint_type": "Foam Collapse",
+      "complaint_description": "هبوط موضعي ملحوظ في طبقة الميموري فوم بالجانب الأيمن بعد استخدام أسبوعين.",
+      "claim_status": "Under Inspection",
+      "assigned_to": "فني أحمد راشد (أخصائي الفحص)",
+      "inspection_date": "2026-03-05",
+      "inspection_result": "تمت المعاينة وقياس الهبوط بمقدار 3.8 سم (يتجاوز حد التسامح المسموح به 2 سم). جاري رفع التقرير للاستبدال.",
+      "resolution": null,
+      "resolution_date": null,
+      "images": [
+        "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=800&q=80"
+      ],
+      "created_at": "2026-03-02T11:00:00Z",
+      "target_resolution_days": 7,
+      "last_action_date": "2026-03-05T14:00:00Z",
+      "next_follow_up_date": "2026-03-08T10:00:00Z",
+      "pending_tasks": [
+        {
+          "id": "task-101-1",
+          "title": "إجراء المعاينة وقياس الهبوط بالموقع",
+          "due_date": "2026-03-05",
+          "is_completed": true,
+          "assigned_to": "فني أحمد راشد",
+          "completed_at": "2026-03-05T13:45:00Z"
+        },
+        {
+          "id": "task-101-2",
+          "title": "اعتماد تقرير الفحص الفني من مدير الجودة",
+          "due_date": "2026-03-07",
+          "is_completed": false,
+          "assigned_to": "م. إبراهيم الجوهري"
+        },
+        {
+          "id": "task-101-3",
+          "title": "إصدار إذن الاستبدال والتواصل مع العميل للتسليم",
+          "due_date": "2026-03-08",
+          "is_completed": false,
+          "assigned_to": "د. منى الشريف"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "claim_id": "CLM-2026-102",
+      "warranty_id": "SLP-WRN-2609-6437",
+      "serial_number": "SLP-2026-9082",
+      "customer_name": "كريم عبد العزيز",
+      "phone": "01099887766",
+      "complaint_type": "Spring Collapse",
+      "complaint_description": "صوت احتكاك قوي في شاسيه السوست مع انخساف ملحوظ عند النوم.",
+      "claim_status": "Approved",
+      "assigned_to": "د. منى الشريف (مدير رقابة الجودة)",
+      "inspection_date": "2026-03-06",
+      "inspection_result": "كسر في أحد نوابض البوكيت ناتج عن عيب تصنيعي في التبريد الحراري للشاسيه.",
+      "resolution": "الموافقة على استبدال المرتبة بالكامل بمرتبة جديدة من نفس المقاس والموديل.",
+      "resolution_date": "2026-03-07T16:00:00Z",
+      "images": [
+        "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80"
+      ],
+      "created_at": "2026-03-04T14:30:00Z",
+      "target_resolution_days": 7,
+      "last_action_date": "2026-03-07T16:00:00Z",
+      "next_follow_up_date": "2026-03-09T12:00:00Z",
+      "pending_tasks": [
+        {
+          "id": "task-102-1",
+          "title": "إجراء المعاينة الفنية للشاسيه المكسور",
+          "due_date": "2026-03-06",
+          "is_completed": true,
+          "assigned_to": "فني محمد فتحي",
+          "completed_at": "2026-03-06T14:30:00Z"
+        },
+        {
+          "id": "task-102-2",
+          "title": "اعتماد استبدال المرتبة بمرتبة بديلة جديدة",
+          "due_date": "2026-03-07",
+          "is_completed": true,
+          "assigned_to": "د. منى الشريف",
+          "completed_at": "2026-03-07T16:00:00Z"
+        },
+        {
+          "id": "task-102-3",
+          "title": "متابعة تسليم المرتبة البديلة ورضا العميل",
+          "due_date": "2026-03-09",
+          "is_completed": true,
+          "assigned_to": "أحمد فهمي",
+          "completed_at": "2026-03-08T16:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "claim_id": "CLM-2026-103",
+      "warranty_id": "SLP-WRN-2609-5291",
+      "serial_number": "SLP-2026-9083",
+      "customer_name": "سارة عبدالله",
+      "phone": "01234567890",
+      "complaint_type": "Fabric Defect",
+      "complaint_description": "تفكك في خياطة الكابتونيه الخارجي بالقرب من المقبض الجانبي للمرتبة.",
+      "claim_status": "Open",
+      "assigned_to": null,
+      "inspection_date": null,
+      "inspection_result": null,
+      "resolution": null,
+      "resolution_date": null,
+      "images": [],
+      "created_at": "2026-09-15T07:46:00Z",
+      "target_resolution_days": 7,
+      "last_action_date": "2026-09-15T07:46:00Z",
+      "next_follow_up_date": "2026-09-20T11:00:00Z",
+      "pending_tasks": [
+        {
+          "id": "task-103-1",
+          "title": "الاتصال بالعميلة لتأكيد تفاصيل عيب الكابتونيه",
+          "due_date": "2026-09-16",
+          "is_completed": true,
+          "assigned_to": "ريم السيد",
+          "completed_at": "2026-09-16T10:15:00Z"
+        },
+        {
+          "id": "task-103-2",
+          "title": "جدولة زيارة فني المعاينة للمنزل",
+          "due_date": "2026-09-20",
+          "is_completed": false,
+          "assigned_to": "فني طارق المنشاوي"
+        },
+        {
+          "id": "task-103-3",
+          "title": "تحديد موعد المعاينة وإغلاق البلاغ بالصيانة أو الاستبدال",
+          "due_date": "2026-09-21",
+          "is_completed": false,
+          "assigned_to": "د. منى الشريف"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "claim_id": "CLM-2026-104",
+      "warranty_id": "SLP-WRN-2609-5291",
+      "serial_number": "SLP-2026-9083",
+      "customer_name": "سارة عبدالله",
+      "phone": "01234567890",
+      "complaint_type": "Fabric Defect",
+      "complaint_description": "تفكك في خياطة شريط البرواز الخارجي بالقرب من الزاوية اليمنى.",
+      "claim_status": "Closed",
+      "assigned_to": "فني طارق المنشاوي (فريق الصيانة السريعة)",
+      "inspection_date": "2026-09-15",
+      "inspection_result": "انفلات غرزة التثبيت الخارجية مع سلامة تامة للشاسيه والبطانة الداخلية.",
+      "resolution": "إجراء الإصلاح الفني وإعادة الحياكة الصناعية المزدوجة بموقع العميل بنجاح ورضا العميل.",
+      "resolution_date": "2026-09-16T11:30:00Z",
+      "images": [
+        "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80"
+      ],
+      "created_at": "2026-09-14T09:15:00Z",
+      "is_archived": true,
+      "archived_at": "2026-09-20T04:31:35.591Z",
+      "target_resolution_days": 7,
+      "last_action_date": "2026-09-16T11:30:00Z",
+      "next_follow_up_date": null,
+      "pending_tasks": [
+        {
+          "id": "task-104-1",
+          "title": "معاينة خياطة شريط البرواز بموقع العميل",
+          "due_date": "2026-09-15",
+          "is_completed": true,
+          "assigned_to": "فني طارق المنشاوي",
+          "completed_at": "2026-09-15T11:00:00Z"
+        },
+        {
+          "id": "task-104-2",
+          "title": "إجراء الصيانة وإعادة الحياكة المزدوجة",
+          "due_date": "2026-09-16",
+          "is_completed": true,
+          "assigned_to": "فني طارق المنشاوي",
+          "completed_at": "2026-09-16T11:30:00Z"
+        }
+      ]
+    }
+  ],
+  "replacements": [
+    {
+      "id": 1,
+      "replacement_id": "REP-2026-001",
+      "old_serial_number": "SLP-2026-9082",
+      "new_serial_number": "SLP-2026-9084",
+      "old_warranty_id": "SLP-WRN-2609-6437",
+      "new_warranty_id": "SLP-WRN-2609-8831",
+      "replacement_reason": "كسر في شاسيه السوست البوكيت بموجب تقرير المعاينة الفنية للشكوى CLM-2026-102",
+      "approval_date": "2026-03-07",
+      "approved_by": "د. منى الشريف (مدير عام رقابة الجودة)",
+      "notes": "تم ربط المرتبة البديلة وتوليد شهادة استبدال معتمدة. يتم استلام المرتبة القديمة وإرجاعها للمصنع لفحص الجودة.",
+      "created_at": "2026-03-07T16:15:00Z"
+    }
+  ],
+  "activation_logs": [
+    {
+      "id": 71,
+      "warranty_id": "SLP-WRN-1501-1099",
+      "serial_number": "SLP-2015-7001",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T06:34:29.084Z"
+    },
+    {
+      "id": 70,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T06:34:25.447Z"
+    },
+    {
+      "id": 69,
+      "warranty_id": "SLP-WRN-1501-1099",
+      "serial_number": "SLP-2015-7001",
+      "action": "[فحص انتهاء الصلاحية الآلي] انتهى ضمان الوثيقة (SLP-WRN-1501-1099) للمرتبة SLP-2015-7001",
+      "created_at": "2026-09-20T06:32:05.037Z"
+    },
+    {
+      "id": 68,
+      "warranty_id": "SLP-WRN-1501-1099",
+      "serial_number": "SLP-2015-7001",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T06:32:02.887Z"
+    },
+    {
+      "id": 67,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T06:32:02.883Z"
+    },
+    {
+      "id": 66,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T06:32:00.548Z"
+    },
+    {
+      "id": 65,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T06:28:45.779Z"
+    },
+    {
+      "id": 64,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T06:28:45.674Z"
+    },
+    {
+      "id": 63,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T06:27:54.508Z"
+    },
+    {
+      "id": 62,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T06:27:54.409Z"
+    },
+    {
+      "id": 61,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تحديث متابعة زمن الخدمة SLA للشكوى (CLM-2026-101) بواسطة: فحص النظام",
+      "created_at": "2026-09-20T06:27:15.957Z"
+    },
+    {
+      "id": 60,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T05:49:01.218Z"
+    },
+    {
+      "id": 59,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T05:49:01.119Z"
+    },
+    {
+      "id": 58,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T04:35:16.580Z"
+    },
+    {
+      "id": 57,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T04:35:16.466Z"
+    },
+    {
+      "id": 56,
+      "warranty_id": "SLP-WRN-2609-5291",
+      "serial_number": "SLP-2026-9083",
+      "action": "[أرشفة الطلبات المغلقة] تمت أرشفة طلب الضمان رقم (CLM-2026-104) بعد مرور فترة التسوية القانونية",
+      "created_at": "2026-09-20T04:31:35.592Z"
+    },
+    {
+      "id": 55,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T04:31:34.063Z"
+    },
+    {
+      "id": 54,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-20T04:31:33.961Z"
+    },
+    {
+      "id": 53,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T09:48:05.884Z"
+    },
+    {
+      "id": 52,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T09:48:05.786Z"
+    },
+    {
+      "id": 51,
+      "warranty_id": null,
+      "serial_number": "MOD-ORTHOPEDIC",
+      "action": "تحديث سياسة الضمان للموديل [سليبي أورثوبيديك الطبية (Orthopedic Comfort)] من 5 إلى 7 سنوات بواسطة م. وجدي باعبيد",
+      "created_at": "2026-09-17T09:40:13.268Z"
+    },
+    {
+      "id": 50,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T09:37:43.213Z"
+    },
+    {
+      "id": 49,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T09:37:43.106Z"
+    },
+    {
+      "id": 48,
+      "warranty_id": null,
+      "serial_number": "IMPORT_IMP-377934",
+      "action": "تم استيراد 2 مرتبة بنجاح، وتخطي 0 سجل مكرر/توقعي بواسطة م. وجدي باعبيد (SUPER_ADMIN) من مصدر [SAP: SAP_S4HANA_ProductionOrder_OData]",
+      "created_at": "2026-09-17T09:29:37.943Z"
+    },
+    {
+      "id": 47,
+      "warranty_id": null,
+      "serial_number": "SLP-SAP-7934-02",
+      "action": "إضافة مرتبة جديدة لخط الإنتاج: سليبي سوبر ميموري فوم (Super Memory Foam) مقاس 160 × 200 سم بواسطة إدارة الإنتاج",
+      "created_at": "2026-09-17T09:29:37.939Z"
+    },
+    {
+      "id": 46,
+      "warranty_id": null,
+      "serial_number": "SLP-SAP-7934-01",
+      "action": "إضافة مرتبة جديدة لخط الإنتاج: سليبي رويال بوكيت سبرينج (Royal Pocket) مقاس 180 × 200 سم بواسطة إدارة الإنتاج",
+      "created_at": "2026-09-17T09:29:37.934Z"
+    },
+    {
+      "id": 45,
+      "warranty_id": null,
+      "serial_number": "IMPORT_IMP-317173",
+      "action": "تم استيراد 2 مرتبة بنجاح، وتخطي 0 سجل مكرر/توقعي بواسطة م. وجدي باعبيد (SUPER_ADMIN) من مصدر [SAP: SAP_S4HANA_ProductionOrder_OData]",
+      "created_at": "2026-09-17T09:28:37.180Z"
+    },
+    {
+      "id": 44,
+      "warranty_id": null,
+      "serial_number": "SLP-SAP-7173-02",
+      "action": "إضافة مرتبة جديدة لخط الإنتاج: سليبي سوبر ميموري فوم (Super Memory Foam) مقاس 160 × 200 سم بواسطة إدارة الإنتاج",
+      "created_at": "2026-09-17T09:28:37.176Z"
+    },
+    {
+      "id": 43,
+      "warranty_id": null,
+      "serial_number": "SLP-SAP-7173-01",
+      "action": "إضافة مرتبة جديدة لخط الإنتاج: سليبي رويال بوكيت سبرينج (Royal Pocket) مقاس 180 × 200 سم بواسطة إدارة الإنتاج",
+      "created_at": "2026-09-17T09:28:37.173Z"
+    },
+    {
+      "id": 42,
+      "warranty_id": null,
+      "serial_number": "IMPORT_IMP-315029",
+      "action": "تم استيراد 2 مرتبة بنجاح، وتخطي 0 سجل مكرر/توقعي بواسطة م. وجدي باعبيد (SUPER_ADMIN) من مصدر [OneDrive: Production_Master.xlsx]",
+      "created_at": "2026-09-17T09:28:35.037Z"
+    },
+    {
+      "id": 41,
+      "warranty_id": null,
+      "serial_number": "SLP-OD-5029-02",
+      "action": "إضافة مرتبة جديدة لخط الإنتاج: سليبي أورثوبيديك الطبية (Orthopedic Comfort) مقاس 120 × 200 سم بواسطة إدارة الإنتاج",
+      "created_at": "2026-09-17T09:28:35.033Z"
+    },
+    {
+      "id": 40,
+      "warranty_id": null,
+      "serial_number": "SLP-OD-5029-01",
+      "action": "إضافة مرتبة جديدة لخط الإنتاج: سليبي سوبر ميموري فوم (Super Memory Foam) مقاس 160 × 200 سم بواسطة إدارة الإنتاج",
+      "created_at": "2026-09-17T09:28:35.029Z"
+    },
+    {
+      "id": 39,
+      "warranty_id": null,
+      "serial_number": "IMPORT_IMP-309429",
+      "action": "تم استيراد 2 مرتبة بنجاح، وتخطي 0 سجل مكرر/توقعي بواسطة م. وجدي باعبيد (SUPER_ADMIN) من مصدر [SharePoint: Production_Master.xlsx]",
+      "created_at": "2026-09-17T09:28:29.436Z"
+    },
+    {
+      "id": 38,
+      "warranty_id": null,
+      "serial_number": "SLP-SP-9429-02",
+      "action": "إضافة مرتبة جديدة لخط الإنتاج: سليبي كلاود بيلو توب الفاخرة (Cloud Pillow Top) مقاس 200 × 200 سم بواسطة إدارة الإنتاج",
+      "created_at": "2026-09-17T09:28:29.433Z"
+    },
+    {
+      "id": 37,
+      "warranty_id": null,
+      "serial_number": "SLP-SP-9429-01",
+      "action": "إضافة مرتبة جديدة لخط الإنتاج: سليبي رويال بوكيت سبرينج (Royal Pocket) مقاس 180 × 200 سم بواسطة إدارة الإنتاج",
+      "created_at": "2026-09-17T09:28:29.430Z"
+    },
+    {
+      "id": 36,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T09:25:49.014Z"
+    },
+    {
+      "id": 35,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T09:25:48.914Z"
+    },
+    {
+      "id": 34,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T08:30:16.416Z"
+    },
+    {
+      "id": 33,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T08:30:16.275Z"
+    },
+    {
+      "id": 32,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T07:53:24.129Z"
+    },
+    {
+      "id": 31,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T07:53:24.023Z"
+    },
+    {
+      "id": 30,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T07:18:14.651Z"
+    },
+    {
+      "id": 29,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-17T07:18:14.534Z"
+    },
+    {
+      "id": 28,
+      "warranty_id": null,
+      "serial_number": "BULK_IMPORT",
+      "action": "تم استيراد 1 منتج جديد بنجاح وتخطي 1 أرقام تسلسلية مكررة بواسطة مسؤول إدارة المنتجات",
+      "created_at": "2026-09-16T13:53:19.948Z"
+    },
+    {
+      "id": 27,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-16T13:38:10.398Z"
+    },
+    {
+      "id": 26,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-16T13:38:10.234Z"
+    },
+    {
+      "id": 25,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-16T13:37:13.674Z"
+    },
+    {
+      "id": 24,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-16T13:37:13.570Z"
+    },
+    {
+      "id": 23,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-16T13:13:06.892Z"
+    },
+    {
+      "id": 22,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-16T13:13:06.788Z"
+    },
+    {
+      "id": 21,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-16T12:46:32.993Z"
+    },
+    {
+      "id": 20,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-16T12:46:32.884Z"
+    },
+    {
+      "id": 19,
+      "warranty_id": null,
+      "serial_number": "CLM-2026-102",
+      "action": "[تحميل مستند] - تم تحميل ومعاينة المرفق [تقرير_المعاينة_الفنية_الميدانية_CLM_102.pdf] (ATT-2026-001) من المسار السحابي (claims/CLM-2026-102/تقرير_المعاينة_الفنية_الميدانية_CLM_102.pdf) بواسطة مستخدم النظام",
+      "created_at": "2026-09-15T13:01:46.876Z"
+    },
+    {
+      "id": 18,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T12:38:54.023Z"
+    },
+    {
+      "id": 17,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T12:38:53.920Z"
+    },
+    {
+      "id": 16,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T12:26:14.624Z"
+    },
+    {
+      "id": 15,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T12:26:14.514Z"
+    },
+    {
+      "id": 14,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T12:16:04.348Z"
+    },
+    {
+      "id": 13,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T12:16:04.242Z"
+    },
+    {
+      "id": 12,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T12:13:29.250Z"
+    },
+    {
+      "id": 11,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T12:13:29.135Z"
+    },
+    {
+      "id": 10,
+      "warranty_id": "SLP-WRN-2609-5291",
+      "serial_number": "SLP-2026-9083",
+      "action": "تم إصدار وتفعيل وثيقة الضمان بنجاح للعميل: سارة عبدالله (هاتف: 01234567890) بموجب فاتورة رقم INV-77112",
+      "created_at": "2026-09-15T07:44:45.618Z"
+    },
+    {
+      "id": 9,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T07:39:17.074Z"
+    },
+    {
+      "id": 8,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T07:39:16.975Z"
+    },
+    {
+      "id": 7,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T07:39:03.167Z"
+    },
+    {
+      "id": 6,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T07:07:40.710Z"
+    },
+    {
+      "id": 5,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T07:07:40.611Z"
+    },
+    {
+      "id": 4,
+      "warranty_id": "SLP-WRN-2609-6437",
+      "serial_number": "SLP-2026-9082",
+      "action": "تم إصدار وتفعيل وثيقة الضمان بنجاح للعميل: كريم عبد العزيز (هاتف: 01099887766) بموجب فاتورة رقم INV-2026-104",
+      "created_at": "2026-09-15T07:07:05.816Z"
+    },
+    {
+      "id": 3,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-15T07:07:02.187Z"
+    },
+    {
+      "id": 1,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم تفعيل الضمان بنجاح عبر البوابة الإلكترونية للعميل: أحمد محمود القاضي",
+      "created_at": "2026-02-11T14:30:00Z"
+    },
+    {
+      "id": 2,
+      "warranty_id": null,
+      "serial_number": "SLP-2026-9082",
+      "action": "تم تسجيل المنتج في خط الإنتاج وتوليد باركود الضمان",
+      "created_at": "2026-02-01T09:15:00Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "USR-01",
+      "name": "م. محمد العامودي",
+      "email": "malamoudi@sleephigh.com",
+      "role": "SUPER_ADMIN",
+      "department": "الإدارة العليا والتنفيذية",
+      "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80",
+      "created_at": "2026-01-01T08:00:00Z"
+    },
+    {
+      "id": "USR-02",
+      "name": "م. وجدي باعبيد",
+      "email": "wsb@sleephigh.com",
+      "role": "SUPER_ADMIN",
+      "department": "الإدارة العليا وتوكيد الجودة",
+      "avatar": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80",
+      "created_at": "2026-01-01T08:00:00Z"
+    },
+    {
+      "id": "USR-03",
+      "name": "م. حسام سليمان",
+      "email": "quality.eg@sleephigh.com",
+      "role": "QUALITY_MANAGER",
+      "department": "إدارة وتوكيد الجودة والمعاينات",
+      "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+      "created_at": "2026-01-05T08:00:00Z"
+    },
+    {
+      "id": "USR-04",
+      "name": "م. محمد شرف",
+      "email": "msharaf@sleephigh.com",
+      "role": "PLANT_MANAGER",
+      "department": "إدارة مصنع المراتب والعمليات",
+      "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
+      "created_at": "2026-01-10T08:00:00Z"
+    },
+    {
+      "id": "USR-05",
+      "name": "أ. يوسف كامل",
+      "email": "production.eg@sleephigh.com",
+      "role": "PRODUCTION",
+      "department": "إدارة وتخطيط خطوط الإنتاج والباركود",
+      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+      "created_at": "2026-01-15T08:00:00Z"
+    },
+    {
+      "id": "USR-06",
+      "name": "أ. حسام عرفة",
+      "email": "hossam@sleephigh.com",
+      "role": "VIEWER",
+      "department": "المتابعة والتدقيق والرقابة (Read-Only)",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+      "created_at": "2026-01-20T08:00:00Z"
+    },
+    {
+      "id": "USR-07",
+      "name": "أ. محمد إبراهيم",
+      "email": "m.hassan@sleephigh.com",
+      "role": "CUSTOMER_SERVICE",
+      "department": "خدمة العملاء وما بعد البيع والضمان 360",
+      "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80",
+      "created_at": "2026-01-25T08:00:00Z"
+    }
+  ],
+  "product_lifecycle": [
+    {
+      "id": 1,
+      "lifecycle_id": "LC-2026-001",
+      "serial_number": "SLP-2026-9081",
+      "event_type": "Produced",
+      "event_date": "2026-01-15T08:30:00Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "اكتمال تصنيع شاسيه البوكيت وتغليف طبقات الفوم واللاتكس وفق أمر إنتاج ORD-2026-041",
+      "reference_id": "ORD-2026-041",
+      "created_at": "2026-01-15T08:30:00Z"
+    },
+    {
+      "id": 2,
+      "lifecycle_id": "LC-2026-002",
+      "serial_number": "SLP-2026-9081",
+      "event_type": "Quality Approved",
+      "event_date": "2026-01-15T11:00:00Z",
+      "performed_by": "م. إبراهيم الجوهري (قسم الجودة)",
+      "notes": "اجتياز اختبارات الأبعاد والصلابة واختبار الضغط المتكرر بنجاح 100%",
+      "reference_id": "QC-2026-091",
+      "created_at": "2026-01-15T11:00:00Z"
+    },
+    {
+      "id": 3,
+      "lifecycle_id": "LC-2026-003",
+      "serial_number": "SLP-2026-9081",
+      "event_type": "Packed",
+      "event_date": "2026-01-16T09:00:00Z",
+      "performed_by": "محطة التعبئة والتغليف الآلي",
+      "notes": "التغليف الحراري المزدوج ثلاثي الطبقات مع بطاقة باركود الضمان الذكي",
+      "reference_id": "BATCH-88A",
+      "created_at": "2026-01-16T09:00:00Z"
+    },
+    {
+      "id": 4,
+      "lifecycle_id": "LC-2026-004",
+      "serial_number": "SLP-2026-9081",
+      "event_type": "Shipped",
+      "event_date": "2026-01-18T07:30:00Z",
+      "performed_by": "أسطول النقل واللوجستيات",
+      "notes": "نقل المرتبة إلى مستودع التوزيع الإقليمي - القاهرة الكبرى",
+      "reference_id": "TRK-2026-114",
+      "created_at": "2026-01-18T07:30:00Z"
+    },
+    {
+      "id": 5,
+      "lifecycle_id": "LC-2026-005",
+      "serial_number": "SLP-2026-9081",
+      "event_type": "Delivered",
+      "event_date": "2026-01-20T11:45:00Z",
+      "performed_by": "معرض سليبي - فرع التجمع الخامس",
+      "notes": "استلام المعرض وتأكيد حالة المنتج الممتازة تمهيداً للتسليم للعميل",
+      "reference_id": "SHP-9081",
+      "created_at": "2026-01-20T11:45:00Z"
+    },
+    {
+      "id": 6,
+      "lifecycle_id": "LC-2026-006",
+      "serial_number": "SLP-2026-9081",
+      "event_type": "Sold",
+      "event_date": "2026-01-20T14:15:00Z",
+      "performed_by": "معرض سليبي التجمع الخامس",
+      "notes": "بيع المنتج للعميل أحمد مصطفى الشناوي بموجب فاتورة INV-2026-8812",
+      "reference_id": "INV-2026-8812",
+      "created_at": "2026-01-20T14:15:00Z"
+    },
+    {
+      "id": 7,
+      "lifecycle_id": "LC-2026-007",
+      "serial_number": "SLP-2026-9081",
+      "event_type": "Warranty Activated",
+      "event_date": "2026-01-20T14:20:00Z",
+      "performed_by": "نظام الضمان الرقمي الذكي",
+      "notes": "تفعيل وثيقة الضمان الذهبي رقم SLP-WRN-2609-8812 لمدة 10 سنوات تنتهي 2036-01-15",
+      "reference_id": "SLP-WRN-2609-8812",
+      "created_at": "2026-01-20T14:20:00Z"
+    },
+    {
+      "id": 8,
+      "lifecycle_id": "LC-2026-008",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Produced",
+      "event_date": "2026-02-01T09:15:00Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "تصنيع مرتبة سليبي سوبر ميموري فوم بموجب أمر إنتاج ORD-2026-052",
+      "reference_id": "ORD-2026-052",
+      "created_at": "2026-02-01T09:15:00Z"
+    },
+    {
+      "id": 9,
+      "lifecycle_id": "LC-2026-009",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Quality Approved",
+      "event_date": "2026-02-01T12:00:00Z",
+      "performed_by": "م. حسام الدين (مدير المصنع)",
+      "notes": "فحص الجودة المعملي والموافقة على ختم المصنع واعتماد التشغيلة BATCH-88A",
+      "reference_id": "QC-2026-104",
+      "created_at": "2026-02-01T12:00:00Z"
+    },
+    {
+      "id": 10,
+      "lifecycle_id": "LC-2026-010",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Packed",
+      "event_date": "2026-02-02T10:00:00Z",
+      "performed_by": "محطة التعبئة والتغليف الآلي",
+      "notes": "التغليف عالي الكثافة والحماية من الرطوبة والغبار",
+      "reference_id": "BATCH-88A",
+      "created_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "id": 11,
+      "lifecycle_id": "LC-2026-011",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Shipped",
+      "event_date": "2026-02-03T08:00:00Z",
+      "performed_by": "قسم الشحن والتوزيع",
+      "notes": "تسليم البضاعة للشحن الداخلي المتجه لمنطقة الجيزة / الدقي",
+      "reference_id": "TRK-2026-130",
+      "created_at": "2026-02-03T08:00:00Z"
+    },
+    {
+      "id": 12,
+      "lifecycle_id": "LC-2026-012",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Delivered",
+      "event_date": "2026-02-04T13:30:00Z",
+      "performed_by": "معرض سليبي - فرع المهندسين",
+      "notes": "استلام المعرض للمنتج والتأكد من سلامته",
+      "reference_id": "SHP-9082",
+      "created_at": "2026-02-04T13:30:00Z"
+    },
+    {
+      "id": 13,
+      "lifecycle_id": "LC-2026-013",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Sold",
+      "event_date": "2026-02-05T16:00:00Z",
+      "performed_by": "معرض سليبي المهندسين",
+      "notes": "شراء المرتبة من قبل العميل سارة محمود عبد العزيز - فاتورة INV-2026-6437",
+      "reference_id": "INV-2026-6437",
+      "created_at": "2026-02-05T16:00:00Z"
+    },
+    {
+      "id": 14,
+      "lifecycle_id": "LC-2026-014",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Warranty Activated",
+      "event_date": "2026-02-05T16:05:00Z",
+      "performed_by": "نظام الضمان الرقمي",
+      "notes": "تفعيل الضمان برقم SLP-WRN-2609-6437 لمدة 10 سنوات تنتهي 2036-02-01",
+      "reference_id": "SLP-WRN-2609-6437",
+      "created_at": "2026-02-05T16:05:00Z"
+    },
+    {
+      "id": 15,
+      "lifecycle_id": "LC-2026-015",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Claim Opened",
+      "event_date": "2026-03-04T14:30:00Z",
+      "performed_by": "خدمة العملاء (بناءً على طلب العميل)",
+      "notes": "فتح بلاغ ضمان رقم CLM-2026-102 لوجود هبوط ملحوظ في جانب المرتبة الأيسر بعد شهر من الاستخدام",
+      "reference_id": "CLM-2026-102",
+      "created_at": "2026-03-04T14:30:00Z"
+    },
+    {
+      "id": 16,
+      "lifecycle_id": "LC-2026-016",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Inspection Scheduled",
+      "event_date": "2026-03-05T10:00:00Z",
+      "performed_by": "قسم خدمة ما بعد البيع",
+      "notes": "تحديد موعد زيارة منزلية للمعاينة الفنية بواسطة الفني محمد فتحي بتاريخ 2026-03-06",
+      "reference_id": "CLM-2026-102",
+      "created_at": "2026-03-05T10:00:00Z"
+    },
+    {
+      "id": 17,
+      "lifecycle_id": "LC-2026-017",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Inspection Completed",
+      "event_date": "2026-03-06T15:30:00Z",
+      "performed_by": "فني الفحص الميداني: محمد فتحي",
+      "notes": "إجراء قياس استواء السطح: هبوط موضعي 4.2 سم في شاسيه السوست الجانبي ناتج عن خلل صناعي غير ناتج عن سوء استخدام",
+      "reference_id": "CLM-2026-102",
+      "created_at": "2026-03-06T15:30:00Z"
+    },
+    {
+      "id": 18,
+      "lifecycle_id": "LC-2026-018",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Replacement Approved",
+      "event_date": "2026-03-07T16:15:00Z",
+      "performed_by": "م. إبراهيم الجوهري (مدير الجودة الأعلى)",
+      "notes": "اعتماد قرار الاستبدال الفوري الكامل بمرتبة جديدة من نفس الطراز والمواصفات بموجب REP-2026-001",
+      "reference_id": "REP-2026-001",
+      "created_at": "2026-03-07T16:15:00Z"
+    },
+    {
+      "id": 19,
+      "lifecycle_id": "LC-2026-019",
+      "serial_number": "SLP-2026-9082",
+      "event_type": "Replacement Completed",
+      "event_date": "2026-03-08T11:00:00Z",
+      "performed_by": "فريق التوصيل والخدمة المنزلية",
+      "notes": "استلام المرتبة المعيبة القديمة وتسليم المرتبة البديلة الجديدة رقم SLP-2026-9084 للعميلة وتوقيع محضر الاستلام",
+      "reference_id": "REP-2026-001",
+      "created_at": "2026-03-08T11:00:00Z"
+    },
+    {
+      "id": 20,
+      "lifecycle_id": "LC-2026-020",
+      "serial_number": "SLP-2026-9084",
+      "event_type": "Produced",
+      "event_date": "2026-02-15T08:00:00Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "إنتاج مرتبة سليبي رويال بوكيت سبرينج 180×200 سم تشغيلة BATCH-89B",
+      "reference_id": "ORD-2026-068",
+      "created_at": "2026-02-15T08:00:00Z"
+    },
+    {
+      "id": 21,
+      "lifecycle_id": "LC-2026-021",
+      "serial_number": "SLP-2026-9084",
+      "event_type": "Quality Approved",
+      "event_date": "2026-02-15T11:30:00Z",
+      "performed_by": "قسم فحص الجودة الشاملة",
+      "notes": "فحص الجودة والمطابقة الفنية لمواصفات مراتب الاستبدال الممتازة",
+      "reference_id": "QC-2026-142",
+      "created_at": "2026-02-15T11:30:00Z"
+    },
+    {
+      "id": 22,
+      "lifecycle_id": "LC-2026-022",
+      "serial_number": "SLP-2026-9084",
+      "event_type": "Delivered",
+      "event_date": "2026-03-08T11:00:00Z",
+      "performed_by": "فريق التسليم الميداني",
+      "notes": "تسليم المرتبة البديلة للعميلة سارة محمود كبديل مباشر لـ SLP-2026-9082 بموجب REP-2026-001",
+      "reference_id": "REP-2026-001",
+      "created_at": "2026-03-08T11:00:00Z"
+    },
+    {
+      "id": 23,
+      "lifecycle_id": "LC-2026-023",
+      "serial_number": "SLP-2026-9084",
+      "event_type": "Warranty Activated",
+      "event_date": "2026-03-08T11:05:00Z",
+      "performed_by": "نظام الضمان الرقمي",
+      "notes": "ربط وثيقة الضمان المنقولة تلقائياً وتثبيت سريان الضمان حتى تاريخ نهاية الوثيقة الأصلية 2036-02-01",
+      "reference_id": "SLP-WRN-2603-9084",
+      "created_at": "2026-03-08T11:05:00Z"
+    },
+    {
+      "id": 24,
+      "lifecycle_id": "LC-2026-024",
+      "serial_number": "SLP-2026-9083",
+      "event_type": "Produced",
+      "event_date": "2026-02-10T10:00:00Z",
+      "performed_by": "خط إنتاج الميموري فوم",
+      "notes": "تصنيع مرتبة سليبي أورثوبيديك بيلوتوب مقاس 140 × 195 سم",
+      "reference_id": "ORD-2026-061",
+      "created_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "id": 25,
+      "lifecycle_id": "LC-2026-025",
+      "serial_number": "SLP-2026-9083",
+      "event_type": "Quality Approved",
+      "event_date": "2026-02-10T14:00:00Z",
+      "performed_by": "فاحص الجودة: سامح عادل",
+      "notes": "اعتماد اختبار الصلابة الطبية والكثافة",
+      "reference_id": "QC-2026-118",
+      "created_at": "2026-02-10T14:00:00Z"
+    },
+    {
+      "id": 26,
+      "lifecycle_id": "LC-2026-026",
+      "serial_number": "SLP-2026-9083",
+      "event_type": "Packed",
+      "event_date": "2026-02-11T09:00:00Z",
+      "performed_by": "محطة التعبئة والتغليف الآلي",
+      "notes": "تغليف آلي جاهز للعرض بالمستودع المركزي",
+      "reference_id": "BATCH-89B",
+      "created_at": "2026-02-11T09:00:00Z"
+    },
+    {
+      "id": 27,
+      "lifecycle_id": "LC-2026-027",
+      "serial_number": "SLP-2026-9085",
+      "event_type": "Produced",
+      "event_date": "2026-03-01T08:00:00Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "إنتاج مرتبة سليبي هايبرد جل كول 160×200 سم",
+      "reference_id": "ORD-2026-090",
+      "created_at": "2026-03-01T08:00:00Z"
+    },
+    {
+      "id": 28,
+      "lifecycle_id": "LC-2026-028",
+      "serial_number": "SLP-2026-9085",
+      "event_type": "Quality Approved",
+      "event_date": "2026-03-01T10:30:00Z",
+      "performed_by": "قسم فحص الجودة الشاملة",
+      "notes": "فحص جودة طبقة الجل واختبار التبريد ومطابقة المقاسات القياسية",
+      "reference_id": "QC-2026-177",
+      "created_at": "2026-03-01T10:30:00Z"
+    },
+    {
+      "id": 29,
+      "lifecycle_id": "LC-299351",
+      "serial_number": "SLP-2026-9083",
+      "event_type": "Warranty Activated",
+      "event_date": "2026-09-15T07:44:45.617Z",
+      "performed_by": "بوابة تفعيل الضمان الرقمية",
+      "notes": "تفعيل الضمان الرسمي رقم SLP-WRN-2609-5291 للعميل سارة عبدالله",
+      "reference_id": "SLP-WRN-2609-5291",
+      "created_at": "2026-09-15T13:01:39.351Z"
+    },
+    {
+      "id": 30,
+      "lifecycle_id": "LC-495576",
+      "serial_number": "SLP-TEST-9901",
+      "event_type": "Produced",
+      "event_date": "2026-09-16T08:00:00Z",
+      "performed_by": "خط الإنتاج - ORD-BULK-2026",
+      "notes": "اكتمال تصنيع المرتبة مرتبة تجريبية سليبي مقاس 180 × 200 سم وتشغيل الشاسيه مع ضبط الجودة",
+      "reference_id": "BATCH-26",
+      "created_at": "2026-09-17T07:18:15.576Z"
+    },
+    {
+      "id": 31,
+      "lifecycle_id": "LC-309430-01",
+      "serial_number": "SLP-SP-9429-01",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T09:28:29.430Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "اكتمال تصنيع المرتبة طراز سليبي رويال بوكيت سبرينج (Royal Pocket) مقاس 180 × 200 سم - تشغيلة BATCH-SP-01",
+      "reference_id": "ORD-SP-9429",
+      "created_at": "2026-09-17T09:28:29.431Z"
+    },
+    {
+      "id": 32,
+      "lifecycle_id": "LC-309431-02",
+      "serial_number": "SLP-SP-9429-01",
+      "event_type": "Quality Approved",
+      "event_date": "2026-09-17T09:28:29.430Z",
+      "performed_by": "قسم فحص وضبط الجودة",
+      "notes": "فحص واختبار مطابقة الجودة القياسية بنجاح 100%",
+      "reference_id": "BATCH-SP-01",
+      "created_at": "2026-09-17T09:28:29.431Z"
+    },
+    {
+      "id": 33,
+      "lifecycle_id": "LC-309432",
+      "serial_number": "SLP-SP-9429-01",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T08:00:00Z",
+      "performed_by": "أحمد محمود (SharePoint)",
+      "notes": "اكتمال تصنيع المرتبة واعتماد مواصفاتها من خلال استيراد الإنتاج [SharePoint - Production_Master.xlsx]",
+      "reference_id": "IMP-309429",
+      "created_at": "2026-09-17T09:28:29.432Z"
+    },
+    {
+      "id": 34,
+      "lifecycle_id": "LC-309434-01",
+      "serial_number": "SLP-SP-9429-02",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T09:28:29.433Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "اكتمال تصنيع المرتبة طراز سليبي كلاود بيلو توب الفاخرة (Cloud Pillow Top) مقاس 200 × 200 سم - تشغيلة BATCH-SP-01",
+      "reference_id": "ORD-SP-9429",
+      "created_at": "2026-09-17T09:28:29.434Z"
+    },
+    {
+      "id": 35,
+      "lifecycle_id": "LC-309434-02",
+      "serial_number": "SLP-SP-9429-02",
+      "event_type": "Quality Approved",
+      "event_date": "2026-09-17T09:28:29.433Z",
+      "performed_by": "قسم فحص وضبط الجودة",
+      "notes": "فحص واختبار مطابقة الجودة القياسية بنجاح 100%",
+      "reference_id": "BATCH-SP-01",
+      "created_at": "2026-09-17T09:28:29.434Z"
+    },
+    {
+      "id": 36,
+      "lifecycle_id": "LC-309435",
+      "serial_number": "SLP-SP-9429-02",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T08:00:00Z",
+      "performed_by": "مصطفى كمال (SharePoint)",
+      "notes": "اكتمال تصنيع المرتبة واعتماد مواصفاتها من خلال استيراد الإنتاج [SharePoint - Production_Master.xlsx]",
+      "reference_id": "IMP-309429",
+      "created_at": "2026-09-17T09:28:29.435Z"
+    },
+    {
+      "id": 37,
+      "lifecycle_id": "LC-315030-01",
+      "serial_number": "SLP-OD-5029-01",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T09:28:35.029Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "اكتمال تصنيع المرتبة طراز سليبي سوبر ميموري فوم (Super Memory Foam) مقاس 160 × 200 سم - تشغيلة BATCH-OD-02",
+      "reference_id": "ORD-OD-5029",
+      "created_at": "2026-09-17T09:28:35.030Z"
+    },
+    {
+      "id": 38,
+      "lifecycle_id": "LC-315030-02",
+      "serial_number": "SLP-OD-5029-01",
+      "event_type": "Quality Approved",
+      "event_date": "2026-09-17T09:28:35.029Z",
+      "performed_by": "قسم فحص وضبط الجودة",
+      "notes": "فحص واختبار مطابقة الجودة القياسية بنجاح 100%",
+      "reference_id": "BATCH-OD-02",
+      "created_at": "2026-09-17T09:28:35.030Z"
+    },
+    {
+      "id": 39,
+      "lifecycle_id": "LC-315031",
+      "serial_number": "SLP-OD-5029-01",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T08:00:00Z",
+      "performed_by": "حسام حسن (OneDrive)",
+      "notes": "اكتمال تصنيع المرتبة واعتماد مواصفاتها من خلال استيراد الإنتاج [OneDrive - Production_Master.xlsx]",
+      "reference_id": "IMP-315029",
+      "created_at": "2026-09-17T09:28:35.031Z"
+    },
+    {
+      "id": 40,
+      "lifecycle_id": "LC-315033-01",
+      "serial_number": "SLP-OD-5029-02",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T09:28:35.033Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "اكتمال تصنيع المرتبة طراز سليبي أورثوبيديك الطبية (Orthopedic Comfort) مقاس 120 × 200 سم - تشغيلة BATCH-OD-02",
+      "reference_id": "ORD-OD-5029",
+      "created_at": "2026-09-17T09:28:35.033Z"
+    },
+    {
+      "id": 41,
+      "lifecycle_id": "LC-315034-02",
+      "serial_number": "SLP-OD-5029-02",
+      "event_type": "Quality Approved",
+      "event_date": "2026-09-17T09:28:35.033Z",
+      "performed_by": "قسم فحص وضبط الجودة",
+      "notes": "فحص واختبار مطابقة الجودة القياسية بنجاح 100%",
+      "reference_id": "BATCH-OD-02",
+      "created_at": "2026-09-17T09:28:35.034Z"
+    },
+    {
+      "id": 42,
+      "lifecycle_id": "LC-315035",
+      "serial_number": "SLP-OD-5029-02",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T08:00:00Z",
+      "performed_by": "إبراهيم علي (OneDrive)",
+      "notes": "اكتمال تصنيع المرتبة واعتماد مواصفاتها من خلال استيراد الإنتاج [OneDrive - Production_Master.xlsx]",
+      "reference_id": "IMP-315029",
+      "created_at": "2026-09-17T09:28:35.035Z"
+    },
+    {
+      "id": 43,
+      "lifecycle_id": "LC-317174-01",
+      "serial_number": "SLP-SAP-7173-01",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T09:28:37.173Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "اكتمال تصنيع المرتبة طراز سليبي رويال بوكيت سبرينج (Royal Pocket) مقاس 180 × 200 سم - تشغيلة BATCH-SAP-71",
+      "reference_id": "ORD-SAP-7173",
+      "created_at": "2026-09-17T09:28:37.174Z"
+    },
+    {
+      "id": 44,
+      "lifecycle_id": "LC-317174-02",
+      "serial_number": "SLP-SAP-7173-01",
+      "event_type": "Quality Approved",
+      "event_date": "2026-09-17T09:28:37.173Z",
+      "performed_by": "قسم فحص وضبط الجودة",
+      "notes": "فحص واختبار مطابقة الجودة القياسية بنجاح 100%",
+      "reference_id": "BATCH-SAP-71",
+      "created_at": "2026-09-17T09:28:37.174Z"
+    },
+    {
+      "id": 45,
+      "lifecycle_id": "LC-317175",
+      "serial_number": "SLP-SAP-7173-01",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T08:00:00Z",
+      "performed_by": "SAP Operator Auto (SAP)",
+      "notes": "اكتمال تصنيع المرتبة واعتماد مواصفاتها من خلال استيراد الإنتاج [SAP - SAP_S4HANA_ProductionOrder_OData]",
+      "reference_id": "IMP-317173",
+      "created_at": "2026-09-17T09:28:37.175Z"
+    },
+    {
+      "id": 46,
+      "lifecycle_id": "LC-317177-01",
+      "serial_number": "SLP-SAP-7173-02",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T09:28:37.176Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "اكتمال تصنيع المرتبة طراز سليبي سوبر ميموري فوم (Super Memory Foam) مقاس 160 × 200 سم - تشغيلة BATCH-SAP-71",
+      "reference_id": "ORD-SAP-7173",
+      "created_at": "2026-09-17T09:28:37.177Z"
+    },
+    {
+      "id": 47,
+      "lifecycle_id": "LC-317177-02",
+      "serial_number": "SLP-SAP-7173-02",
+      "event_type": "Quality Approved",
+      "event_date": "2026-09-17T09:28:37.176Z",
+      "performed_by": "قسم فحص وضبط الجودة",
+      "notes": "فحص واختبار مطابقة الجودة القياسية بنجاح 100%",
+      "reference_id": "BATCH-SAP-71",
+      "created_at": "2026-09-17T09:28:37.177Z"
+    },
+    {
+      "id": 48,
+      "lifecycle_id": "LC-317178",
+      "serial_number": "SLP-SAP-7173-02",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T08:00:00Z",
+      "performed_by": "SAP Operator Auto (SAP)",
+      "notes": "اكتمال تصنيع المرتبة واعتماد مواصفاتها من خلال استيراد الإنتاج [SAP - SAP_S4HANA_ProductionOrder_OData]",
+      "reference_id": "IMP-317173",
+      "created_at": "2026-09-17T09:28:37.178Z"
+    },
+    {
+      "id": 49,
+      "lifecycle_id": "LC-377935-01",
+      "serial_number": "SLP-SAP-7934-01",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T09:29:37.934Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "اكتمال تصنيع المرتبة طراز سليبي رويال بوكيت سبرينج (Royal Pocket) مقاس 180 × 200 سم - تشغيلة BATCH-SAP-79",
+      "reference_id": "ORD-SAP-7934",
+      "created_at": "2026-09-17T09:29:37.935Z"
+    },
+    {
+      "id": 50,
+      "lifecycle_id": "LC-377936-02",
+      "serial_number": "SLP-SAP-7934-01",
+      "event_type": "Quality Approved",
+      "event_date": "2026-09-17T09:29:37.934Z",
+      "performed_by": "قسم فحص وضبط الجودة",
+      "notes": "فحص واختبار مطابقة الجودة القياسية بنجاح 100%",
+      "reference_id": "BATCH-SAP-79",
+      "created_at": "2026-09-17T09:29:37.936Z"
+    },
+    {
+      "id": 51,
+      "lifecycle_id": "LC-377937",
+      "serial_number": "SLP-SAP-7934-01",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T08:00:00Z",
+      "performed_by": "SAP Operator Auto (SAP)",
+      "notes": "اكتمال تصنيع المرتبة واعتماد مواصفاتها من خلال استيراد الإنتاج [SAP - SAP_S4HANA_ProductionOrder_OData]",
+      "reference_id": "IMP-377934",
+      "created_at": "2026-09-17T09:29:37.937Z"
+    },
+    {
+      "id": 52,
+      "lifecycle_id": "LC-377939-01",
+      "serial_number": "SLP-SAP-7934-02",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T09:29:37.939Z",
+      "performed_by": "إدارة خطوط الإنتاج - مصنع العاشر",
+      "notes": "اكتمال تصنيع المرتبة طراز سليبي سوبر ميموري فوم (Super Memory Foam) مقاس 160 × 200 سم - تشغيلة BATCH-SAP-79",
+      "reference_id": "ORD-SAP-7934",
+      "created_at": "2026-09-17T09:29:37.939Z"
+    },
+    {
+      "id": 53,
+      "lifecycle_id": "LC-377939-02",
+      "serial_number": "SLP-SAP-7934-02",
+      "event_type": "Quality Approved",
+      "event_date": "2026-09-17T09:29:37.939Z",
+      "performed_by": "قسم فحص وضبط الجودة",
+      "notes": "فحص واختبار مطابقة الجودة القياسية بنجاح 100%",
+      "reference_id": "BATCH-SAP-79",
+      "created_at": "2026-09-17T09:29:37.939Z"
+    },
+    {
+      "id": 54,
+      "lifecycle_id": "LC-377941",
+      "serial_number": "SLP-SAP-7934-02",
+      "event_type": "Produced",
+      "event_date": "2026-09-17T08:00:00Z",
+      "performed_by": "SAP Operator Auto (SAP)",
+      "notes": "اكتمال تصنيع المرتبة واعتماد مواصفاتها من خلال استيراد الإنتاج [SAP - SAP_S4HANA_ProductionOrder_OData]",
+      "reference_id": "IMP-377934",
+      "created_at": "2026-09-17T09:29:37.941Z"
+    },
+    {
+      "id": 35,
+      "lifecycle_id": "LC-2026-035",
+      "serial_number": "SLP-2026-9083",
+      "event_type": "Inspection Completed",
+      "event_date": "2026-09-15T14:00:00Z",
+      "performed_by": "فني الفحص: طارق المنشاوي",
+      "notes": "معاينة شريط البرواز والتأكد من انحصار العيب في الخياطة الخارجية دون المساس بالشاسيه",
+      "reference_id": "CLM-2026-104",
+      "created_at": "2026-09-15T14:00:00Z"
+    },
+    {
+      "id": 36,
+      "lifecycle_id": "LC-2026-036",
+      "serial_number": "SLP-2026-9083",
+      "event_type": "Repair Completed",
+      "event_date": "2026-09-16T11:30:00Z",
+      "performed_by": "فريق الصيانة السريعة: طارق المنشاوي",
+      "notes": "إجراء الإصلاح الفني وإعادة الحياكة الصناعية المزدوجة لشريط البرواز وتسليم المرتبة بحالة ممتازة",
+      "reference_id": "CLM-2026-104",
+      "created_at": "2026-09-16T11:30:00Z"
+    },
+    {
+      "id": 55,
+      "lifecycle_id": "LC-925036",
+      "serial_number": "SLP-2015-7001",
+      "event_type": "Warranty Expired",
+      "event_date": "2025-01-15T23:59:59Z",
+      "performed_by": "نظام الجدولة الآلي (Scheduled Expiration Job)",
+      "notes": "انتهاء فترة سريان وثيقة الضمان (SLP-WRN-1501-1099) الخاصة بالعميل طارق حسني مصطفى",
+      "reference_id": "SLP-WRN-1501-1099",
+      "created_at": "2026-09-20T06:32:05.036Z"
+    },
+    {
+      "id": 56,
+      "lifecycle_id": "LC-925039",
+      "serial_number": "SLP-2015-7001",
+      "event_type": "Produced",
+      "event_date": "2015-01-10T08:00:00Z",
+      "performed_by": "خط الإنتاج - ORD-2015-012",
+      "notes": "اكتمال تصنيع المرتبة سليبي كلاسيك بلس (Classic Plus) مقاس 160 × 200 سم وتشغيل الشاسيه مع ضبط الجودة",
+      "reference_id": "BATCH-15X",
+      "created_at": "2026-09-20T06:32:05.039Z"
+    }
+  ],
+  "attachments": [
+    {
+      "id": 5,
+      "attachment_id": "ATT-2026-005",
+      "entity_type": "Replacement",
+      "entity_id": "REP-2026-001",
+      "file_name": "محضر_استلام_وتسليم_العميل_REP_001.pdf",
+      "file_type": "application/pdf",
+      "file_size": 640100,
+      "uploaded_by": "فريق التسليم والتركيب",
+      "uploaded_at": "2026-03-08T11:15:00Z",
+      "storage_path": "replacements/REP-2026-001/محضر_استلام_وتسليم_العميل_REP_001.pdf",
+      "download_url": "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80",
+      "storage_url": "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80",
+      "description": "توقيع العميل سارة محمود على استلام المرتبة البديلة في حالة ممتازة وسحب القديمة",
+      "category": "Customer Acceptance Form"
+    },
+    {
+      "id": 4,
+      "attachment_id": "ATT-2026-004",
+      "entity_type": "Replacement",
+      "entity_id": "REP-2026-001",
+      "file_name": "نموذج_اعتماد_استبدال_مرتبة_معيبة_REP_001.pdf",
+      "file_type": "application/pdf",
+      "file_size": 890400,
+      "uploaded_by": "م. إبراهيم الجوهري (مدير الجودة)",
+      "uploaded_at": "2026-03-07T16:20:00Z",
+      "storage_path": "replacements/REP-2026-001/نموذج_اعتماد_استبدال_مرتبة_معيبة_REP_001.pdf",
+      "download_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1200&q=80",
+      "storage_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1200&q=80",
+      "description": "استمارة الاعتماد الرسمية لاستبدال المرتبة القديمة SLP-2026-9082 بالجديدة SLP-2026-9084",
+      "category": "Approval Form"
+    },
+    {
+      "id": 3,
+      "attachment_id": "ATT-2026-003",
+      "entity_type": "Claim",
+      "entity_id": "CLM-2026-102",
+      "file_name": "صورة_قياس_مسطرة_الهبوط_الميداني.jpg",
+      "file_type": "image/jpeg",
+      "file_size": 1890000,
+      "uploaded_by": "فني الفحص: محمد فتحي",
+      "uploaded_at": "2026-03-06T15:40:00Z",
+      "storage_path": "claims/CLM-2026-102/صورة_قياس_مسطرة_الهبوط_الميداني.jpg",
+      "download_url": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
+      "storage_url": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
+      "description": "صورة موثقة بجهاز القياس الليزري والمسطرة توضح الهبوط الإنشائي",
+      "category": "Inspection Photos"
+    },
+    {
+      "id": 1,
+      "attachment_id": "ATT-2026-001",
+      "entity_type": "Claim",
+      "entity_id": "CLM-2026-102",
+      "file_name": "تقرير_المعاينة_الفنية_الميدانية_CLM_102.pdf",
+      "file_type": "application/pdf",
+      "file_size": 1485200,
+      "uploaded_by": "فني الفحص: محمد فتحي",
+      "uploaded_at": "2026-03-06T15:35:00Z",
+      "storage_path": "claims/CLM-2026-102/تقرير_المعاينة_الفنية_الميدانية_CLM_102.pdf",
+      "download_url": "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80",
+      "storage_url": "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80",
+      "description": "تقرير فحص هبوط شاسيه السوست والقياس المساحي لعمق الانخفاض (4.2 سم)",
+      "category": "Technical Report"
+    },
+    {
+      "id": 2,
+      "attachment_id": "ATT-2026-002",
+      "entity_type": "Claim",
+      "entity_id": "CLM-2026-102",
+      "file_name": "صورة_المرتبة_قبل_الفحص_الجانب_الأيسر.jpg",
+      "file_type": "image/jpeg",
+      "file_size": 2150000,
+      "uploaded_by": "خدمة العملاء",
+      "uploaded_at": "2026-03-04T14:32:00Z",
+      "storage_path": "claims/CLM-2026-102/صورة_المرتبة_قبل_الفحص_الجانب_الأيسر.jpg",
+      "download_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1200&q=80",
+      "storage_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1200&q=80",
+      "description": "صورة الهبوط المرسلة من العميل عند فتح بلاغ الضمان",
+      "category": "Before Photos"
+    },
+    {
+      "id": 6,
+      "attachment_id": "ATT-2026-006",
+      "entity_type": "Warranty",
+      "entity_id": "SLP-WRN-2609-8812",
+      "file_name": "فاتورة_شراء_رسمية_INV_8812.pdf",
+      "file_type": "application/pdf",
+      "file_size": 420000,
+      "uploaded_by": "معرض التجمع الخامس",
+      "uploaded_at": "2026-01-20T14:18:00Z",
+      "storage_path": "warranties/SLP-WRN-2609-8812/فاتورة_شراء_رسمية_INV_8812.pdf",
+      "download_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1200&q=80",
+      "storage_url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1200&q=80",
+      "description": "فاتورة ضريبية رسمية لشراء مرتبة رويال بوكيت معتمدة",
+      "category": "Invoice"
+    },
+    {
+      "id": 7,
+      "attachment_id": "ATT-2026-007",
+      "entity_type": "Product",
+      "entity_id": "SLP-2026-9081",
+      "file_name": "شهادة_مطابقة_الجودة_المصنعية_BATCH_88A.pdf",
+      "file_type": "application/pdf",
+      "file_size": 780000,
+      "uploaded_by": "إدارة الجودة وضبط المعايير",
+      "uploaded_at": "2026-01-15T11:10:00Z",
+      "storage_path": "products/SLP-2026-9081/شهادة_مطابقة_الجودة_المصنعية_BATCH_88A.pdf",
+      "download_url": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
+      "storage_url": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
+      "description": "شهادة الجودة الصادرة من المعمل المركزي لمصنع العاشر من رمضان",
+      "category": "Quality Certificate"
+    }
+  ],
+  "product_models": [
+    {
+      "id": 1,
+      "model_id": "MOD-ROYAL-POCKET",
+      "commercial_model_name": "سليبي رويال بوكيت سبرينج (Royal Pocket)",
+      "sap_material_code": "MAT-SLP-RP-01",
+      "sap_material_description": "Sleepee Royal Pocket Spring Luxury 180x200",
+      "product_family": "Pocket Spring Luxury",
+      "warranty_years": 10,
+      "status": "Active",
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": 2,
+      "model_id": "MOD-SUPER-MEMORY",
+      "commercial_model_name": "سليبي سوبر ميموري فوم (Super Memory Foam)",
+      "sap_material_code": "MAT-SLP-SMF-02",
+      "sap_material_description": "Sleepee Super Memory Foam 160x200",
+      "product_family": "Memory Foam",
+      "warranty_years": 10,
+      "status": "Active",
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": 3,
+      "model_id": "MOD-ORTHOPEDIC",
+      "commercial_model_name": "سليبي أورثوبيديك الطبية (Orthopedic Comfort)",
+      "sap_material_code": "MAT-SLP-ORT-03",
+      "sap_material_description": "Sleepee Orthopedic Comfort Medical 120x200",
+      "product_family": "Medical Orthopedic",
+      "warranty_years": 7,
+      "status": "Active",
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": 4,
+      "model_id": "MOD-CLOUD-PILLOW",
+      "commercial_model_name": "سليبي كلاود بيلو توب الفاخرة (Cloud Pillow Top)",
+      "sap_material_code": "MAT-SLP-CPT-04",
+      "sap_material_description": "Sleepee Cloud Pillow Top High-End 200x200",
+      "product_family": "Pillow Top Luxury",
+      "warranty_years": 10,
+      "status": "Active",
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": 5,
+      "model_id": "MOD-HYBRID-LATEX",
+      "commercial_model_name": "سليبي هايبريد لاتكس الطبيعي (Hybrid Latex)",
+      "sap_material_code": "MAT-SLP-HLX-05",
+      "sap_material_description": "Sleepee Hybrid Latex Organic 160x200",
+      "product_family": "Eco Latex Hybrid",
+      "warranty_years": 10,
+      "status": "Active",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "warranty_policy_audit": [
+    {
+      "id": 2,
+      "audit_id": "AUD-POL-013268",
+      "model_id": "MOD-ORTHOPEDIC",
+      "commercial_model_name": "سليبي أورثوبيديك الطبية (Orthopedic Comfort)",
+      "old_warranty_years": 5,
+      "new_warranty_years": 7,
+      "changed_by": "م. وجدي باعبيد",
+      "changed_at": "2026-09-17T09:40:13.268Z",
+      "reason": "تحديث دوري لسياسة الضمان المعتمدة"
+    },
+    {
+      "id": 1,
+      "audit_id": "AUD-POL-001",
+      "model_id": "MOD-ORTHOPEDIC",
+      "commercial_model_name": "سليبي أورثوبيديك الطبية (Orthopedic Comfort)",
+      "old_warranty_years": 3,
+      "new_warranty_years": 5,
+      "changed_by": "م. إبراهيم الجوهري (SUPER_ADMIN)",
+      "changed_at": "2026-01-10T10:00:00Z",
+      "reason": "تحديث سياسة الضمان للمراتب الطبية تماشياً مع معايير الجودة العالمية وتوصية الإدارة العليا"
+    }
+  ],
+  "production_sync_state": [
+    {
+      "id": 1,
+      "sync_source": "SharePoint",
+      "last_sync_time": "2026-09-17T09:28:29.436Z",
+      "last_successful_sync": "2026-09-17T09:28:29.436Z",
+      "last_file_hash": "aef02298570b8d302e91b66d765d278e795eed7d65acd5f1fb5f3d9c8c2729ee",
+      "last_row_count": 2,
+      "sync_url": "https://sleepee-factory.sharepoint.com/sites/ProductionMaster/Shared%20Documents/Production_Master.xlsx",
+      "target_file_name": "Production_Master.xlsx",
+      "connection_status": "simulated",
+      "connection_mode": "simulated_fallback",
+      "auth_type": "anonymous_link",
+      "notes": "المصدر الحالي: نموذج محاكاة الإنتاج المتوافق مع شيربوينت. يمكنك تعديل الرابط إلى رابط مستند Excel المشترك الفعلي في مكتبة SharePoint الخاصة بالمصنع."
+    },
+    {
+      "id": 2,
+      "sync_source": "OneDrive",
+      "last_sync_time": "2026-09-17T09:28:35.036Z",
+      "last_successful_sync": "2026-09-17T09:28:35.036Z",
+      "last_file_hash": "a331888ff7d3688f02f9bcf07621d091d96426a84b0b48bcb41a5d3914913cfa",
+      "last_row_count": 2,
+      "sync_url": "https://1drv.ms/x/s!AkL920SleepeeProductionSharedFolder_MasterData?download=1",
+      "target_file_name": "OneDrive_Production_Master.xlsx",
+      "connection_status": "simulated",
+      "connection_mode": "simulated_fallback",
+      "auth_type": "anonymous_link",
+      "notes": "المصدر الحالي: نموذج خطوط إنتاج المصنع المتوافق. لإجراء مزامنة حية، الصق رابط تنزيل ملف الإكسيل المباشر أو رابط OneDrive Business."
+    },
+    {
+      "id": 3,
+      "sync_source": "Excel",
+      "last_sync_time": "2026-03-14T14:30:00Z",
+      "last_successful_sync": "2026-03-14T14:30:00Z",
+      "last_file_hash": "HASH_EX_MANUAL_BATCH_88A",
+      "last_row_count": 210,
+      "target_file_name": "Manual_Upload_Daily.xlsx",
+      "connection_status": "connected",
+      "connection_mode": "live_url",
+      "auth_type": "anonymous_link",
+      "notes": "استيراد يدوي مباشر عبر رفع ملفات Excel (.xlsx, .xls) بالسحب والإفلات."
+    },
+    {
+      "id": 4,
+      "sync_source": "CSV",
+      "last_sync_time": "2026-03-12T11:00:00Z",
+      "last_successful_sync": "2026-03-12T11:00:00Z",
+      "last_file_hash": "HASH_CSV_EXP_20260312",
+      "last_row_count": 50,
+      "target_file_name": "Machine_Export_Lines.csv",
+      "connection_status": "connected",
+      "connection_mode": "live_url",
+      "auth_type": "anonymous_link",
+      "notes": "استيراد يدوي مباشر لملفات CSV المصدرة من ماكينات المصنع."
+    },
+    {
+      "id": 5,
+      "sync_source": "SAP",
+      "last_sync_time": "2026-09-17T09:29:37.943Z",
+      "last_successful_sync": "2026-09-17T09:29:37.943Z",
+      "last_file_hash": "SAP_1789637377934",
+      "last_row_count": 2,
+      "sync_url": "https://s4hana-gateway.sleepee.com/sap/opu/odata/sap/API_PRODUCTION_ORDER_2_SRV/A_ProductionOrder",
+      "target_file_name": "API_PRODUCTION_ORDER_2_SRV",
+      "connection_status": "simulated",
+      "connection_mode": "simulated_fallback",
+      "auth_type": "basic_auth",
+      "notes": "المصدر الحالي: كتالوج أوامر الشغل المطابق لنظام SAP S/4HANA OData. يمكنك إدخال رابط الـ OData Endpoint وتوثيق الربط لتنفيذ المزامنة الحية."
+    }
+  ],
+  "production_import_logs": [
+    {
+      "id": 7,
+      "import_id": "IMP-377934",
+      "file_name": "SAP_S4HANA_ProductionOrder_OData",
+      "source_type": "SAP",
+      "import_date": "2026-09-17T09:29:37.942Z",
+      "imported_records": 2,
+      "skipped_records": 0,
+      "failed_records": 0,
+      "execution_time": 8,
+      "performed_by": "م. وجدي باعبيد (SUPER_ADMIN)",
+      "status": "SUCCESS",
+      "error_log": []
+    },
+    {
+      "id": 6,
+      "import_id": "IMP-317173",
+      "file_name": "SAP_S4HANA_ProductionOrder_OData",
+      "source_type": "SAP",
+      "import_date": "2026-09-17T09:28:37.179Z",
+      "imported_records": 2,
+      "skipped_records": 0,
+      "failed_records": 0,
+      "execution_time": 6,
+      "performed_by": "م. وجدي باعبيد (SUPER_ADMIN)",
+      "status": "SUCCESS",
+      "error_log": []
+    },
+    {
+      "id": 5,
+      "import_id": "IMP-315029",
+      "file_name": "Production_Master.xlsx",
+      "source_type": "OneDrive",
+      "import_date": "2026-09-17T09:28:35.035Z",
+      "imported_records": 2,
+      "skipped_records": 0,
+      "failed_records": 0,
+      "execution_time": 6,
+      "performed_by": "م. وجدي باعبيد (SUPER_ADMIN)",
+      "status": "SUCCESS",
+      "error_log": []
+    },
+    {
+      "id": 4,
+      "import_id": "IMP-309429",
+      "file_name": "Production_Master.xlsx",
+      "source_type": "SharePoint",
+      "import_date": "2026-09-17T09:28:29.436Z",
+      "imported_records": 2,
+      "skipped_records": 0,
+      "failed_records": 0,
+      "execution_time": 7,
+      "performed_by": "م. وجدي باعبيد (SUPER_ADMIN)",
+      "status": "SUCCESS",
+      "error_log": []
+    },
+    {
+      "id": 1,
+      "import_id": "IMP-90112",
+      "file_name": "Production_Master.xlsx",
+      "source_type": "SharePoint",
+      "import_date": "2026-03-15T08:00:00Z",
+      "imported_records": 12,
+      "skipped_records": 3,
+      "failed_records": 0,
+      "execution_time": 240,
+      "performed_by": "Hourly SharePoint Sync Worker",
+      "status": "SUCCESS",
+      "error_log": []
+    },
+    {
+      "id": 2,
+      "import_id": "IMP-90111",
+      "file_name": "Daily_Factory_Batch_88A.xlsx",
+      "source_type": "Excel",
+      "import_date": "2026-03-14T14:30:00Z",
+      "imported_records": 25,
+      "skipped_records": 2,
+      "failed_records": 0,
+      "execution_time": 410,
+      "performed_by": "م. طارق العسقلاني (مسؤول الإنتاج)",
+      "status": "SUCCESS",
+      "error_log": []
+    },
+    {
+      "id": 3,
+      "import_id": "IMP-90110",
+      "file_name": "Production_Master.xlsx",
+      "source_type": "OneDrive",
+      "import_date": "2026-03-14T09:00:00Z",
+      "imported_records": 18,
+      "skipped_records": 5,
+      "failed_records": 0,
+      "execution_time": 190,
+      "performed_by": "Hourly OneDrive Sync Worker",
+      "status": "SUCCESS",
+      "error_log": []
+    }
+  ],
+  "production_batches": [
+    {
+      "id": 8,
+      "batch_id": "BAT-BATCH-SAP-79",
+      "batch_no": "BATCH-SAP-79",
+      "production_order": "ORD-SAP-7934",
+      "production_date": "2026-09-17",
+      "total_serials": 2,
+      "model_count": {
+        "سليبي رويال بوكيت سبرينج (Royal Pocket)": 1,
+        "سليبي سوبر ميموري فوم (Super Memory Foam)": 1
+      },
+      "source_system": "SAP",
+      "created_at": "2026-09-17T09:29:37.938Z"
+    },
+    {
+      "id": 7,
+      "batch_id": "BAT-BATCH-SAP-71",
+      "batch_no": "BATCH-SAP-71",
+      "production_order": "ORD-SAP-7173",
+      "production_date": "2026-09-17",
+      "total_serials": 2,
+      "model_count": {
+        "سليبي رويال بوكيت سبرينج (Royal Pocket)": 1,
+        "سليبي سوبر ميموري فوم (Super Memory Foam)": 1
+      },
+      "source_system": "SAP",
+      "created_at": "2026-09-17T09:28:37.175Z"
+    },
+    {
+      "id": 6,
+      "batch_id": "BAT-BATCH-OD-02",
+      "batch_no": "BATCH-OD-02",
+      "production_order": "ORD-OD-5029",
+      "production_date": "2026-09-17",
+      "total_serials": 2,
+      "model_count": {
+        "سليبي سوبر ميموري فوم (Super Memory Foam)": 1,
+        "سليبي أورثوبيديك الطبية (Orthopedic Comfort)": 1
+      },
+      "source_system": "OneDrive",
+      "created_at": "2026-09-17T09:28:35.032Z"
+    },
+    {
+      "id": 5,
+      "batch_id": "BAT-BATCH-SP-01",
+      "batch_no": "BATCH-SP-01",
+      "production_order": "ORD-SP-9429",
+      "production_date": "2026-09-17",
+      "total_serials": 2,
+      "model_count": {
+        "سليبي رويال بوكيت سبرينج (Royal Pocket)": 1,
+        "سليبي كلاود بيلو توب الفاخرة (Cloud Pillow Top)": 1
+      },
+      "source_system": "SharePoint",
+      "created_at": "2026-09-17T09:28:29.433Z"
+    },
+    {
+      "id": 1,
+      "batch_id": "BAT-2026-88A",
+      "batch_no": "BATCH-88A",
+      "production_order": "ORD-2026-041",
+      "production_date": "2026-01-15",
+      "total_serials": 50,
+      "model_count": {
+        "سليبي رويال بوكيت سبرينج (Royal Pocket)": 30,
+        "سليبي سوبر ميموري فوم (Super Memory Foam)": 20
+      },
+      "source_system": "Excel",
+      "created_at": "2026-01-15T08:00:00Z"
+    },
+    {
+      "id": 2,
+      "batch_id": "BAT-2026-89B",
+      "batch_no": "BATCH-89B",
+      "production_order": "ORD-2026-063",
+      "production_date": "2026-02-10",
+      "total_serials": 40,
+      "model_count": {
+        "سليبي أورثوبيديك الطبية (Orthopedic Comfort)": 40
+      },
+      "source_system": "Manual",
+      "created_at": "2026-02-10T08:00:00Z"
+    },
+    {
+      "id": 3,
+      "batch_id": "BAT-2026-90A",
+      "batch_no": "BATCH-90A",
+      "production_order": "ORD-2026-077",
+      "production_date": "2026-02-18",
+      "total_serials": 35,
+      "model_count": {
+        "سليبي كلاود بيلو توب الفاخرة (Cloud Pillow Top)": 35
+      },
+      "source_system": "SharePoint",
+      "created_at": "2026-02-18T08:00:00Z"
+    },
+    {
+      "id": 4,
+      "batch_id": "BAT-2026-91C",
+      "batch_no": "BATCH-91C",
+      "production_order": "ORD-2026-091",
+      "production_date": "2026-03-01",
+      "total_serials": 45,
+      "model_count": {
+        "سليبي هايبريد لاتكس الطبيعي (Hybrid Latex)": 45
+      },
+      "source_system": "OneDrive",
+      "created_at": "2026-03-01T08:00:00Z"
+    }
+  ],
+  "customer_communications": [
+    {
+      "id": "COMM-2026-001",
+      "serial_number": "SLP-2026-9082",
+      "warranty_id": "SLP-WRN-2609-1029",
+      "customer_name": "سارة محمود عبدالعزيز",
+      "customer_phone": "01098765432",
+      "communication_type": "مكالمة هاتفية",
+      "date_time": "2026-03-02T10:30:00Z",
+      "responsible_user": "د. منى الشريف (رئيسة قسم خدمة العملاء)",
+      "details": "اتصال هاتفي وارد من العميلة تشتكي من هبوط مفاجئ ووجود صوت طقطقة في الجانب الأيمن للمرتبة بعد مرور شهر من الاستخدام. تم تهدئة العميلة وتأكيد سريان الضمان الذهبي لمدة 10 سنوات وشرح خطوات المعاينة الفنية المجانية بالموقع، وتم فتح بلاغ شكوى رسمي رقم CLM-2026-102.",
+      "related_reference": "CLM-2026-102",
+      "created_at": "2026-03-02T10:30:00Z"
+    },
+    {
+      "id": "COMM-2026-002",
+      "serial_number": "SLP-2026-9082",
+      "warranty_id": "SLP-WRN-2609-1029",
+      "customer_name": "سارة محمود عبدالعزيز",
+      "customer_phone": "01098765432",
+      "communication_type": "واتساب",
+      "date_time": "2026-03-03T11:15:00Z",
+      "responsible_user": "ريم السيد (فريق الدعم الفني وخدمة العملاء)",
+      "details": "محادثة عبر الواتساب الرسمي مع العميلة؛ تم استلام مقطع فيديو وصور واضحة توضح موضع الهبوط بالمرتبة، وإرسال رابط تأكيد الموقع الجغرافي وحجز موعد الزيارة المنزلية للمعاينة يوم الخميس بين الساعة 2 و 4 عصراً.",
+      "related_reference": "CLM-2026-102",
+      "created_at": "2026-03-03T11:15:00Z"
+    },
+    {
+      "id": "COMM-2026-003",
+      "serial_number": "SLP-2026-9082",
+      "warranty_id": "SLP-WRN-2609-1029",
+      "customer_name": "سارة محمود عبدالعزيز",
+      "customer_phone": "01098765432",
+      "communication_type": "زيارة",
+      "date_time": "2026-03-05T14:30:00Z",
+      "responsible_user": "فني محمد فتحي (فني أول فحص وضمان الجودة)",
+      "details": "زيارة ميدانية لمنزل العميلة بالمعادي. تم إجراء اختبار قياس استواء الشاسيه بالمسطرة الرقمية وتبين وجود كسر فعلي في سوستتين داخل الشاسيه الداخلي، وتم تحرير تقرير فني رقم (REP-INSP-9082) وتوصية اللجنة بالاستبدال الفوري الكامل للمرتبة.",
+      "related_reference": "REP-INSP-9082",
+      "created_at": "2026-03-05T14:30:00Z"
+    },
+    {
+      "id": "COMM-2026-004",
+      "serial_number": "SLP-2026-9082",
+      "warranty_id": "SLP-WRN-2609-1029",
+      "customer_name": "سارة محمود عبدالعزيز",
+      "customer_phone": "01098765432",
+      "communication_type": "ملاحظة داخلية",
+      "date_time": "2026-03-07T12:00:00Z",
+      "responsible_user": "م. إبراهيم الجوهري (مدير الجودة الأعلى)",
+      "details": "تم الاطلاع على تقرير المعاينة الفنية واعتماد الاستبدال بمرتبة جديدة رقم SLP-2026-9084 من نفس الموديل، مع إعطاء أولوية توصيل للعميلة حفاظاً على رضا العملاء، وتم ربط وثيقة الضمان البديلة بنجاح بموجب إذن REP-2026-001.",
+      "related_reference": "REP-2026-001",
+      "created_at": "2026-03-07T12:00:00Z"
+    },
+    {
+      "id": "COMM-2026-005",
+      "serial_number": "SLP-2026-9082",
+      "warranty_id": "SLP-WRN-2609-1029",
+      "customer_name": "سارة محمود عبدالعزيز",
+      "customer_phone": "01098765432",
+      "communication_type": "بريد إلكتروني",
+      "date_time": "2026-03-08T16:00:00Z",
+      "responsible_user": "أحمد فهمي (مسؤول الاتصال وخدمة ما بعد البيع)",
+      "details": "إرسال بريد إلكتروني رسمي للعميلة يحتوي على وثيقة الضمان الجديدة الخاصة بالمرتبة البديلة (SLP-WRN-2609-1029-REP) ورابط استبيان تقييم جودة الخدمة ورضا العميل بعد إتمام التسليم بنجاح.",
+      "related_reference": "REP-2026-001",
+      "created_at": "2026-03-08T16:00:00Z"
+    },
+    {
+      "id": "COMM-2026-006",
+      "serial_number": "SLP-2026-9083",
+      "warranty_id": "SLP-WRN-2609-5291",
+      "customer_name": "سارة عبدالله الشناوي",
+      "customer_phone": "01234567890",
+      "communication_type": "مكالمة هاتفية",
+      "date_time": "2026-09-14T09:15:00Z",
+      "responsible_user": "د. منى الشريف (خدمة العملاء)",
+      "details": "اتصال وارد من العميلة تبلغ عن تفكك خياطة شريط البرواز الخارجي بالقرب من الزاوية اليمنى. تم تسجيل بلاغ صيانة سريعة برقم CLM-2026-104 وتحديد موعد تنسيق المعاينة.",
+      "related_reference": "CLM-2026-104",
+      "created_at": "2026-09-14T09:15:00Z"
+    },
+    {
+      "id": "COMM-2026-007",
+      "serial_number": "SLP-2026-9083",
+      "warranty_id": "SLP-WRN-2609-5291",
+      "customer_name": "سارة عبدالله الشناوي",
+      "customer_phone": "01234567890",
+      "communication_type": "واتساب",
+      "date_time": "2026-09-14T12:30:00Z",
+      "responsible_user": "ريم السيد (خدمة العملاء)",
+      "details": "التنسيق مع العميلة عبر الواتساب لتحديد موعد حضور فني الصيانة السريعة باليوم التالي بين الساعة 10 ص و 12 ظهراً، واستلام صورة تفكك الخياطة.",
+      "related_reference": "CLM-2026-104",
+      "created_at": "2026-09-14T12:30:00Z"
+    },
+    {
+      "id": "COMM-2026-008",
+      "serial_number": "SLP-2026-9083",
+      "warranty_id": "SLP-WRN-2609-5291",
+      "customer_name": "سارة عبدالله الشناوي",
+      "customer_phone": "01234567890",
+      "communication_type": "زيارة",
+      "date_time": "2026-09-15T11:00:00Z",
+      "responsible_user": "فني طارق المنشاوي (فريق الصيانة السريعة)",
+      "details": "زيارة ميدانية للعميلة وإجراء المعاينة الفنية لشريط البرواز والتأكد من سلامة الشاسيه والبطانة الطبية، والاتفاق على الحياكة بموقع العميل غداً.",
+      "related_reference": "CLM-2026-104",
+      "created_at": "2026-09-15T11:00:00Z"
+    },
+    {
+      "id": "COMM-2026-009",
+      "serial_number": "SLP-2026-9083",
+      "warranty_id": "SLP-WRN-2609-5291",
+      "customer_name": "سارة عبدالله الشناوي",
+      "customer_phone": "01234567890",
+      "communication_type": "ملاحظة داخلية",
+      "date_time": "2026-09-16T12:00:00Z",
+      "responsible_user": "د. منى الشريف (خدمة العملاء)",
+      "details": "تم إنجاز الصيانة بنجاح وتوقيع استلام العميل والتأكد هاتفياً من رضا العميل التام عن سرعة الاستجابة.",
+      "related_reference": "CLM-2026-104",
+      "created_at": "2026-09-16T12:00:00Z"
+    },
+    {
+      "id": "COMM-2026-010",
+      "serial_number": "SLP-2026-9081",
+      "warranty_id": "SLP-WRN-2609-8812",
+      "customer_name": "أحمد مصطفى الشناوي",
+      "customer_phone": "01012345678",
+      "communication_type": "مكالمة هاتفية",
+      "date_time": "2026-01-20T14:30:00Z",
+      "responsible_user": "د. منى الشريف (خدمة العملاء)",
+      "details": "مكالمة ترحيبية بالعميل عقب تفعيل الضمان الذهبي، وشرح تعليمات تدوير المرتبة كل 3 أشهر للمحافظة على كفاءة البوكيت سبرينج والغطاء القطني.",
+      "related_reference": "SLP-WRN-2609-8812",
+      "created_at": "2026-01-20T14:30:00Z"
+    },
+    {
+      "id": "COMM-2026-011",
+      "serial_number": "SLP-2026-9081",
+      "warranty_id": "SLP-WRN-2609-8812",
+      "customer_name": "أحمد مصطفى الشناوي",
+      "customer_phone": "01012345678",
+      "communication_type": "بريد إلكتروني",
+      "date_time": "2026-01-20T14:35:00Z",
+      "responsible_user": "نظام الإشعارات الآلي لسليبي",
+      "details": "إرسال شهادة الضمان الرقمية الرسمية وبطاقة كود الاستجابة السريعة (QR Code) لبريد العميل الإلكتروني.",
+      "related_reference": "SLP-WRN-2609-8812",
+      "created_at": "2026-01-20T14:35:00Z"
+    }
+  ]
+}
