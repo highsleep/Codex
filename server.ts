@@ -24,6 +24,26 @@ app.disable('x-powered-by');
 // Every /api route is classified here. Unknown routes fail closed.
 app.use('/api', apiSecurity);
 
+function toPublicProduct(product: any) {
+  return {
+    serial_number: product.serial_number,
+    model: product.model,
+    size: product.size,
+    warranty_years: product.warranty_years,
+    image_url: product.image_url,
+  };
+}
+
+function toPublicActivation(activation: any) {
+  return {
+    warranty_id: activation.warranty_id,
+    serial_number: activation.serial_number,
+    activation_date: activation.activation_date,
+    expiry_date: activation.expiry_date,
+    status: activation.status,
+  };
+}
+
 // ----------------------------------------------------
 // Health & Diagnostic API
 // ----------------------------------------------------
@@ -149,31 +169,17 @@ app.get(['/api/products/verify-qr/:serial', '/api/verify/qr/:serial'], (req, res
     res.json({
       valid: true,
       serial_number: product.serial_number,
-      model: product.model,
-      size: product.size,
-      warranty_years: product.warranty_years,
-      production_date: product.production_date,
-      status: product.status || (isActivated ? 'مفعل بالضمان' : 'جاهز للضمان'),
+      product: toPublicProduct(product),
+      status: isActivated ? 'ACTIVATED' : 'READY_FOR_ACTIVATION',
       ready_for_activation: !isActivated,
       activation_status: isActivated ? 'ALREADY_ACTIVATED' : 'READY_FOR_ACTIVATION',
       verification_timestamp: new Date().toISOString(),
       activation_endpoint: '/api/warranty/activate',
       qr_payload: {
-        serial_number: product.serial_number,
-        model: product.model,
-        size: product.size,
-        warranty_years: product.warranty_years,
         action: 'warranty_activation',
         activation_url: `${protocol}://${host}/?verify=${encodeURIComponent(product.serial_number)}`,
       },
-      warranty_details: product.activation
-        ? {
-            warranty_id: product.activation.warranty_id,
-            customer_name: product.activation.customer_name,
-            activation_date: product.activation.activation_date,
-            expiry_date: product.activation.expiry_date,
-          }
-        : null,
+      warranty_details: product.activation ? toPublicActivation(product.activation) : null,
       message: isActivated
         ? `المنتج أصلي ومعتمد، ومسجل له وثيقة ضمان نشطة رقم (${product.activation?.warranty_id}).`
         : `المنتج أصلي ومعتمد في قاعدة بيانات الإنتاج وجاهز للتفعيل الفوري للضمان الإلكتروني (${product.warranty_years} سنوات).`,
@@ -288,8 +294,8 @@ app.get('/api/warranty/verify/:idOrSerial', (req, res) => {
     res.json({
       status: data.is_valid ? 'VALID' : 'EXPIRED',
       message: data.is_valid ? 'شهادة الضمان معتمدة وسارية المفعول لدى شركة سليبي' : 'شهادة الضمان منتهية الصلاحية',
-      activation: data.activation,
-      product: data.product,
+      activation: toPublicActivation(data.activation),
+      product: toPublicProduct(data.product),
       days_remaining: data.days_remaining,
     });
   } catch (err: any) {
