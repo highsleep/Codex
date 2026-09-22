@@ -9,6 +9,7 @@ import { CSVProvider } from './server/providers/CSVProvider.js';
 import { ZebraZPLGenerator } from './server/zebra/zplGenerator.js';
 import fs from 'fs';
 import { apiSecurity } from './server/security/apiSecurity.js';
+import { authenticatedActor } from './server/security/auth.js';
 
 const app = express();
 const PORT = 3000;
@@ -93,7 +94,7 @@ app.get('/api/products', (req, res) => {
 // Bulk Import Products (XLSX / CSV JSON payload)
 app.post('/api/products/bulk-import', (req, res) => {
   try {
-    const { products, acting_user } = req.body;
+    const { products } = req.body;
     if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({
         success: false,
@@ -101,7 +102,7 @@ app.post('/api/products/bulk-import', (req, res) => {
       });
     }
 
-    const result = db.bulkAddProducts(products, acting_user || 'مسؤول إدارة المنتجات');
+    const result = db.bulkAddProducts(products, authenticatedActor(req));
     res.status(200).json({
       success: true,
       summary: {
@@ -477,9 +478,9 @@ app.get('/api/users/role-logs', (req, res) => {
 
 app.patch('/api/users/:id/role', (req, res) => {
   try {
-    const { role, acting_user } = req.body;
+    const { role } = req.body;
     if (!role) return res.status(400).json({ error: 'الدور مطلوب' });
-    const result = db.updateUserRole(req.params.id, role, acting_user);
+    const result = db.updateUserRole(req.params.id, role, authenticatedActor(req));
     res.json({ success: true, user: result.user, log: result.log });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -488,11 +489,11 @@ app.patch('/api/users/:id/role', (req, res) => {
 
 app.patch('/api/users/:id/status', (req, res) => {
   try {
-    const { status, acting_user } = req.body;
+    const { status } = req.body;
     if (!status || !['ACTIVE', 'INACTIVE', 'SUSPENDED'].includes(status)) {
       return res.status(400).json({ error: 'حالة الحساب غير صالحة' });
     }
-    const result = db.updateUserStatus(req.params.id, status, acting_user);
+    const result = db.updateUserStatus(req.params.id, status, authenticatedActor(req));
     res.json({ success: true, user: result.user, log: result.log });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -524,7 +525,7 @@ app.get('/api/claims/:id', (req, res) => {
 
 app.post('/api/claims', (req, res) => {
   try {
-    const { warranty_id, serial_number, customer_name, phone, complaint_type, complaint_description, images, acting_user } = req.body;
+    const { warranty_id, serial_number, customer_name, phone, complaint_type, complaint_description, images } = req.body;
     if (!serial_number || !customer_name || !phone || !complaint_type || !complaint_description) {
       return res.status(400).json({ error: 'يرجى استكمال جميع بيانات تقديم الشكوى' });
     }
@@ -539,7 +540,7 @@ app.post('/api/claims', (req, res) => {
         complaint_description,
         images: images || [],
       },
-      acting_user
+      req.principal ? authenticatedActor(req) : 'public-customer-submission'
     );
 
     res.status(201).json({ success: true, claim });
@@ -550,7 +551,7 @@ app.post('/api/claims', (req, res) => {
 
 app.patch('/api/claims/:id/workflow', (req, res) => {
   try {
-    const { claim_status, assigned_to, inspection_date, inspection_result, resolution, acting_user } = req.body;
+    const { claim_status, assigned_to, inspection_date, inspection_result, resolution } = req.body;
     const updated = db.updateClaimWorkflow(
       req.params.id,
       {
@@ -560,7 +561,7 @@ app.patch('/api/claims/:id/workflow', (req, res) => {
         inspection_result,
         resolution,
       },
-      acting_user
+      authenticatedActor(req)
     );
 
     res.json({ success: true, claim: updated });
@@ -571,7 +572,7 @@ app.patch('/api/claims/:id/workflow', (req, res) => {
 
 app.patch('/api/claims/:id/sla', (req, res) => {
   try {
-    const { next_follow_up_date, last_action_date, target_resolution_days, pending_tasks, acting_user } = req.body;
+    const { next_follow_up_date, last_action_date, target_resolution_days, pending_tasks } = req.body;
     const updated = db.updateClaimSLA(
       req.params.id,
       {
@@ -580,7 +581,7 @@ app.patch('/api/claims/:id/sla', (req, res) => {
         target_resolution_days,
         pending_tasks,
       },
-      acting_user
+      authenticatedActor(req)
     );
 
     res.json({ success: true, claim: updated });
@@ -614,8 +615,8 @@ app.get('/api/replacements/:id', (req, res) => {
 
 app.post('/api/replacements', (req, res) => {
   try {
-    const { old_serial_number, new_serial_number, old_warranty_id, replacement_reason, approved_by, notes, acting_user } = req.body;
-    if (!old_serial_number || !new_serial_number || !old_warranty_id || !replacement_reason || !approved_by) {
+    const { old_serial_number, new_serial_number, old_warranty_id, replacement_reason, notes } = req.body;
+    if (!old_serial_number || !new_serial_number || !old_warranty_id || !replacement_reason) {
       return res.status(400).json({ error: 'يرجى استكمال جميع بيانات طلب الاستبدال' });
     }
 
@@ -625,10 +626,10 @@ app.post('/api/replacements', (req, res) => {
         new_serial_number,
         old_warranty_id,
         replacement_reason,
-        approved_by,
+        approved_by: authenticatedActor(req),
         notes,
       },
-      acting_user
+      authenticatedActor(req)
     );
 
     res.status(201).json({ success: true, replacement });
@@ -715,7 +716,6 @@ app.post('/api/attachments', (req, res) => {
       storage_url,
       description,
       category,
-      uploaded_by,
     } = req.body;
 
     if (!entity_type || !entity_id || !file_name) {
@@ -734,9 +734,9 @@ app.post('/api/attachments', (req, res) => {
         storage_url: download_url || storage_url,
         description: description || '',
         category: category || 'عام',
-        uploaded_by: uploaded_by || 'النظام',
+        uploaded_by: authenticatedActor(req),
       },
-      uploaded_by
+      authenticatedActor(req)
     );
 
     res.status(201).json({ success: true, attachment });
@@ -747,7 +747,7 @@ app.post('/api/attachments', (req, res) => {
 
 app.delete('/api/attachments/:id', (req, res) => {
   try {
-    const actingUser = (req.query.acting_user as string) || 'مدير النظام';
+    const actingUser = authenticatedActor(req);
     db.deleteAttachment(req.params.id, actingUser);
     res.json({ success: true, message: 'تم حذف المرفق بنجاح وتوثيق العملية في سجل التدقيق' });
   } catch (err: any) {
@@ -757,7 +757,7 @@ app.delete('/api/attachments/:id', (req, res) => {
 
 app.post('/api/attachments/:id/audit-download', (req, res) => {
   try {
-    const actingUser = (req.body.acting_user as string) || 'المستخدم';
+    const actingUser = authenticatedActor(req);
     db.auditAttachmentDownload(req.params.id, actingUser);
     res.json({ success: true });
   } catch (err: any) {
@@ -773,7 +773,7 @@ app.get('/api/attachments/:id/download-url', (req, res) => {
       return res.status(404).json({ error: 'المرفق غير موجود' });
     }
 
-    const actingUser = (req.query.acting_user as string) || 'مستخدم النظام';
+    const actingUser = authenticatedActor(req);
     db.auditAttachmentDownload(attachment.attachment_id, actingUser);
 
     res.json({
@@ -1154,7 +1154,7 @@ app.post('/api/production/models', (req, res) => {
 app.put('/api/production/models/:modelId/warranty', (req, res) => {
   try {
     const { modelId } = req.params;
-    const { warranty_years, changed_by, user_role, reason } = req.body;
+    const { warranty_years, reason } = req.body;
 
     if (!warranty_years) {
       return res.status(400).json({ error: 'حقل سنوات الضمان مطلوب' });
@@ -1266,7 +1266,7 @@ app.post('/api/production/validate', (req, res) => {
 // 9. Execute Production Import
 app.post('/api/production/import', async (req, res) => {
   try {
-    const { sourceType, fileName, fileData, rawText, records, performedBy } = req.body;
+    const { sourceType, fileName, fileData, rawText, records } = req.body;
     let rawRecords: any[] = [];
     let detectedFileName = fileName || 'Production_Data.xlsx';
 
@@ -1291,7 +1291,7 @@ app.post('/api/production/import', async (req, res) => {
       sourceType || 'Manual',
       detectedFileName,
       rawRecords,
-      performedBy || 'إدارة الإنتاج'
+      authenticatedActor(req)
     );
 
     res.json(result);
@@ -1303,8 +1303,8 @@ app.post('/api/production/import', async (req, res) => {
 // 10. Trigger SharePoint Sync
 app.post('/api/production/sync/sharepoint', async (req, res) => {
   try {
-    const { performedBy, customUrl } = req.body;
-    const result = await productionEngine.syncSharePoint(performedBy || 'SharePoint Sync Button', customUrl);
+    const { customUrl } = req.body;
+    const result = await productionEngine.syncSharePoint(authenticatedActor(req), customUrl);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1315,7 +1315,7 @@ app.post('/api/production/sync/sharepoint', async (req, res) => {
 app.post('/api/production/sync/onedrive', async (req, res) => {
   try {
     const { performedBy, customUrl } = req.body;
-    const result = await productionEngine.syncOneDrive(performedBy || 'OneDrive Sync Button', customUrl);
+    const result = await productionEngine.syncOneDrive(authenticatedActor(req), customUrl);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1326,7 +1326,7 @@ app.post('/api/production/sync/onedrive', async (req, res) => {
 app.post('/api/production/sync/sap', async (req, res) => {
   try {
     const { performedBy, customUrl } = req.body;
-    const result = await productionEngine.syncSAP(performedBy || 'SAP S/4HANA OData Connector', customUrl);
+    const result = await productionEngine.syncSAP(authenticatedActor(req), customUrl);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
