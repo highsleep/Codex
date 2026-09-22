@@ -44,6 +44,26 @@ function toPublicActivation(activation: any) {
   };
 }
 
+function validateIntegrationUrl(value: unknown): string | null {
+  if (typeof value !== 'string' || value.length === 0 || value.length > 2048) return null;
+  try {
+    const parsed = new URL(value);
+    const hostname = parsed.hostname.toLowerCase();
+    const configured = (process.env.INTEGRATION_ALLOWED_HOSTS || '')
+      .split(',')
+      .map((host) => host.trim().toLowerCase())
+      .filter(Boolean);
+    const allowed = [
+      '1drv.ms',
+      's4hana-gateway.sleepee.com',
+      ...configured,
+    ].some((host) => hostname === host) || hostname.endsWith('.sharepoint.com');
+    return parsed.protocol === 'https:' && allowed ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 // ----------------------------------------------------
 // Health & Diagnostic API
 // ----------------------------------------------------
@@ -1346,15 +1366,22 @@ app.post('/api/production/sync-config', (req, res) => {
     if (!sync_source) {
       return res.status(400).json({ error: 'اسم مزود المزامنة (sync_source) مطلوب' });
     }
+    if (api_key_or_token) {
+      return res.status(400).json({ error: 'INTEGRATION_SECRETS_MUST_NOT_BE_SENT_BY_BROWSER' });
+    }
+    const approvedUrl = sync_url ? validateIntegrationUrl(sync_url) : undefined;
+    if (sync_url && !approvedUrl) {
+      return res.status(400).json({ error: 'رابط التكامل غير مسموح به. استخدم نقطة HTTPS معتمدة فقط.' });
+    }
 
     const updated = db.updateSyncState({
       sync_source,
-      sync_url,
+      sync_url: approvedUrl,
       target_file_name,
-      connection_mode: connection_mode || (sync_url ? 'live_url' : 'simulated_fallback'),
-      connection_status: sync_url ? 'connected' : 'simulated',
+      connection_mode: connection_mode || (approvedUrl ? 'live_url' : 'simulated_fallback'),
+      connection_status: approvedUrl ? 'connected' : 'simulated',
       auth_type,
-      api_key_or_token,
+      // Secrets are intentionally never persisted in application records.
       notes,
     });
 
@@ -1379,12 +1406,12 @@ app.post('/api/production/test-connection', async (req, res) => {
       });
     }
 
-    const trimmedUrl = sync_url.trim();
-    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
-      return res.status(400).json({
-        success: false,
-        error: 'يجب أن يبدأ الرابط بـ https:// أو http://',
-      });
+    if (api_key_or_token) {
+      return res.status(400).json({ success: false, error: 'لا يتم قبول رموز وصول من المتصفح. اضبط سر التكامل على الخادم.' });
+    }
+    const trimmedUrl = validateIntegrationUrl(sync_url);
+    if (!trimmedUrl) {
+      return res.status(400).json({ success: false, error: 'رابط التكامل غير مسموح به. يلزم رابط HTTPS معتمد.' });
     }
 
     const startTime = Date.now();
