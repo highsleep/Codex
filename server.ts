@@ -1330,7 +1330,9 @@ app.post('/api/production/import', async (req, res) => {
 app.post('/api/production/sync/sharepoint', async (req, res) => {
   try {
     const { customUrl } = req.body;
-    const result = await productionEngine.syncSharePoint(authenticatedActor(req), customUrl);
+    const approvedUrl = customUrl ? validateIntegrationUrl(customUrl) : undefined;
+    if (customUrl && !approvedUrl) return res.status(400).json({ error: 'رابط التكامل غير مسموح به.' });
+    const result = await productionEngine.syncSharePoint(authenticatedActor(req), approvedUrl);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1341,7 +1343,9 @@ app.post('/api/production/sync/sharepoint', async (req, res) => {
 app.post('/api/production/sync/onedrive', async (req, res) => {
   try {
     const { customUrl } = req.body;
-    const result = await productionEngine.syncOneDrive(authenticatedActor(req), customUrl);
+    const approvedUrl = customUrl ? validateIntegrationUrl(customUrl) : undefined;
+    if (customUrl && !approvedUrl) return res.status(400).json({ error: 'رابط التكامل غير مسموح به.' });
+    const result = await productionEngine.syncOneDrive(authenticatedActor(req), approvedUrl);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1352,7 +1356,9 @@ app.post('/api/production/sync/onedrive', async (req, res) => {
 app.post('/api/production/sync/sap', async (req, res) => {
   try {
     const { performedBy, customUrl } = req.body;
-    const result = await productionEngine.syncSAP(authenticatedActor(req), customUrl);
+    const approvedUrl = customUrl ? validateIntegrationUrl(customUrl) : undefined;
+    if (customUrl && !approvedUrl) return res.status(400).json({ error: 'رابط التكامل غير مسموح به.' });
+    const result = await productionEngine.syncSAP(authenticatedActor(req), approvedUrl);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
