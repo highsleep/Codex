@@ -1163,8 +1163,8 @@ app.put('/api/production/models/:modelId/warranty', (req, res) => {
     const result = db.updateModelWarrantyYears(
       modelId,
       Number(warranty_years),
-      changed_by || 'المشرف العام',
-      user_role || '',
+      authenticatedActor(req),
+      req.principal?.role || '',
       reason || 'تحديث دوري لسياسة الضمان'
     );
 
@@ -1314,7 +1314,7 @@ app.post('/api/production/sync/sharepoint', async (req, res) => {
 // 11. Trigger OneDrive Sync
 app.post('/api/production/sync/onedrive', async (req, res) => {
   try {
-    const { performedBy, customUrl } = req.body;
+    const { customUrl } = req.body;
     const result = await productionEngine.syncOneDrive(authenticatedActor(req), customUrl);
     res.json(result);
   } catch (err: any) {
