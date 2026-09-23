@@ -1125,6 +1125,10 @@ export class PostgresApplicationRepository implements IApplicationRepository {
     return this.memDb.getQualityStats();
   }
 
+  public getExecutiveDashboardData(filters?: any) {
+    return this.memDb.getExecutiveDashboardData(filters);
+  }
+
   public getCustomer360(query: string) {
     return this.memDb.getCustomer360(query);
   }

@@ -26,6 +26,7 @@ import {
   Layers,
   Printer,
   BarChart2,
+  Crown,
 } from 'lucide-react';
 import { Product, WarrantyActivation, ActivationLog, AdminStats, AppUser, WarrantyClaim } from '../types';
 import { auth, googleProvider } from '../firebase';
@@ -33,6 +34,7 @@ import { signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/aut
 import { CustomerService360, CS360Tab } from './CustomerService360';
 import { QualityDashboard } from './QualityDashboard';
 import { RBACManagement } from './RBACManagement';
+import { ExecutiveDashboard } from './ExecutiveDashboard';
 import { CustomerClaimModal } from './CustomerClaimModal';
 import { ProductionImportCenter } from './ProductionImportCenter';
 import { PowerBIIntegrationHub } from './PowerBIIntegrationHub';
@@ -65,14 +67,25 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 }) => {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-    const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  // RBAC User & Simulated Role
+  const [internalUser, setInternalUser] = useState<AppUser>(() => {
+    return AUTHORIZED_SYSTEM_USERS.find((u) => u.id === 'USR-03') || AUTHORIZED_SYSTEM_USERS[0];
+  });
+  const [internalSystemUsers, setInternalSystemUsers] = useState<AppUser[]>(AUTHORIZED_SYSTEM_USERS);
+
+  const currentUser = propCurrentUser || internalUser;
+  const systemUsers = propSystemUsers && propSystemUsers.length > 0 ? propSystemUsers : internalSystemUsers;
 
   // Active Admin Sub-tab (claims, replacements, repairs, warranties & logs consolidated into Customer Service 360 Case Management Center)
-  const getResolvedAdminTab = (tab?: string): 'dashboard' | 'production' | 'quality' | 'customer360' | 'rbac' | 'products' | 'schema' | 'powerbi' => {
+  const getResolvedAdminTab = (tab?: string): 'executive' | 'dashboard' | 'production' | 'quality' | 'customer360' | 'rbac' | 'products' | 'schema' | 'powerbi' => {
     if (tab === 'claims' || tab === 'replacements' || tab === 'repairs' || tab === 'warranties' || tab === 'logs' || tab === 'customer360') {
       return 'customer360';
     }
-    return (tab as any) || 'dashboard';
+    if (tab === 'executive') return 'executive';
+    if (tab) return tab as any;
+    return canAccessTab(currentUser?.role || 'SUPER_ADMIN', 'executive') ? 'executive' : 'dashboard';
   };
 
   const getResolved360Tab = (tab?: string): CS360Tab => {
@@ -84,7 +97,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   };
 
   const [adminTab, setAdminTab] = useState<
-    'dashboard' | 'production' | 'quality' | 'customer360' | 'rbac' | 'products' | 'schema' | 'powerbi'
+    'executive' | 'dashboard' | 'production' | 'quality' | 'customer360' | 'rbac' | 'products' | 'schema' | 'powerbi'
   >(getResolvedAdminTab(initialAdminTab));
 
   useEffect(() => {
@@ -97,15 +110,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   }, [initialAdminTab]);
 
   const [showPowerBIModal, setShowPowerBIModal] = useState<boolean>(false);
-
-  // RBAC User & Simulated Role
-  const [internalUser, setInternalUser] = useState<AppUser>(() => {
-    return AUTHORIZED_SYSTEM_USERS.find((u) => u.id === 'USR-03') || AUTHORIZED_SYSTEM_USERS[0];
-  });
-  const [internalSystemUsers, setInternalSystemUsers] = useState<AppUser[]>(AUTHORIZED_SYSTEM_USERS);
-
-  const currentUser = propCurrentUser || internalUser;
-  const systemUsers = propSystemUsers && propSystemUsers.length > 0 ? propSystemUsers : internalSystemUsers;
 
   // Fetch registered users from server on mount if not supplied by parent
   useEffect(() => {
@@ -509,6 +513,21 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
       {/* Admin Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-6 border-b border-[#E5E7EB] text-xs sm:text-sm font-bold">
+        {canAccessTab(currentUser.role, 'executive') && (
+          <button
+            onClick={() => setAdminTab('executive')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl whitespace-nowrap transition cursor-pointer ${
+              adminTab === 'executive'
+                ? 'bg-indigo-700 text-white shadow-sm'
+                : 'text-slate-600 hover:text-[#111111] hover:bg-[#F5F5F5]'
+            }`}
+          >
+            <Crown className="w-4 h-4 text-amber-300" />
+            <span>لوحة القيادة التنفيذية</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-900 text-[10px] font-bold">KPIs</span>
+          </button>
+        )}
+
         {canAccessTab(currentUser.role, 'dashboard') && (
           <button
             onClick={() => setAdminTab('dashboard')}
@@ -622,6 +641,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           </button>
         )}
       </div>
+
+      {/* TAB 0: EXECUTIVE MANAGEMENT DASHBOARD */}
+      {adminTab === 'executive' && <ExecutiveDashboard currentUser={currentUser} />}
 
       {/* TAB 1: DASHBOARD & STATS */}
       {adminTab === 'dashboard' && stats && (

@@ -172,6 +172,7 @@ export type UserRole =
   | 'SUPER_ADMIN'
   | 'QUALITY_MANAGER'
   | 'PLANT_MANAGER'
+  | 'GENERAL_MANAGER'
   | 'PRODUCTION'
   | 'CUSTOMER_SERVICE'
   | 'VIEWER';

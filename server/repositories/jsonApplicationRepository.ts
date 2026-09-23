@@ -375,6 +375,10 @@ export class JsonApplicationRepository implements IApplicationRepository {
     return this.db.getQualityStats();
   }
 
+  public getExecutiveDashboardData(filters?: any) {
+    return this.db.getExecutiveDashboardData(filters);
+  }
+
   public getCustomer360(query: string) {
     return this.db.getCustomer360(query);
   }

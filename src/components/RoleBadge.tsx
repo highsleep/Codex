@@ -5,6 +5,7 @@ import { ROLES_CONFIG } from '../utils/rbac';
 
 export const ROLE_ICONS: Record<UserRole, React.ComponentType<{ className?: string }>> = {
   SUPER_ADMIN: Crown,
+  GENERAL_MANAGER: Crown,
   PLANT_MANAGER: Factory,
   QUALITY_MANAGER: ClipboardCheck,
   CUSTOMER_SERVICE: Headset,
@@ -30,6 +31,14 @@ export const ROLE_COLOR_CONFIGS: Record<
     iconBg: 'bg-rose-600 text-white',
     hex: '#D62828',
     lightHex: '#FEE2E2',
+  },
+  GENERAL_MANAGER: {
+    bg: 'bg-indigo-50',
+    text: 'text-indigo-700',
+    border: 'border-indigo-200',
+    iconBg: 'bg-indigo-600 text-white',
+    hex: '#4F46E5',
+    lightHex: '#E0E7FF',
   },
   PLANT_MANAGER: {
     bg: 'bg-slate-900',

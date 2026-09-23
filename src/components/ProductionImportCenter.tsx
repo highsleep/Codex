@@ -228,11 +228,11 @@ export const ProductionImportCenter: React.FC<ProductionImportCenterProps> = ({
         ]);
 
       setStats(statsRes);
-      setModels(modelsRes);
-      setSyncStates(syncRes);
-      setImportLogs(logsRes);
-      setBatches(batchesRes);
-      setWarrantyAudits(auditsRes);
+      setModels(Array.isArray(modelsRes) ? modelsRes : []);
+      setSyncStates(Array.isArray(syncRes) ? syncRes : []);
+      setImportLogs(Array.isArray(logsRes) ? logsRes : []);
+      setBatches(Array.isArray(batchesRes) ? batchesRes : []);
+      setWarrantyAudits(Array.isArray(auditsRes) ? auditsRes : []);
       setBackupPolicy(backupRes);
     } catch (err: any) {
       console.error('Error fetching production data:', err);

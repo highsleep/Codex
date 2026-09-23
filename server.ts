@@ -1012,6 +1012,26 @@ app.get('/api/search/omni', (req, res) => {
 });
 
 // ----------------------------------------------------
+// EXECUTIVE MANAGEMENT DASHBOARD API
+// ----------------------------------------------------
+app.get('/api/executive/dashboard', (req, res) => {
+  try {
+    const filters = {
+      dateRange: req.query.dateRange as string,
+      startDate: req.query.startDate as string,
+      endDate: req.query.endDate as string,
+      productFamily: req.query.productFamily as string,
+      model: req.query.model as string,
+      factoryLine: req.query.factoryLine as string,
+    };
+    const data = repository.getExecutiveDashboardData(filters);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------
 // QUALITY DASHBOARD & DEFECT KPIS API
 // ----------------------------------------------------
 app.get('/api/quality/stats', (req, res) => {

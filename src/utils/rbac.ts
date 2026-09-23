@@ -29,7 +29,8 @@ export interface RoleConfig {
 }
 
 export const ALL_SYSTEM_SCREENS: RoleScreenInfo[] = [
-  { id: 'dashboard', name: 'لوحة المؤشرات التنفيذية (KPI Dashboard)', category: 'تقارير ورؤى' },
+  { id: 'executive', name: 'لوحة القيادة التنفيذية (Executive Dashboard)', category: 'الإدارة العليا' },
+  { id: 'dashboard', name: 'لوحة المؤشرات العامة (KPI Dashboard)', category: 'تقارير ورؤى' },
   { id: 'products', name: 'إدارة المنتجات والمواصفات والموديلات', category: 'العمليات' },
   { id: 'production', name: 'خطوط الإنتاج ومزامنة أوامر التشغيل والباركود', category: 'الإنتاج' },
   { id: 'quality', name: 'رقابة الجودة وسجل المعاينات الفنية والهبوط', category: 'الجودة' },
@@ -55,6 +56,15 @@ export const AUTHORIZED_SYSTEM_USERS: AppUser[] = [
     email: 'wsb@sleephigh.com',
     role: 'SUPER_ADMIN',
     department: 'الإدارة العليا وتوكيد الجودة',
+    status: 'ACTIVE',
+    created_at: '2026-01-01T08:00:00Z',
+  },
+  {
+    id: 'USR-08',
+    name: 'أ.د. عبد الرحمن الفارس',
+    email: 'gm@sleephigh.com',
+    role: 'GENERAL_MANAGER',
+    department: 'الإدارة العامة والتنفيذية',
     status: 'ACTIVE',
     created_at: '2026-01-01T08:00:00Z',
   },
@@ -115,6 +125,7 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
     iconName: 'Crown',
     permissions: [
       'Full system access (وصول كامل للنظام)',
+      'Executive dashboard (لوحة القيادة التنفيذية)',
       'User management (إدارة المستخدمين)',
       'Role management (إدارة الصلاحيات والأدوار)',
       'Product management (إدارة المنتجات الكاملة)',
@@ -124,8 +135,8 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
       'Reports (التقارير المتقدمة وتصدير البيانات)',
       'System settings (إعدادات النظام والتهيئة)',
     ],
-    allowedTabs: ['dashboard', 'products', 'production', 'quality', 'customer360', 'rbac', 'schema', 'powerbi'],
-    defaultTab: 'dashboard',
+    allowedTabs: ['executive', 'dashboard', 'products', 'production', 'quality', 'customer360', 'rbac', 'schema', 'powerbi'],
+    defaultTab: 'executive',
     detailed: {
       screensAllowed: ALL_SYSTEM_SCREENS,
       screensBlocked: [],
@@ -133,6 +144,31 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
       canEdit: { allowed: true, description: 'تعديل كافة السجلات والأدوار والسياسات بدون قيود' },
       canDelete: { allowed: true, description: 'حذف السجلات والمنتجات والمطالبات (مع الحماية)' },
       canExport: { allowed: true, description: 'تصدير شامل لكافة التقارير (Excel / PDF / CSV / SQL)' },
+    },
+  },
+  GENERAL_MANAGER: {
+    role: 'GENERAL_MANAGER',
+    title: 'المدير العام (General Manager)',
+    description: 'إشراف كلي ورؤية استراتيجية لمؤشرات الأداء الرئيسية (KPIs) وجودة التصنيع والضمان ورضا العملاء.',
+    badge: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    accentColor: '#4F46E5',
+    iconName: 'Crown',
+    permissions: [
+      'Executive dashboard (لوحة القيادة التنفيذية ومؤشرات الأداء)',
+      'Quality KPIs (مؤشرات الجودة ومعدلات الهبوط والعيوب)',
+      'Manufacturing KPIs (مؤشرات الإنتاج ونسب الهالك وتكلفة الضمان)',
+      'Customer Service KPIs (رضا العملاء وأوقات الاستجابة والإغلاق)',
+      'Executive export (تصدير التقارير التنفيذية PDF / Excel / CSV)',
+    ],
+    allowedTabs: ['executive', 'dashboard', 'products', 'quality', 'customer360', 'powerbi'],
+    defaultTab: 'executive',
+    detailed: {
+      screensAllowed: ALL_SYSTEM_SCREENS,
+      screensBlocked: [],
+      canCreate: { allowed: false, description: 'صلاحية استعراض تنفيذي واطلاع شامل' },
+      canEdit: { allowed: false, description: 'صلاحية اتخاذ القرارات والاستعراض دون تعديل مباشر' },
+      canDelete: { allowed: false, description: 'محظور الحذف نهائياً' },
+      canExport: { allowed: true, description: 'تصدير كامل للتقارير التنفيذية والبيانات الإحصائية' },
     },
   },
   QUALITY_MANAGER: {
@@ -153,7 +189,7 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
     defaultTab: 'quality',
     detailed: {
       screensAllowed: ALL_SYSTEM_SCREENS.filter((s) => ['quality', 'customer360', 'products', 'dashboard'].includes(s.id)),
-      screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'production', 'powerbi'].includes(s.id)),
+      screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'production', 'powerbi', 'executive'].includes(s.id)),
       canCreate: { allowed: true, description: 'إنشاء تقارير الفحص والمعاينة الفنية الميدانية للعيوب' },
       canEdit: { allowed: true, description: 'اعتماد نتائج الفحص وتحديد نسب الهبوط والقرارات الفنية' },
       canDelete: { allowed: false, description: 'محظور حذف أي سجلات جودة أو مطالبات معتمدة' },
@@ -168,16 +204,17 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
     accentColor: '#0F172A',
     iconName: 'Factory',
     permissions: [
+      'Executive dashboard (لوحة القيادة التنفيذية)',
       'Production data (بيانات الإنتاج والتشغيل)',
       'Product records (سجلات المنتجات وأوامر التشغيل)',
       'Import/export (استيراد وتصدير بيانات التصنيع)',
       'Production reports (تقارير الإنتاج ومعدلات الإنجاز)',
       'Read-only warranty access (اطلاع فقط على وثائق الضمان)',
     ],
-    allowedTabs: ['production', 'products', 'dashboard', 'customer360'],
-    defaultTab: 'production',
+    allowedTabs: ['executive', 'production', 'products', 'dashboard', 'customer360'],
+    defaultTab: 'executive',
     detailed: {
-      screensAllowed: ALL_SYSTEM_SCREENS.filter((s) => ['production', 'products', 'dashboard', 'customer360'].includes(s.id)),
+      screensAllowed: ALL_SYSTEM_SCREENS.filter((s) => ['executive', 'production', 'products', 'dashboard', 'customer360'].includes(s.id)),
       screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'quality', 'powerbi'].includes(s.id)),
       canCreate: { allowed: true, description: 'استيراد دفعات التصنيع، إضافة سجلات خطوط الإنتاج وأوامر التشغيل' },
       canEdit: { allowed: true, description: 'تحديث بيانات أوامر التشغيل ومزامنة بيانات التصنيع مع SAP' },
@@ -327,7 +364,11 @@ export function canCloseClaim(role: UserRole): boolean {
 }
 
 export function canAccessQualityDashboard(role: UserRole): boolean {
-  return role === 'SUPER_ADMIN' || role === 'QUALITY_MANAGER';
+  return role === 'SUPER_ADMIN' || role === 'QUALITY_MANAGER' || role === 'GENERAL_MANAGER';
+}
+
+export function canAccessExecutiveDashboard(role: UserRole): boolean {
+  return role === 'SUPER_ADMIN' || role === 'PLANT_MANAGER' || role === 'GENERAL_MANAGER';
 }
 
 export function canAccessProduction(role: UserRole): boolean {

@@ -10,7 +10,7 @@ import { seedInitialFirestoreData } from './firebase';
 export default function App() {
   const [activeTab, setActiveTab] = useState<'warranty' | 'products' | 'admin' | string>('warranty');
   const [adminInitialTab, setAdminInitialTab] = useState<
-    'dashboard' | 'production' | 'quality' | 'customer360' | 'claims' | 'replacements' | 'rbac' | 'warranties' | 'products' | 'logs' | 'schema' | 'powerbi' | undefined
+    'executive' | 'dashboard' | 'production' | 'quality' | 'customer360' | 'claims' | 'replacements' | 'rbac' | 'warranties' | 'products' | 'logs' | 'schema' | 'powerbi' | undefined
   >(undefined);
   const [currentActivation, setCurrentActivation] = useState<WarrantyActivation | null>(null);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);

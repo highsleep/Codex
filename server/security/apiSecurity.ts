@@ -49,6 +49,10 @@ export function apiSecurity(req: Request, res: Response, next: NextFunction) {
     return protect(['SUPER_ADMIN'])(req, res, next);
   }
 
+  if (path.startsWith('/executive')) {
+    return protect(['SUPER_ADMIN', 'PLANT_MANAGER', 'GENERAL_MANAGER'])(req, res, next);
+  }
+
   if (path.startsWith('/production')) {
     return protect(['SUPER_ADMIN', 'PLANT_MANAGER', 'PRODUCTION'])(req, res, next);
   }
