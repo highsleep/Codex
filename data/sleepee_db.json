@@ -534,6 +534,20 @@
   ],
   "activation_logs": [
     {
+      "id": 73,
+      "warranty_id": "SLP-WRN-1501-1099",
+      "serial_number": "SLP-2015-7001",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-23T12:13:18.635Z"
+    },
+    {
+      "id": 72,
+      "warranty_id": "SLP-WRN-2601-8192",
+      "serial_number": "SLP-2026-9081",
+      "action": "تم التحقق من سريان الضمان عبر مسح رمز QR",
+      "created_at": "2026-09-23T12:13:18.627Z"
+    },
+    {
       "id": 71,
       "warranty_id": "SLP-WRN-1501-1099",
       "serial_number": "SLP-2015-7001",
