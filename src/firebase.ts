@@ -41,6 +41,19 @@ try {
 
 // CRITICAL: Connect to designated firestoreDatabaseId
 export const firestoreDb = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// Explicitly increase timeout to handle potential network latency/instability
+try {
+  // Firestore v9+ doesn't have a direct 'timeout' setting in getFirestore.
+  // It usually relies on SDK internals.
+  // We can attempt to set persistence settings to better handle intermittent connectivity.
+  import('firebase/firestore').then(({ enableIndexedDbPersistence }) => {
+    enableIndexedDbPersistence(firestoreDb).catch((err) => {
+      console.warn('Firestore persistence enabled error:', err);
+    });
+  });
+} catch (e) {
+  console.warn('Firestore persistence initialization error:', e);
+}
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 

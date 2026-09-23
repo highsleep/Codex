@@ -230,6 +230,9 @@ export const UnifiedWarrantyPortal: React.FC<UnifiedWarrantyPortalProps> = ({
   // Result state
   const [verifyResult, setVerifyResult] = useState<VerifyResponse | null>(null);
   const [qrCertificateUrl, setQrCertificateUrl] = useState<string>('');
+  const [trackedClaim, setTrackedClaim] = useState<any | null>(null);
+  const [associatedClaims, setAssociatedClaims] = useState<any[]>([]);
+  const [associatedReplacements, setAssociatedReplacements] = useState<any[]>([]);
 
   // Scanner modal / camera state & feedback
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -779,12 +782,74 @@ export const UnifiedWarrantyPortal: React.FC<UnifiedWarrantyPortalProps> = ({
     setActivationError(null);
     setActivationSuccessBanner(null);
 
+    // Support direct lookup of Claim IDs
+    if (term.toUpperCase().startsWith('CLM-')) {
+      try {
+        const response = await fetch(`/api/claims/${encodeURIComponent(term)}`);
+        if (response.ok) {
+          const claimData = await response.json();
+          setTrackedClaim(claimData);
+          setVerifyResult({
+            status: 'VALID',
+            message: 'تم العثور على طلب الضمان والشكوى الفنية المعتمدة بنجاح.',
+            product: {
+              serial_number: claimData.serial_number,
+              model: 'مرتبة سليبي',
+              size: 'مقاس معتمد',
+              warranty_years: 10,
+              image_url: '',
+              production_date: claimData.created_at ? claimData.created_at.split('T')[0] : '2026-01-01',
+            } as any,
+            activation: {
+              warranty_id: claimData.warranty_id || 'سليبي-ضمان-عام',
+              serial_number: claimData.serial_number,
+              customer_name: claimData.customer_name,
+              phone: claimData.phone,
+              activation_date: claimData.created_at,
+              expiry_date: '2036-01-01',
+              status: 'ساري',
+            } as any,
+            days_remaining: 3450,
+          });
+          setIsSearchCollapsed(true);
+          
+          // Fetch all other claims and replacements for the same serial
+          fetch(`/api/claims?search=${encodeURIComponent(claimData.serial_number)}`)
+            .then((r) => r.json())
+            .then((claims) => setAssociatedClaims(claims))
+            .catch((e) => console.error(e));
+          fetch(`/api/replacements?search=${encodeURIComponent(claimData.serial_number)}`)
+            .then((r) => r.json())
+            .then((reps) => setAssociatedReplacements(reps))
+            .catch((e) => console.error(e));
+          
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Direct claim fetch error:', err);
+      }
+    }
+
     try {
       const response = await fetch(`/api/warranty/verify/${encodeURIComponent(term)}?source=${encodeURIComponent(source)}`);
       const data: VerifyResponse = await response.json();
       setVerifyResult(data);
+      setTrackedClaim(null);
       if (data.status === 'VALID') {
         setIsSearchCollapsed(true);
+        const serial = data.product?.serial_number || term;
+        fetch(`/api/claims?search=${encodeURIComponent(serial)}`)
+          .then((r) => r.json())
+          .then((claims) => setAssociatedClaims(claims))
+          .catch((e) => console.error(e));
+        fetch(`/api/replacements?search=${encodeURIComponent(serial)}`)
+          .then((r) => r.json())
+          .then((reps) => setAssociatedReplacements(reps))
+          .catch((e) => console.error(e));
+      } else {
+        setAssociatedClaims([]);
+        setAssociatedReplacements([]);
       }
     } catch (err: any) {
       console.error('Search verification error:', err);
@@ -1907,6 +1972,190 @@ export const UnifiedWarrantyPortal: React.FC<UnifiedWarrantyPortalProps> = ({
                     </strong>
                   </div>
                 </div>
+              </div>
+
+              {/* ========================================================= */}
+              {/* بوابة تتبع طلبات الصيانة والشكاوى الفنية (Claims & Workflow Tracking) */}
+              {/* ========================================================= */}
+              <div id="section-claims-tracking" className="no-print bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
+                <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <Wrench className="w-6 h-6 text-[#D62828]" />
+                    <div>
+                      <h4 className="text-lg font-black text-[#111111]">
+                        بوابة الدعم الفني وتتبع طلبات الصيانة والضمان
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        تتبع حالة الفحص الفني، المعاينة المنزلية، واستبدال مراتب سليبي
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <span className="px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold font-mono text-slate-600">
+                    إجمالي الطلبات: {associatedClaims.length}
+                  </span>
+                </div>
+
+                {associatedClaims.length === 0 ? (
+                  <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-4">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto">
+                      <Wrench className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-1">
+                      <h5 className="text-sm font-bold text-slate-800">لا توجد طلبات صيانة نشطة أو سابقة</h5>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                        إذا واجهت أي مشكلة فنية أو هبوط في المرتبة، يمكنك تقديم طلب فحص فني فوري وسيقوم مهندس المعاينة بالتواصل معك لزيارتك في المنزل.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsClaimModalOpen(true)}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition cursor-pointer"
+                    >
+                      <AlertTriangle className="w-4 h-4 text-white" />
+                      <span>تقديم طلب معاينة وضمان جديد</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {associatedClaims.map((claim) => {
+                      // Status Badge Themes
+                      let badgeBg = 'bg-amber-100 text-amber-900 border-amber-300';
+                      let badgeText = 'قيد المراجعة والجدولة';
+                      if (claim.claim_status === 'Approved' || claim.claim_status === 'Inspected' || claim.claim_status === 'Assigned') {
+                        badgeBg = 'bg-indigo-100 text-indigo-900 border-indigo-300';
+                        badgeText = 'تمت المعاينة وقيد المعالجة';
+                      } else if (claim.claim_status === 'Closed') {
+                        badgeBg = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+                        badgeText = 'تم الحل والإغلاق بنجاح';
+                      }
+
+                      // Find linked replacement
+                      const linkedReplacement = associatedReplacements.find(
+                        (r) => r.old_serial_number === claim.serial_number || r.old_warranty_id === claim.warranty_id
+                      );
+
+                      return (
+                        <div key={claim.claim_id} className="p-5 sm:p-6 bg-slate-50/50 rounded-2xl border border-slate-200/80 space-y-5 text-right relative">
+                          {/* Claim Top Info */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/60 pb-3">
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono font-black text-[#D62828] text-base">
+                                رقم الطلب: {claim.claim_id}
+                              </span>
+                              <span className={`px-2.5 py-0.5 rounded-full border text-[11px] font-bold ${badgeBg}`}>
+                                {badgeText}
+                              </span>
+                            </div>
+                            <div className="text-xs text-slate-500 font-bold">
+                              تاريخ تسجيل الشكوى: <span className="font-mono">{claim.created_at ? claim.created_at.split('T')[0] : 'غير معروف'}</span>
+                            </div>
+                          </div>
+
+                          {/* Complaint Details Grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
+                            <div className="space-y-2">
+                              <span className="text-slate-500 font-bold block">موضوع الشكوى والتشخيص الفني:</span>
+                              <div className="bg-white p-3.5 rounded-xl border border-slate-200 font-bold text-slate-800">
+                                {claim.complaint_type === 'Spring Collapse' && 'هبوط / كسر في شاسيه السوست'}
+                                {claim.complaint_type === 'Foam Collapse' && 'هبوط موضعي في طبقات الإسفنج / الفوم'}
+                                {claim.complaint_type === 'Fabric Defect' && 'عيب في القماش الخارجي أو الكابتونيه'}
+                                {claim.complaint_type === 'Noise' && 'أصوات احتكاك أو طقطقة غير طبيعية'}
+                                {claim.complaint_type === 'Manufacturing Defect' && 'عيب مصنعي عام أو تشطيب'}
+                                {claim.complaint_type === 'Other' && 'شكوى أو عيب آخر'}
+                              </div>
+                              <p className="text-xs text-slate-600 leading-relaxed bg-white p-3 rounded-xl border border-slate-100">
+                                {claim.complaint_description}
+                              </p>
+                            </div>
+
+                            {/* Technical Inspection Timeline (مسار المعاينة الفنية) */}
+                            <div className="space-y-2">
+                              <span className="text-slate-500 font-bold block">مسار المعاينة الفنية الميدانية:</span>
+                              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                                <div className="flex items-start gap-3">
+                                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${claim.inspection_date ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                    ✓
+                                  </div>
+                                  <div>
+                                    <div className="text-xs font-bold text-slate-800">تحديد موعد المعاينة المنزلية:</div>
+                                    <div className="text-xs font-mono text-slate-600 mt-0.5">
+                                      {claim.inspection_date 
+                                        ? `مجدولة بتاريخ: ${claim.inspection_date}`
+                                        : 'جاري التنسيق لتحديد موعد الزيارة من مهندس الفحص الفني'
+                                      }
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-start gap-3 border-t border-slate-100 pt-2.5">
+                                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${claim.inspection_result ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                    ✓
+                                  </div>
+                                  <div>
+                                    <div className="text-xs font-bold text-slate-800">تقرير نتيجة الفحص والتقييم:</div>
+                                    <div className="text-xs text-slate-600 mt-0.5 leading-relaxed font-semibold">
+                                      {claim.inspection_result 
+                                        ? claim.inspection_result
+                                        : 'بانتظار وصول مهندس الفحص الفني للتقييم المنزلي وتسجيل التقرير'
+                                      }
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Replacement Order Workflow (سير عمل الاستبدال والحل النهائي) */}
+                          {linkedReplacement ? (
+                            <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl space-y-2">
+                              <div className="flex items-center gap-2 text-emerald-950 font-black text-xs sm:text-sm">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                <span>إذن الاستبدال الفوري المعتمد والمصدر من إدارة الجودة:</span>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                                <div className="p-2.5 bg-white rounded-lg border border-emerald-200">
+                                  <span className="text-slate-500 block mb-0.5">رقم إذن الاستبدال</span>
+                                  <strong className="text-emerald-950 font-mono font-bold block">{linkedReplacement.replacement_id}</strong>
+                                </div>
+                                <div className="p-2.5 bg-white rounded-lg border border-emerald-200">
+                                  <span className="text-slate-500 block mb-0.5">الرقم التسلسلي الجديد الممنوح</span>
+                                  <strong className="text-[#D62828] font-mono font-black block">{linkedReplacement.new_serial_number}</strong>
+                                </div>
+                                <div className="p-2.5 bg-white rounded-lg border border-emerald-200">
+                                  <span className="text-slate-500 block mb-0.5">تاريخ اعتماد الإذن</span>
+                                  <strong className="text-slate-800 font-mono font-bold block">{linkedReplacement.approval_date ? linkedReplacement.approval_date.split('T')[0] : '2026-01-01'}</strong>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            claim.claim_status === 'Approved' && (
+                              <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-950 font-bold flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-amber-600" />
+                                <span>تمت الموافقة الفنية على استبدال المرتبة، وجاري إصدار وطباعة شهادة الرقم التسلسلي الجديد من خطوط الإنتاج.</span>
+                              </div>
+                            )
+                          )}
+
+                          {/* Claim Closure Final Verdict Block */}
+                          {claim.claim_status === 'Closed' && (
+                            <div className="p-4 bg-slate-100 border border-slate-300 rounded-xl space-y-1 text-xs">
+                              <div className="text-slate-700 font-bold">القرار والحل النهائي المغلق بمصادقة العميل:</div>
+                              <p className="font-bold text-slate-900 text-sm mt-1 leading-relaxed">
+                                {claim.resolution || 'تم تسليم المنتج المستبدل وإجراء الصيانة الشاملة وإغلاق الطلب.'}
+                              </p>
+                              {claim.resolution_date && (
+                                <div className="text-slate-400 text-[10px] font-mono pt-1">
+                                  تاريخ الإغلاق الرسمي: {claim.resolution_date.split('T')[0]}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* ========================================================= */}

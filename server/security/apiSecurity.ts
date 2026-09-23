@@ -32,7 +32,10 @@ export function apiSecurity(req: Request, res: Response, next: NextFunction) {
     (method === 'GET' && (
       path.startsWith('/warranty/verify/') ||
       path.startsWith('/products/verify-qr/') ||
-      path.startsWith('/verify/qr/')
+      path.startsWith('/verify/qr/') ||
+      path.startsWith('/claims/') ||
+      (path === '/claims' && req.query.search) ||
+      (path === '/replacements' && req.query.search)
     )) ||
     (method === 'POST' && path === '/warranty/activate') ||
     (method === 'POST' && path === '/claims')

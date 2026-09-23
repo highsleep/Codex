@@ -10,6 +10,9 @@ interface CustomerClaimModalProps {
   defaultCustomerName?: string;
   defaultPhone?: string;
   onClaimCreated?: (claim: WarrantyClaim) => void;
+  activation?: any;
+  product?: any;
+  onClaimSubmitted?: () => void;
 }
 
 const COMPLAINT_TYPES: { type: ComplaintType; label: string; desc: string }[] = [
@@ -29,11 +32,14 @@ export const CustomerClaimModal: React.FC<CustomerClaimModalProps> = ({
   defaultCustomerName = '',
   defaultPhone = '',
   onClaimCreated,
+  activation,
+  product,
+  onClaimSubmitted,
 }) => {
-  const [serialNumber, setSerialNumber] = useState(defaultSerialNumber);
-  const [warrantyId, setWarrantyId] = useState(defaultWarrantyId);
-  const [customerName, setCustomerName] = useState(defaultCustomerName);
-  const [phone, setPhone] = useState(defaultPhone);
+  const [serialNumber, setSerialNumber] = useState(defaultSerialNumber || product?.serial_number || '');
+  const [warrantyId, setWarrantyId] = useState(defaultWarrantyId || activation?.warranty_id || '');
+  const [customerName, setCustomerName] = useState(defaultCustomerName || activation?.customer_name || '');
+  const [phone, setPhone] = useState(defaultPhone || activation?.phone || '');
   const [complaintType, setComplaintType] = useState<ComplaintType>('Spring Collapse');
   const [complaintDescription, setComplaintDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -79,6 +85,9 @@ export const CustomerClaimModal: React.FC<CustomerClaimModalProps> = ({
       setSuccessClaim(data.claim);
       if (onClaimCreated) {
         onClaimCreated(data.claim);
+      }
+      if (onClaimSubmitted) {
+        onClaimSubmitted();
       }
     } catch (err: any) {
       setError(err.message);

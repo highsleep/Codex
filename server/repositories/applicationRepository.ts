@@ -32,3 +32,7 @@ export function createApplicationRepository(
 }
 
 export const repository: IApplicationRepository = createApplicationRepository();
+
+if (DATABASE_DRIVER === 'postgres') {
+  (repository as PostgresApplicationRepository).loadFromPostgres();
+}
