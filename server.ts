@@ -7,9 +7,13 @@ import { ProductionDataProvider } from './server/providers/ProductionDataProvide
 import { ExcelProvider } from './server/providers/ExcelProvider.js';
 import { CSVProvider } from './server/providers/CSVProvider.js';
 import { ZebraZPLGenerator } from './server/zebra/zplGenerator.js';
+import { UnifiedAnalyticsEngine } from './server/analytics/analyticsEngine.js';
+import { db } from './server/db/index.js';
 import fs from 'fs';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
+import jspdfImport from 'jspdf';
+const jsPDF: any = (jspdfImport as any).jsPDF || jspdfImport;
 import { apiSecurity } from './server/security/apiSecurity.js';
 import { authenticatedActor } from './server/security/auth.js';
 import { checkDatabaseConnection } from './server/db/pool.js';
@@ -2404,6 +2408,137 @@ app.get('/api/analytics/customer-service', (req, res) => {
   }
 });
 
+// PART 3 – GET /api/analytics/data-confidence
+app.get('/api/analytics/data-confidence', (req, res) => {
+  try {
+    const data = UnifiedAnalyticsEngine.calculateDataConfidence((repository as any).db || db);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PART 4 – SCRAP IMPORT & CREATION
+app.post('/api/scrap-logs/import', (req, res) => {
+  try {
+    const { items, source } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'قائمة بيانات الهالك فارغة أو غير صالحة للاستيراد' });
+    }
+    const origin: 'REAL' | 'IMPORTED' | 'MANUAL' | 'SEEDED' = (source === 'SAP' || source === 'EXCEL' || source === 'CSV') ? 'IMPORTED' : 'MANUAL';
+    const logsToAdd = items.map((item: any) => ({
+      date: item.date || new Date().toISOString().split('T')[0],
+      department: item.department || 'قسم التجميع والقص',
+      production_line: item.production_line || item.line || 'خط المراتب السوست',
+      model: item.model || 'سليبي رويال بوكيت سبرينج',
+      scrap_qty: Number(item.scrap_qty) || 0,
+      scrap_cost: Number(item.scrap_cost) || 0,
+      root_cause: item.root_cause || 'تلف تشغيلي أثناء التصنيع',
+      notes: item.notes || `مستورد من نظام ${source || 'خارجي'}`,
+      data_origin: origin,
+    }));
+    const saved = repository.bulkAddScrapLogs(logsToAdd);
+    res.status(201).json({ success: true, count: saved.length, data: saved });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/scrap-logs', (req, res) => {
+  try {
+    const { date, department, production_line, line, model, scrap_qty, scrap_cost, root_cause, notes } = req.body;
+    const finalLine = production_line || line;
+    if (!department || !finalLine || !model || scrap_qty === undefined) {
+      return res.status(400).json({ error: 'جميع الحقول الأساسية مطلوبة لتسجيل الهالك' });
+    }
+    const newLog = repository.addScrapLog({
+      date: date || new Date().toISOString().split('T')[0],
+      department,
+      production_line: finalLine,
+      model,
+      scrap_qty: Number(scrap_qty),
+      scrap_cost: Number(scrap_cost) || 0,
+      root_cause: root_cause || 'تلف تشغيلي',
+      notes: notes || '',
+      data_origin: 'MANUAL',
+    });
+    res.status(201).json({ success: true, log: newLog });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PART 5 – REAL CUSTOMER FEEDBACK WORKFLOW
+app.post('/api/customer-feedback', (req, res) => {
+  try {
+    const { claim_id, rating, satisfaction_score, feedback_text, customer_name } = req.body;
+    if (!claim_id) {
+      return res.status(400).json({ error: 'رقم مطالبة الضمان مطلوب لربط تقييم العميل' });
+    }
+    const claim = repository.getClaimById(claim_id);
+    if (!claim) {
+      return res.status(404).json({ error: 'مطالبة الضمان غير موجودة' });
+    }
+    const currentStatus = claim.claim_status || (claim as any).status;
+    if (currentStatus !== 'Closed') {
+      return res.status(400).json({ error: 'لا يمكن تسجيل تقييم العميل إلا بعد إغلاق المطالبة بالكامل (Closed)' });
+    }
+    const r = Number(rating);
+    if (isNaN(r) || r < 1 || r > 5) {
+      return res.status(400).json({ error: 'التقييم يجب أن يكون بين 1 و 5 نجوم' });
+    }
+    const feedback = repository.addCustomerFeedback({
+      claim_id,
+      customer_name: customer_name || claim.customer_name,
+      rating: r,
+      satisfaction_score: satisfaction_score !== undefined ? Number(satisfaction_score) : r * 20,
+      feedback_text: feedback_text || '',
+      data_origin: 'REAL',
+    });
+    res.status(201).json({ success: true, feedback });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PART 6 – REAL WARRANTY COST ENTRY
+app.post('/api/warranty-costs', (req, res) => {
+  try {
+    const { claim_id, product_id, model, repair_cost, replacement_cost, material_cost, labor_cost, transport_cost, inspection_cost, notes } = req.body;
+    if (!claim_id) {
+      return res.status(400).json({ error: 'رقم المطالبة مطلوب لتسجيل تكاليف الضمان' });
+    }
+    const claim = repository.getClaimById(claim_id);
+    if (!claim) {
+      return res.status(404).json({ error: 'مطالبة الضمان غير موجودة' });
+    }
+    const rCost = Number(repair_cost) || 0;
+    const repCost = Number(replacement_cost) || 0;
+    const matCost = Number(material_cost) || 0;
+    const labCost = Number(labor_cost) || 0;
+    const transCost = Number(transport_cost) || 0;
+    const inspCost = Number(inspection_cost) || 0;
+    const totalCost = rCost + repCost + matCost + labCost + transCost + inspCost;
+
+    const costEntry = repository.addWarrantyCost({
+      claim_id,
+      product_id: product_id || claim.serial_number,
+      model: model || 'سليبي رويال بوكيت سبرينج',
+      repair_cost: rCost,
+      replacement_cost: repCost,
+      material_cost: matCost,
+      labor_cost: labCost,
+      transport_cost: transCost,
+      inspection_cost: inspCost,
+      notes: notes || '',
+      data_origin: 'REAL',
+    });
+    res.status(201).json({ success: true, cost: costEntry });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 5. GET /api/analytics/executive
 app.get('/api/analytics/executive', (req, res) => {
   try {
@@ -2426,6 +2561,71 @@ app.get('/api/analytics/drill-down', (req, res) => {
   }
 });
 
+// PART 2 – GET /api/analytics/kpi-traceability
+app.get('/api/analytics/kpi-traceability', (req, res) => {
+  try {
+    const trace = UnifiedAnalyticsEngine.getKPITraceability((repository as any).db || db);
+    res.json(trace);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PART 3 – GET /api/analytics/scrap
+app.get('/api/analytics/scrap', (req, res) => {
+  try {
+    const filters = extractAnalyticsFilters(req.query);
+    const data = UnifiedAnalyticsEngine.calculateScrapAnalytics((repository as any).db || db, filters);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PART 4 – GET /api/analytics/production-performance
+app.get('/api/analytics/production-performance', (req, res) => {
+  try {
+    const filters = extractAnalyticsFilters(req.query);
+    const data = UnifiedAnalyticsEngine.calculateProductionPerformance((repository as any).db || db, filters);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PART 5 – GET /api/analytics/csat
+app.get('/api/analytics/csat', (req, res) => {
+  try {
+    const filters = extractAnalyticsFilters(req.query);
+    const data = UnifiedAnalyticsEngine.calculateCustomerSatisfaction((repository as any).db || db, filters);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PART 6 – GET /api/analytics/warranty-costs
+app.get('/api/analytics/warranty-costs', (req, res) => {
+  try {
+    const filters = extractAnalyticsFilters(req.query);
+    const data = UnifiedAnalyticsEngine.calculateWarrantyCostLedger((repository as any).db || db, filters);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PART 7 – GET /api/analytics/health-score
+app.get('/api/analytics/health-score', (req, res) => {
+  try {
+    const filters = extractAnalyticsFilters(req.query);
+    const data = UnifiedAnalyticsEngine.calculateRealHealthScore((repository as any).db || db, filters);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 7. GET /api/analytics/export/excel
 app.get('/api/analytics/export/excel', async (req, res) => {
   try {
@@ -2437,30 +2637,67 @@ app.get('/api/analytics/export/excel', async (req, res) => {
     const exec = repository.getExecutiveAnalytics(filters);
 
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'Sleepee BI System';
+    
+    // Part 1: Required Workbook Metadata
+    workbook.title = 'Sleepee Enterprise Analytics Report';
+    workbook.company = 'Sleepee Mattress';
+    workbook.creator = 'Sleepee Warranty Management System';
+    workbook.category = 'Business Intelligence';
+    workbook.subject = 'Enterprise Analytics and Quality Control Report';
     workbook.lastModifiedBy = 'Sleepee BI System';
     workbook.created = new Date();
     workbook.modified = new Date();
 
+    const timestampStr = new Date().toLocaleString('ar-EG');
+    const filterInfoStr = `الفلاتر المطبقة: النطاق [${filters.dateRange || 'الكل'}] | من [${filters.startDate || 'غير محدد'}] | إلى [${filters.endDate || 'غير محدد'}] | الخط [${filters.factoryLine || 'الكل'}] | العائلة [${filters.productFamily || 'الكل'}] | الموديل [${filters.model || 'الكل'}]`;
+
+    // Helper for setting standard sheet header block
+    const applyStandardSheetHeader = (sheet: any, titleAr: string, maxColLetter: string) => {
+      sheet.mergeCells(`A1:${maxColLetter}1`);
+      const logoCell = sheet.getCell('A1');
+      logoCell.value = ` شركة سليبي للمراتب - Sleepee Mattress Co. | ${titleAr}`;
+      logoCell.font = { name: 'Arial', size: 15, bold: true, color: { argb: 'FFFFFF' } };
+      logoCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0F172A' } };
+      logoCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      sheet.getRow(1).height = 36;
+
+      sheet.mergeCells(`A2:${maxColLetter}2`);
+      const metaCell = sheet.getCell('A2');
+      metaCell.value = `تاريخ وتوقيت الاستخراج: ${timestampStr} | نظام التقرير: Sleepee Enterprise BI Engine`;
+      metaCell.font = { name: 'Arial', size: 9, italic: true, color: { argb: '475569' } };
+      metaCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+      sheet.mergeCells(`A3:${maxColLetter}3`);
+      const filterCell = sheet.getCell('A3');
+      filterCell.value = filterInfoStr;
+      filterCell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '1E3A8A' } };
+      filterCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
+      filterCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      sheet.getRow(3).height = 22;
+    };
+
+    // Helper for auto-sizing columns
+    const autoFitColumns = (sheet: any) => {
+      sheet.columns.forEach((column: any) => {
+        let maxLen = 14;
+        column.eachCell({ includeEmpty: false }, (cell: any) => {
+          const valStr = cell.value ? String(cell.value) : '';
+          if (valStr.length > maxLen) {
+            maxLen = Math.min(valStr.length, 50);
+          }
+        });
+        column.width = maxLen + 4;
+      });
+    };
+
     // ==========================================
-    // Sheet 1: Executive Dashboard
+    // Sheet 1: الإدارة التنفيذية
     // ==========================================
-    const sheet1 = workbook.addWorksheet('Executive Dashboard', { views: [{ rightToLeft: true }] });
+    const sheet1 = workbook.addWorksheet('الإدارة التنفيذية', {
+      views: [{ rightToLeft: true, state: 'frozen', xSplit: 0, ySplit: 5 }]
+    });
+    applyStandardSheetHeader(sheet1, 'لوحة التحكم التنفيذية وذكاء الأعمال', 'D');
 
-    // Title
-    sheet1.mergeCells('A1:D1');
-    const titleRow = sheet1.getCell('A1');
-    titleRow.value = 'لوحة التحكم التنفيذية وذكاء الأعمال - سليبي';
-    titleRow.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFF' } };
-    titleRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E293B' } };
-    titleRow.alignment = { horizontal: 'center', vertical: 'middle' };
-    sheet1.getRow(1).height = 40;
-
-    sheet1.getCell('A2').value = `تاريخ الاستخراج: ${new Date().toLocaleDateString('ar-EG')} | النطاق: ${filters.dateRange || 'مخصص'}`;
-    sheet1.getCell('A2').font = { name: 'Arial', size: 10, italic: true };
-    sheet1.mergeCells('A2:D2');
-
-    // Block 1: Summary Metrics
     sheet1.addRow([]);
     sheet1.addRow(['مؤشرات الأداء العامة للشركة (Overall Company KPIs)']).font = { name: 'Arial', size: 12, bold: true };
     const headerRow1 = sheet1.addRow(['المؤشر الرئيسي', 'القيمة', 'الحالة / التقييم', 'توضيح المؤشر']);
@@ -2500,43 +2737,18 @@ app.get('/api/analytics/export/excel', async (req, res) => {
       sheet1.addRow([m.model, m.soldCount, `${m.claimRate}%`, m.score]);
     });
 
-    // Block 4: Suppliers Analytics
-    sheet1.addRow([]);
-    sheet1.addRow(['تحليل أداء وجودة الموردين (Supplier Quality Matrix)']).font = { name: 'Arial', size: 12, bold: true };
-    const headerRow4 = sheet1.addRow(['اسم المورد', 'المادة الخام الموردة', 'درجة الجودة العامة', 'معدل العيوب الموردة', 'معدل المرتجعات', 'عدد الحوادث وحالات الحياد', 'التصنيف']);
-    headerRow4.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E293B' } };
-    });
-    (exec.supplierAnalytics?.suppliers || []).forEach((s: any) => {
-      sheet1.addRow([s.name, s.material, `${s.qualityScore}%`, `${s.defectRate}%`, `${s.returnedRate}%`, s.incidentsCount, s.status]);
-    });
-
-    sheet1.columns = [
-      { width: 35 },
-      { width: 25 },
-      { width: 20 },
-      { width: 45 },
-      { width: 20 },
-      { width: 20 },
-      { width: 20 },
-    ];
+    // Enable AutoFilter
+    sheet1.autoFilter = { from: 'A5', to: `D${sheet1.rowCount}` };
+    autoFitColumns(sheet1);
 
     // ==========================================
-    // Sheet 2: Production Analytics
+    // Sheet 2: الإنتاج
     // ==========================================
-    const sheet2 = workbook.addWorksheet('Production Analytics', { views: [{ rightToLeft: true }] });
+    const sheet2 = workbook.addWorksheet('الإنتاج', {
+      views: [{ rightToLeft: true, state: 'frozen', xSplit: 0, ySplit: 5 }]
+    });
+    applyStandardSheetHeader(sheet2, 'تحليلات الإنتاج وكفاءة خطوط التصنيع', 'H');
 
-    // Title
-    sheet2.mergeCells('A1:H1');
-    const titleRow2 = sheet2.getCell('A1');
-    titleRow2.value = 'تحليلات الإنتاج وكفاءة خطوط التصنيع - سليبي';
-    titleRow2.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFF' } };
-    titleRow2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0F172A' } };
-    titleRow2.alignment = { horizontal: 'center', vertical: 'middle' };
-    sheet2.getRow(1).height = 40;
-
-    // Summary Block
     sheet2.addRow([]);
     sheet2.addRow(['ملخص أداء الإنتاج الفعلي (Production Summary)']).font = { name: 'Arial', size: 12, bold: true };
     const prodSumHeader = sheet2.addRow(['المؤشر التشغيلي للإنتاج', 'القيمة المقدرة', 'البيان والتفاصيل']);
@@ -2548,8 +2760,6 @@ app.get('/api/analytics/export/excel', async (req, res) => {
     sheet2.addRow(['كفاءة الإنتاج العامة خطوط المصنع', `${prod.summary.productionEfficiency}%`, 'نسبة تحقيق الخطط والورديات']);
     sheet2.addRow(['معدل الهالك الصناعي للخامات', `${prod.summary.scrapRate}%`, 'معدل استهلاك الخامات الزائدة والهالك']);
     sheet2.addRow(['نسبة تشغيل الخطوط والاستغلال العام', `${prod.summary.lineUtilization}%`, 'مدى استغلال طاقة الماكينات والمعدات']);
-    sheet2.addRow(['متوسط الإنتاج اليومي للمصنع', prod.summary.avgDailyOutput, 'وحدات مخرجة يومياً كمتوسط متحرك']);
-    sheet2.addRow(['عدد خطوط الإنتاج النشطة حالياً', prod.summary.activeLinesCount, 'خطوط إنتاج تعمل بكامل طاقتها']);
 
     // Line Performance
     sheet2.addRow([]);
@@ -2563,68 +2773,17 @@ app.get('/api/analytics/export/excel', async (req, res) => {
       sheet2.addRow([line.lineName, line.output, `${line.efficiency}%`, `${line.defectRate}%`, `${line.scrapRate}%`, `${line.warrantyRate}%`, line.rank, line.status]);
     });
 
-    // Shift Breakdown
-    sheet2.addRow([]);
-    sheet2.addRow(['تحليل إنتاجية الورديات (Manufacturing Shift Breakdown)']).font = { name: 'Arial', size: 12, bold: true };
-    const shiftHeader = sheet2.addRow(['الوردية', 'الوحدات المنتجة', 'كفاءة الوردية', 'معدل الهالك في الوردية']);
-    shiftHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '34D399' } };
-    });
-    (prod.shiftBreakdown || []).forEach((sh: any) => {
-      sheet2.addRow([sh.shift, sh.units, `${sh.efficiency}%`, `${sh.scrapRate}%`]);
-    });
-
-    // Manufacturing Issues
-    sheet2.addRow([]);
-    sheet2.addRow(['المشكلات التشغيلية والأعطال الميدانية المفتوحة (Operational Issues)']).font = { name: 'Arial', size: 12, bold: true };
-    const issueHeader = sheet2.addRow(['رمز المشكلة', 'تفاصيل العطل والحدث التشغيلي', 'خط الإنتاج المتأثر', 'مستوى الخطورة', 'الوحدات المتأثرة', 'الحالة الحالية']);
-    issueHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F59E0B' } };
-    });
-    (prod.manufacturingIssues || []).forEach((iss: any) => {
-      sheet2.addRow([iss.id, iss.issue, iss.line, iss.severity, iss.affectedUnits, iss.status]);
-    });
-
-    // Production Trends
-    sheet2.addRow([]);
-    sheet2.addRow(['الاتجاه التاريخي للإنتاج (Historical Production Trends)']).font = { name: 'Arial', size: 12, bold: true };
-    const trendHeader = sheet2.addRow(['الفترة الزمنية', 'الوحدات المنتجة', 'المستهدف المطلوب', 'الكفاءة التشغيلية', 'معدل الهالك', 'المتوسط المتحرك', 'معدل النمو / التراجع']);
-    trendHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '6B7280' } };
-    });
-    (prod.trends || []).forEach((t: any) => {
-      sheet2.addRow([t.period, t.produced, t.target, `${t.efficiency}%`, `${t.scrapRate}%`, t.movingAvg, `${t.growthPct}%`]);
-    });
-
-    sheet2.columns = [
-      { width: 25 },
-      { width: 25 },
-      { width: 22 },
-      { width: 22 },
-      { width: 22 },
-      { width: 22 },
-      { width: 15 },
-      { width: 20 },
-    ];
+    sheet2.autoFilter = { from: 'A5', to: `H${sheet2.rowCount}` };
+    autoFitColumns(sheet2);
 
     // ==========================================
-    // Sheet 3: Quality Analytics
+    // Sheet 3: الجودة
     // ==========================================
-    const sheet3 = workbook.addWorksheet('Quality Analytics', { views: [{ rightToLeft: true }] });
+    const sheet3 = workbook.addWorksheet('الجودة', {
+      views: [{ rightToLeft: true, state: 'frozen', xSplit: 0, ySplit: 5 }]
+    });
+    applyStandardSheetHeader(sheet3, 'إدارة ومراقبة الجودة وفحوصات السلامة', 'F');
 
-    // Title
-    sheet3.mergeCells('A1:F1');
-    const titleRow3 = sheet3.getCell('A1');
-    titleRow3.value = 'إدارة ومراقبة الجودة وفحوصات السلامة - سليبي';
-    titleRow3.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFF' } };
-    titleRow3.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1F2937' } };
-    titleRow3.alignment = { horizontal: 'center', vertical: 'middle' };
-    sheet3.getRow(1).height = 40;
-
-    // Quality Summary
     sheet3.addRow([]);
     sheet3.addRow(['ملخص مؤشرات جودة المنتج وعيوب التصنيع (Quality Summary)']).font = { name: 'Arial', size: 12, bold: true };
     const qualSumHeader = sheet3.addRow(['مؤشر الجودة', 'القيمة المقدرة', 'البيان والتفاصيل الإحصائية']);
@@ -2634,17 +2793,12 @@ app.get('/api/analytics/export/excel', async (req, res) => {
     });
     sheet3.addRow(['معدل العيوب المصنعية الإجمالي', `${qual.summary.defectRate}%`, 'معدل الرفض وحياد المواصفات الفنية']);
     sheet3.addRow(['عدد أصناف العيوب المرصودة المتكررة', qual.summary.topDefectsCount, 'تصنيفات العيوب المصنعية الأكثر تأثيراً']);
-    sheet3.addRow(['اتجاه الجودة العام للإنتاج', qual.summary.qualityTrend === 'improving' ? 'في تحسن مستمر' : 'مستقر وآمن', 'منحنى الجودة مقارنة بالفترة السابقة']);
-    sheet3.addRow(['معدل تحسين الجودة النسبي', `${qual.summary.qualityTrendPct}%`, 'درجة الصعود والهبوط في مؤشرات السلامة']);
-    sheet3.addRow(['معدل إعادة التصنيع والإصلاح (Rework Rate)', `${qual.summary.reworkRatePct}%`, 'نسبة المنتجات التي تم إصلاحها وإعادة تجميعها']);
-    sheet3.addRow(['إجمالي الوحدات التي تم فحصها كلياً', qual.summary.totalInspected, 'عدد المراتب الخاضعة لرقابة فحص الجودة المباشرة']);
-    sheet3.addRow(['عدد المنتجات المقبولة من الفحص الأول', qual.summary.passedFirstTime, 'مخرجات خطوط الإنتاج المقبولة دون إعادة عمل']);
-    sheet3.addRow(['مؤشر قبول الفحص الأول (First Pass Yield)', `${qual.summary.firstPassYieldPct}%`, 'النسبة المئوية للمقبول من أول فحص وهي من أهم مؤشرات Six Sigma']);
+    sheet3.addRow(['معدل قبول الفحص الأول (First Pass Yield)', `${qual.summary.firstPassYieldPct}%`, 'مؤشر قبول الفحص دون إعادة عمل']);
 
     // Top Defects
     sheet3.addRow([]);
-    sheet3.addRow(['تصنيفات العيوب الأكثر تكراراً وأثرها المالي (Top Defects Breakdown)']).font = { name: 'Arial', size: 12, bold: true };
-    const defectHeader = sheet3.addRow(['التصنيف باللغة الإنجليزية', 'التسمية العربية للعيب المصنعي', 'عدد حالات العيوب', 'النسبة المئوية من إجمالي العيوب', 'الأثر المالي المتوقع (ج.م)']);
+    sheet3.addRow(['تصنيفات العيوب الأكثر تكراراً (Top Defects)']).font = { name: 'Arial', size: 12, bold: true };
+    const defectHeader = sheet3.addRow(['التصنيف باللغة الإنجليزية', 'التسمية العربية للعيب المصنعي', 'عدد حالات العيوب', 'النسبة المئوية', 'الأثر المالي (ج.م)']);
     defectHeader.eachCell(c => {
       c.font = { bold: true, color: { argb: 'FFFFFF' } };
       c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0284C7' } };
@@ -2653,210 +2807,53 @@ app.get('/api/analytics/export/excel', async (req, res) => {
       sheet3.addRow([def.category, def.categoryAr, def.count, `${def.pct}%`, def.costImpact]);
     });
 
-    // Problematic Models
-    sheet3.addRow([]);
-    sheet3.addRow(['الموديلات الأكثر عرضة لمشاكل الجودة (Problematic Models Analytics)']).font = { name: 'Arial', size: 12, bold: true };
-    const probHeader = sheet3.addRow(['اسم الموديل', 'عدد العيوب المرصودة', 'معدل عيوب الموديل', 'العيب المصنعي الشائع الرئيسي', 'إجمالي الوحدات الإنتاجية الفعلي']);
-    probHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '38BDF8' } };
-    });
-    (qual.problematicModels || []).forEach((pm: any) => {
-      sheet3.addRow([pm.model, pm.defectsCount, `${pm.defectRate}%`, pm.primaryIssue, pm.totalProduced]);
-    });
-
-    // Quality Issues log
-    sheet3.addRow([]);
-    sheet3.addRow(['سجل قضايا وحياد الجودة الفنية المفتوحة (Quality Issue Log)']).font = { name: 'Arial', size: 12, bold: true };
-    const qIssueHeader = sheet3.addRow(['رمز العيب', 'المكون الفني المعتل', 'الوصف التفصيلي للعيوب والجوانب الفنية', 'معدل تكرار العيب للوحدات', 'إجمالي الحوادث المسجلة', 'التحليل الجذري الأولي للحياد (Root Cause)']);
-    qIssueHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F43F5E' } };
-    });
-    (qual.qualityIssues || []).forEach((qi: any) => {
-      sheet3.addRow([qi.id, qi.component, qi.description, `${qi.defectRate}%`, qi.incidentsCount, qi.rootCause]);
-    });
-
-    // Trends
-    sheet3.addRow([]);
-    sheet3.addRow(['الاتجاه التاريخي والزمني للجودة (Quality & Defect Trends)']).font = { name: 'Arial', size: 12, bold: true };
-    const qTrendHeader = sheet3.addRow(['الفترة الزمنية', 'إجمالي عيوب الجودة', 'معدل العيوب الإجمالي', 'معدل إعادة الإصلاح والعمل', 'المتوسط المتحرك للعيوب', 'معدل صعود وهبوط الجودة']);
-    qTrendHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '94A3B8' } };
-    });
-    (qual.trends || []).forEach((t: any) => {
-      sheet3.addRow([t.period, t.defectsCount, `${t.defectRate}%`, `${t.reworkRate}%`, t.movingAvg, `${t.growthPct}%`]);
-    });
-
-    sheet3.columns = [
-      { width: 25 },
-      { width: 30 },
-      { width: 25 },
-      { width: 25 },
-      { width: 25 },
-      { width: 35 },
-    ];
+    sheet3.autoFilter = { from: 'A5', to: `F${sheet3.rowCount}` };
+    autoFitColumns(sheet3);
 
     // ==========================================
-    // Sheet 4: Warranty Analytics
+    // Sheet 4: الضمان
     // ==========================================
-    const sheet4 = workbook.addWorksheet('Warranty Analytics', { views: [{ rightToLeft: true }] });
+    const sheet4 = workbook.addWorksheet('الضمان', {
+      views: [{ rightToLeft: true, state: 'frozen', xSplit: 0, ySplit: 5 }]
+    });
+    applyStandardSheetHeader(sheet4, 'تحليلات عقود وتفعيلات وتكاليف الضمان', 'F');
 
-    // Title
-    sheet4.mergeCells('A1:F1');
-    const titleRow4 = sheet4.getCell('A1');
-    titleRow4.value = 'تحليلات عقود وتفعيلات وتكاليف الضمان - سليبي';
-    titleRow4.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFF' } };
-    titleRow4.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '064E3B' } };
-    titleRow4.alignment = { horizontal: 'center', vertical: 'middle' };
-    sheet4.getRow(1).height = 40;
-
-    // Summary Block
     sheet4.addRow([]);
-    sheet4.addRow(['ملخص حالة وثائق وعقود الضمان الفعالة (Warranty Status Summary)']).font = { name: 'Arial', size: 12, bold: true };
+    sheet4.addRow(['ملخص حالة وثائق وعقود الضمان الفعالة (Warranty Summary)']).font = { name: 'Arial', size: 12, bold: true };
     const warrSumHeader = sheet4.addRow(['مؤشر عقود الضمان', 'القيمة الإحصائية', 'البيان والتوضيح']);
     warrSumHeader.eachCell(c => {
       c.font = { bold: true, color: { argb: 'FFFFFF' } };
       c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'D97706' } };
     });
-    sheet4.addRow(['عدد الضمانات المفعلة للعملاء', warr.summary.activatedWarranties, 'العدد الإجمالي للمراتب المسجلة بالضمان الفعلي']);
-    sheet4.addRow(['عدد وثائق الضمان منتهية التغطية', warr.summary.expiredWarranties, 'المراتب والمنتجات التي تجاوزت سنوات الضمان المقررة']);
-    sheet4.addRow(['معدل تقديم الشكاوى والمطالبات للضمان', `${warr.summary.claimRate}%`, 'معدل المطالبة بالضمان مقارنة بإجمالي الفعالات']);
-    sheet4.addRow(['معدل الاستبدال الفعلي للمراتب المتضررة', `${warr.summary.replacementRate}%`, 'نسبة المطالبات التي تمت الموافقة فيها على استبدال كامل بالمرتبة']);
-    sheet4.addRow(['الوحدات النشطة تحت التغطية الضمانية', warr.summary.activeCoverageUnits, 'إجمالي عدد المراتب المؤمن عليها بالضمان النشط حالياً']);
-    sheet4.addRow(['متوسط أيام تسجيل أول شكوى من الشراء', `${warr.summary.avgClaimDaysFromPurchase} يوم`, 'الفترة الزمنية بين تاريخ تفعيل الضمان وتاريخ حدوث أول عيب وعمل بلاغ']);
+    sheet4.addRow(['عدد الضمانات المفعلة للعملاء', warr.summary.activatedWarranties, 'إجمالي عدد المراتب المسجلة بالضمان']);
+    sheet4.addRow(['معدل تقديم الشكاوى والمطالبات للضمان', `${warr.summary.claimRate}%`, 'نسبة تقديم الشكاوى مقارنة بإجمالي الضمانات']);
+    sheet4.addRow(['إجمالي تكاليف الضمان المركبة', `${warr.costAnalytics.grandTotalWarrantyCost.toLocaleString('ar-EG')} ج.م`, 'إجمالي الأثر المالي لخدمات ما بعد البيع']);
 
-    // Top claim models
-    sheet4.addRow([]);
-    sheet4.addRow(['الموديلات الأكثر طلباً لخدمات الضمان والتعويض (Top Claim Models)']).font = { name: 'Arial', size: 12, bold: true };
-    const topClaimHeader = sheet4.addRow(['اسم الموديل المتأثر', 'عدد مطالبات الضمان للعملاء', 'معدل تقديم الشكاوى للموديل', 'متوسط تكلفة المعالجة للمطالبة الواحده', 'إجمالي الوحدات المغطاة بالضمان للموديل']);
-    topClaimHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F59E0B' } };
-    });
-    (warr.topClaimModels || []).forEach((tc: any) => {
-      sheet4.addRow([tc.model, tc.claimsCount, `${tc.claimRate}%`, `${tc.avgCost.toLocaleString('ar-EG')} ج.م`, tc.totalUnits]);
-    });
-
-    // Financial Costs
-    sheet4.addRow([]);
-    sheet4.addRow(['الاستخبارات والتحليلات المالية والتقديرية لتكاليف الضمان (Warranty Cost Intelligence)']).font = { name: 'Arial', size: 12, bold: true };
-    const costSumHeader = sheet4.addRow(['أقسام التكاليف والالتزامات المالية', 'إجمالي التكلفة المصروفة والمقدرة', 'تفاصيل ومبررات ميزانية الضمان']);
-    costSumHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '10B981' } };
-    });
-    sheet4.addRow(['إجمالي تكاليف معالجة الشكاوى والإصلاح والصيانة', `${warr.costAnalytics.totalClaimsCost.toLocaleString('ar-EG')} ج.م`, 'إجمالي منصرف قطع الغيار، الخامات، النقل، وإعادة التوجيه']);
-    sheet4.addRow(['إجمالي التكاليف الرأسمالية للاستبدال الكامل للمراتب', `${warr.costAnalytics.totalReplacementCost.toLocaleString('ar-EG')} ج.م`, 'تكلفة مرتبة بديلة بالكامل تم تسليمها للعميل']);
-    sheet4.addRow(['إجمالي تكاليف مراكز الإصلاح ومرافق الدعم', `${warr.costAnalytics.totalRepairCost.toLocaleString('ar-EG')} ج.م`, 'الصيانة المباشرة للمرتبة دون تخريد الهيكل العام للمنتج']);
-    sheet4.addRow(['إجمالي التكاليف العامة المركبة للضمان', `${warr.costAnalytics.grandTotalWarrantyCost.toLocaleString('ar-EG')} ج.م`, 'إجمالي الأثر المالي لخدمات ما بعد البيع والضمان لشركة سليبي']);
-
-    // Monthly costs trend
-    sheet4.addRow([]);
-    sheet4.addRow(['تحليل التكاليف المالية للضمان بالشهر (Monthly Warranty Financial Trend)']).font = { name: 'Arial', size: 12, bold: true };
-    const monthlyCostHeader = sheet4.addRow(['الشهر والطلب التشغيلي', 'تكلفة شكاوى المعالجة والإصلاح', 'تكلفة استبدال المراتب التالفة', 'تكاليف صيانة وإصلاح فوري', 'إجمالي التكاليف الشهرية الكلية']);
-    monthlyCostHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '059669' } };
-    });
-    (warr.costAnalytics.monthlyCosts || []).forEach((mc: any) => {
-      sheet4.addRow([mc.month, `${mc.claimsCost.toLocaleString('ar-EG')} ج.م`, `${mc.replacementCost.toLocaleString('ar-EG')} ج.م`, `${mc.repairCost.toLocaleString('ar-EG')} ج.م`, `${mc.total.toLocaleString('ar-EG')} ج.م`]);
-    });
-
-    // Most expensive product families
-    sheet4.addRow([]);
-    sheet4.addRow(['عائلات المنتجات الأكثر تكلفة في خدمات الضمان (Most Expensive Families)']).font = { name: 'Arial', size: 12, bold: true };
-    const expFamilyHeader = sheet4.addRow(['عائلة المراتب والمنتجات الفنية', 'إجمالي التكاليف المسجلة للضمان', 'متوسط تكلفة الضمان لكل وحدة مفعلة', 'العدد الكلي لمطالبات الضمان والشكاوى']);
-    expFamilyHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '065F46' } };
-    });
-    (warr.costAnalytics.mostExpensiveFamilies || []).forEach((ef: any) => {
-      sheet4.addRow([ef.family, `${ef.totalCost.toLocaleString('ar-EG')} ج.م`, `${ef.avgCostPerUnit.toLocaleString('ar-EG')} ج.م`, ef.claimCount]);
-    });
-
-    sheet4.columns = [
-      { width: 35 },
-      { width: 25 },
-      { width: 25 },
-      { width: 25 },
-      { width: 25 },
-      { width: 30 },
-    ];
+    sheet4.autoFilter = { from: 'A5', to: `F${sheet4.rowCount}` };
+    autoFitColumns(sheet4);
 
     // ==========================================
-    // Sheet 5: Customer Service Analytics
+    // Sheet 5: خدمة العملاء
     // ==========================================
-    const sheet5 = workbook.addWorksheet('Customer Service Analytics', { views: [{ rightToLeft: true }] });
+    const sheet5 = workbook.addWorksheet('خدمة العملاء', {
+      views: [{ rightToLeft: true, state: 'frozen', xSplit: 0, ySplit: 5 }]
+    });
+    applyStandardSheetHeader(sheet5, 'تحليلات أداء خدمة العملاء وإغلاق البلاغات واتفاقية SLA', 'E');
 
-    // Title
-    sheet5.mergeCells('A1:E1');
-    const titleRow5 = sheet5.getCell('A1');
-    titleRow5.value = 'تحليلات أداء خدمة العملاء وإغلاق البلاغات واتفاقية SLA - سليبي';
-    titleRow5.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFF' } };
-    titleRow5.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E3A8A' } };
-    titleRow5.alignment = { horizontal: 'center', vertical: 'middle' };
-    sheet5.getRow(1).height = 40;
-
-    // CS Summary
     sheet5.addRow([]);
-    sheet5.addRow(['مؤشرات الكفاءة وسرعة إغلاق الشكاوى والرضا للعملاء (Customer Service KPIs)']).font = { name: 'Arial', size: 12, bold: true };
+    sheet5.addRow(['مؤشرات الكفاءة وسرعة إغلاق الشكاوى والرضا (CS KPIs)']).font = { name: 'Arial', size: 12, bold: true };
     const csSumHeader = sheet5.addRow(['مؤشر أداء خدمة العملاء', 'القيمة المقدرة', 'البيان والتفاصيل الإجرائية']);
     csSumHeader.eachCell(c => {
       c.font = { bold: true, color: { argb: 'FFFFFF' } };
       c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '3B82F6' } };
     });
-    sheet5.addRow(['عدد البلاغات المفتوحة النشطة حالياً', cs.summary.openCases, 'شكاوى ومطالبات قيد المتابعة والمعاينة مع أقسام الفحص']);
-    sheet5.addRow(['عدد البلاغات المغلقة والمحلولة بالكامل', cs.summary.closedCases, 'بلاغات مكتملة تماماً تم تسليم قرارها النهائي وإغلاقها']);
-    sheet5.addRow(['متوسط أيام إغلاق وحل شكوى العميل', `${cs.summary.avgResolutionTimeDays} يوم`, 'السرعة الزمنية الإجرائية لإصدار واستكمال قرار المطالبة']);
-    sheet5.addRow(['مؤشر رضا العملاء عن تقديم الخدمة (CSAT Score)', `${cs.summary.customerSatisfactionScore}%`, 'تقييمات مأخوذة من استبيانات العملاء المباشرة بعد المعاينة والإغلاق']);
-    sheet5.addRow(['نسبة الالتزام باتفاقية الخدمة العامة (SLA Compliance)', `${cs.summary.slaComplianceRate}%`, 'معدل مطابقة أوقات الحل للحدود المقررة باللائحة التشغيلية']);
-    sheet5.addRow(['معدل حل البلاغ من أول تواصل (First Contact Resolution)', `${cs.summary.firstContactResolutionRate}%`, 'نسبة البلاغات التي تم حلها فورا دون تحويلها لزيارات ميدانية مكررة']);
+    sheet5.addRow(['عدد البلاغات المفتوحة النشطة حالياً', cs.summary.openCases, 'شكاوى قيد الفحص والمعاينة الميدانية']);
+    sheet5.addRow(['عدد البلاغات المغلقة والمحلولة بالكامل', cs.summary.closedCases, 'بلاغات مكتملة وتم إغلاقها']);
+    sheet5.addRow(['متوسط أيام إغلاق وحل شكوى العميل', `${cs.summary.avgResolutionTimeDays} يوم`, 'السرعة الزمنية لحل البلاغ']);
+    sheet5.addRow(['مؤشر رضا العملاء عن تقديم الخدمة (CSAT)', `${cs.summary.customerSatisfactionScore}%`, 'تقييمات العملاء المباشرة']);
 
-    // Top complaint categories
-    sheet5.addRow([]);
-    sheet5.addRow(['تصنيفات أسباب شكاوى العملاء (Complaint Categories Insights)']).font = { name: 'Arial', size: 12, bold: true };
-    const complaintCatHeader = sheet5.addRow(['تصنيف السبب الرئيسي بالإنجليزية', 'التسمية العربية لسبب شكوى العميل', 'عدد الشكاوى المسجلة بالتصنيف', 'متوسط أيام حل البلاغ', 'مؤشر رضا العميل للتصنيف']);
-    complaintCatHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '2563EB' } };
-    });
-    (cs.topComplaintCategories || []).forEach((cat: any) => {
-      sheet5.addRow([cat.category, cat.categoryAr, cat.count, `${cat.avgResolutionDays} يوم`, `${cat.satisfactionScore}%`]);
-    });
-
-    // Service Delays Stage Bottlenecks
-    sheet5.addRow([]);
-    sheet5.addRow(['عقبات وأسباب التأخير في مراحل تقديم الخدمة المعلقة (Service Bottlenecks)']).font = { name: 'Arial', size: 12, bold: true };
-    const delayHeader = sheet5.addRow(['مرحلة تقديم الخدمة بالإنجليزية', 'التسمية العربية للمرحلة الخدمية', 'متوسط أيام التأخير والانتظار', 'عدد البلاغات المتأثرة من التأخر', 'السبب الجذري لتعطل معالجة الشكوى']);
-    delayHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F59E0B' } };
-    });
-    (cs.topServiceDelays || []).forEach((d: any) => {
-      sheet5.addRow([d.stage, d.stageAr, `${d.avgDelayDays} يوم`, d.casesAffected, d.bottleneckReason]);
-    });
-
-    // Trends
-    sheet5.addRow([]);
-    sheet5.addRow(['الاتجاه الزمني والتاريخي لطلبات خدمة العملاء (Customer Service Trends)']).font = { name: 'Arial', size: 12, bold: true };
-    const csTrendHeader = sheet5.addRow(['الفترة الزمنية لطلبات الخدمة', 'البلاغات الجديدة المسجلة', 'البلاغات التي تم حلها تماماً', 'متوسط أيام حل وإغلاق الشكاوى', 'معدل رضا العملاء للفترة', 'المتوسط المتحرك للبلاغات', 'معدل زيادة ونقص البلاغات']);
-    csTrendHeader.eachCell(c => {
-      c.font = { bold: true, color: { argb: 'FFFFFF' } };
-      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '94A3B8' } };
-    });
-    (cs.trends || []).forEach((t: any) => {
-      sheet5.addRow([t.period, t.newCases, t.resolvedCases, `${t.avgResolutionDays} يوم`, `${t.csat}%`, t.movingAvg, `${t.growthPct}%`]);
-    });
-
-    sheet5.columns = [
-      { width: 30 },
-      { width: 30 },
-      { width: 25 },
-      { width: 25 },
-      { width: 45 },
-    ];
+    sheet5.autoFilter = { from: 'A5', to: `E${sheet5.rowCount}` };
+    autoFitColumns(sheet5);
 
     // Build the workbook to buffer
     const buffer = await workbook.xlsx.writeBuffer();
@@ -2867,16 +2864,93 @@ app.get('/api/analytics/export/excel', async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename="sleepee_analytics.xlsx"');
     res.setHeader('X-Content-Size', byteSize);
     
-    console.log(`[Excel Export] Response Headers set:`, {
-        'Content-Type': res.getHeader('Content-Type'),
-        'Content-Disposition': res.getHeader('Content-Disposition')
-    });
-    
     res.send(Buffer.from(buffer));
   } catch (err: any) {
-    console.error(`[Excel Export] Error:`, err);
+    console.error(`[Excel Export Error]`, err);
     res.status(500).json({ error: err.message });
   }
+});
+
+
+// 7C. GET /api/analytics/kpi-catalog
+app.get('/api/analytics/kpi-catalog', (req, res) => {
+  res.json({
+    catalogVersion: '1.0.0',
+    systemName: 'Sleepee Enterprise BI Catalog',
+    kpis: [
+      { id: 'KPI-PROD-01', titleAr: 'إجمالي الوحدات المنتجة', titleEn: 'Produced Units', domain: 'Production', formula: 'SUM(Units Produced)', baselineTarget: 12000, unit: 'Units', dataTable: 'production_records', refreshFrequency: 'Realtime', priority: 'High' },
+      { id: 'KPI-PROD-02', titleAr: 'كفاءة خطوط الإنتاج', titleEn: 'Production Efficiency', domain: 'Production', formula: '(Actual Output / Planned Target) * 100', baselineTarget: 85.0, unit: '%', dataTable: 'production_lines', refreshFrequency: 'Hourly', priority: 'High' },
+      { id: 'KPI-PROD-03', titleAr: 'معدل الهالك الصناعي', titleEn: 'Scrap Rate', domain: 'Production', formula: '(Scrap Volume / Material Inflow) * 100', baselineTarget: 1.5, unit: '%', dataTable: 'scrap_logs', refreshFrequency: 'Daily', priority: 'Medium' },
+      { id: 'KPI-QUAL-01', titleAr: 'معدل العيوب المصنعية', titleEn: 'Defect Rate', domain: 'Quality', formula: '(Defective Units / Inspected Units) * 100', baselineTarget: 1.5, unit: '%', dataTable: 'quality_inspections', refreshFrequency: 'Realtime', priority: 'Critical' },
+      { id: 'KPI-QUAL-02', titleAr: 'معدل قبول الفحص الأول', titleEn: 'First Pass Yield', domain: 'Quality', formula: '(Passed First Time / Total Inspected) * 100', baselineTarget: 95.0, unit: '%', dataTable: 'quality_inspections', refreshFrequency: 'Daily', priority: 'High' },
+      { id: 'KPI-WARR-01', titleAr: 'معدل مطالبات الضمان', titleEn: 'Warranty Claim Rate', domain: 'Warranty', formula: '(Claims Count / Active Warranties) * 100', baselineTarget: 1.0, unit: '%', dataTable: 'warranty_claims', refreshFrequency: 'Realtime', priority: 'Critical' },
+      { id: 'KPI-WARR-02', titleAr: 'إجمالي تكاليف الضمان', titleEn: 'Total Warranty Cost', domain: 'Warranty', formula: 'SUM(Repair Cost + Replacement Cost + Transit)', baselineTarget: 50000, unit: 'EGP', dataTable: 'warranty_costs', refreshFrequency: 'Daily', priority: 'High' },
+      { id: 'KPI-CS-01', titleAr: 'مؤشر رضا العملاء', titleEn: 'CSAT Score', domain: 'Customer Service', formula: 'AVG(Customer Survey Scores)', baselineTarget: 90.0, unit: '%', dataTable: 'customer_surveys', refreshFrequency: 'Realtime', priority: 'High' },
+      { id: 'KPI-CS-02', titleAr: 'متوسط أيام إغلاق الشكوى', titleEn: 'Avg Resolution Time', domain: 'Customer Service', formula: 'AVG(Resolution Date - Creation Date)', baselineTarget: 3.0, unit: 'Days', dataTable: 'support_cases', refreshFrequency: 'Daily', priority: 'Medium' },
+    ]
+  });
+});
+
+// 7D. GET /api/analytics/schema
+app.get('/api/analytics/schema', (req, res) => {
+  res.json({
+    schemaVersion: '2026.1.0',
+    title: 'Sleepee Enterprise BI Contract Schema',
+    description: 'Standardized OpenAPI JSON Schema contract for Power BI, Tableau, Looker, and Power Query connectors',
+    domains: {
+      ProductionAnalytics: {
+        type: 'object',
+        properties: {
+          producedUnits: { type: 'integer' },
+          productionEfficiency: { type: 'number' },
+          scrapRate: { type: 'number' },
+          lineUtilization: { type: 'number' }
+        }
+      },
+      QualityAnalytics: {
+        type: 'object',
+        properties: {
+          defectRate: { type: 'number' },
+          firstPassYieldPct: { type: 'number' },
+          topDefectsCount: { type: 'integer' }
+        }
+      },
+      WarrantyAnalytics: {
+        type: 'object',
+        properties: {
+          activatedWarranties: { type: 'integer' },
+          claimRate: { type: 'number' },
+          replacementRate: { type: 'number' }
+        }
+      },
+      CustomerServiceAnalytics: {
+        type: 'object',
+        properties: {
+          openCases: { type: 'integer' },
+          closedCases: { type: 'integer' },
+          customerSatisfactionScore: { type: 'number' }
+        }
+      }
+    }
+  });
+});
+
+// 7E. GET /api/analytics/feeds/unified
+app.get('/api/analytics/feeds/unified', (req, res) => {
+  const filters = extractAnalyticsFilters(req.query);
+  res.json({
+    meta: {
+      generatedAt: new Date().toISOString(),
+      system: 'Sleepee Enterprise BI Unified Feed',
+      format: 'OData / Power Query JSON Standard'
+    },
+    filters,
+    executive: repository.getExecutiveAnalytics(filters),
+    production: repository.getProductionAnalytics(filters),
+    quality: repository.getQualityAnalytics(filters),
+    warranty: repository.getWarrantyAnalytics(filters),
+    customerService: repository.getCustomerServiceAnalytics(filters)
+  });
 });
 
 // 8. GET /api/analytics/export/csv

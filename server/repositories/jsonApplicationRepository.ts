@@ -448,6 +448,34 @@ export class JsonApplicationRepository implements IApplicationRepository {
     return this.db.getDrillDownAnalytics(type);
   }
 
+  public getScrapLogs() {
+    return this.db.getScrapLogs();
+  }
+
+  public addScrapLog(log: any) {
+    return this.db.addScrapLog(log);
+  }
+
+  public bulkAddScrapLogs(logs: any[]) {
+    return this.db.bulkAddScrapLogs(logs);
+  }
+
+  public getCustomerFeedbacks() {
+    return this.db.getCustomerFeedbacks();
+  }
+
+  public addCustomerFeedback(fb: any) {
+    return this.db.addCustomerFeedback(fb);
+  }
+
+  public getWarrantyCosts() {
+    return this.db.getWarrantyCosts();
+  }
+
+  public addWarrantyCost(cost: any) {
+    return this.db.addWarrantyCost(cost);
+  }
+
   public persist() {
     return this.db.persist();
   }

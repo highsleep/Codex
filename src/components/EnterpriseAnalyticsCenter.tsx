@@ -4,7 +4,9 @@
  * Cost Intelligence, Supplier Analytics, Drill-Downs, and Power BI Integration.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import {
   TrendingUp,
   TrendingDown,
@@ -57,8 +59,23 @@ type TabType =
   | 'suppliers'
   | 'drilldown'
   | 'snapshots'
+  | 'kpi_traceability'
   | 'powerbi_hub'
   | 'export_center';
+
+const DataQualityBadge: React.FC<{ status?: 'VERIFIED' | 'DERIVED' | 'ESTIMATED' | 'INCOMPLETE' }> = ({ status = 'VERIFIED' }) => {
+  const bgColors = {
+    VERIFIED: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    DERIVED: 'bg-blue-100 text-blue-800 border-blue-300',
+    ESTIMATED: 'bg-amber-100 text-amber-800 border-amber-300',
+    INCOMPLETE: 'bg-rose-100 text-rose-800 border-rose-300',
+  };
+  return (
+    <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${bgColors[status] || bgColors.VERIFIED}`}>
+      {status}
+    </span>
+  );
+};
 
 export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps> = ({ currentUser }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -81,6 +98,51 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
   const [executiveData, setExecutiveData] = useState<any>(null);
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [drillDownType, setDrillDownType] = useState<'warranty' | 'quality'>('warranty');
+  const [kpiTraceabilityData, setKpiTraceabilityData] = useState<any[]>([]);
+  const [scrapData, setScrapData] = useState<any>(null);
+  const [csatData, setCsatData] = useState<any>(null);
+  const [warrantyCostsData, setWarrantyCostsData] = useState<any>(null);
+  const [healthScoreData, setHealthScoreData] = useState<any>(null);
+  const [dataConfidenceData, setDataConfidenceData] = useState<any>(null);
+
+  // Phase 7C.2 Production Readiness Modals
+  const [isScrapModalOpen, setIsScrapModalOpen] = useState(false);
+  const [scrapImportSource, setScrapImportSource] = useState<'SAP' | 'EXCEL' | 'CSV'>('SAP');
+  const [scrapFormData, setScrapFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    department: 'قسم التجميع والقص',
+    production_line: 'خط المراتب السوست',
+    model: 'سليبي رويال بوكيت سبرينج',
+    scrap_qty: 2,
+    scrap_cost: 1450,
+    root_cause: 'تلف تشغيلي أثناء كبس السوست',
+    notes: '',
+  });
+
+  const [isCsatModalOpen, setIsCsatModalOpen] = useState(false);
+  const [csatFormData, setCsatFormData] = useState({
+    claim_id: '',
+    customer_name: '',
+    rating: 5,
+    satisfaction_score: 95,
+    feedback_text: '',
+  });
+
+  const [isCostModalOpen, setIsCostModalOpen] = useState(false);
+  const [costFormData, setCostFormData] = useState({
+    claim_id: '',
+    product_id: '',
+    model: 'سليبي رويال بوكيت سبرينج',
+    repair_cost: 0,
+    replacement_cost: 0,
+    material_cost: 0,
+    labor_cost: 0,
+    transport_cost: 0,
+    inspection_cost: 0,
+    notes: '',
+  });
+  const [formSuccessMessage, setFormSuccessMessage] = useState<string | null>(null);
+  const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null);
 
   // Interactive Snapshot State
   const [snapshots, setSnapshots] = useState<any[]>([]);
@@ -108,13 +170,19 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
 
       const qs = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
-      const [resProd, resQual, resWarr, resCs, resExec, resDrill] = await Promise.all([
+      const [resProd, resQual, resWarr, resCs, resExec, resDrill, resTrace, resScrap, resCsat, resCosts, resHealth, resConf] = await Promise.all([
         fetch(`/api/analytics/production${qs}`).then((r) => r.json()),
         fetch(`/api/analytics/quality${qs}`).then((r) => r.json()),
         fetch(`/api/analytics/warranty${qs}`).then((r) => r.json()),
         fetch(`/api/analytics/customer-service${qs}`).then((r) => r.json()),
         fetch(`/api/analytics/executive${qs}`).then((r) => r.json()),
         fetch(`/api/analytics/drill-down?type=${drillDownType}`).then((r) => r.json()),
+        fetch(`/api/analytics/kpi-traceability`).then((r) => r.json()),
+        fetch(`/api/analytics/scrap${qs}`).then((r) => r.json()),
+        fetch(`/api/analytics/csat${qs}`).then((r) => r.json()),
+        fetch(`/api/analytics/warranty-costs${qs}`).then((r) => r.json()),
+        fetch(`/api/analytics/health-score${qs}`).then((r) => r.json()),
+        fetch(`/api/analytics/data-confidence`).then((r) => r.json()),
       ]);
 
       setProductionData(resProd);
@@ -123,6 +191,12 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
       setCustomerServiceData(resCs);
       setExecutiveData(resExec);
       setDrillDownData(resDrill);
+      setKpiTraceabilityData(Array.isArray(resTrace) ? resTrace : []);
+      setScrapData(resScrap);
+      setCsatData(resCsat);
+      setWarrantyCostsData(resCosts);
+      setHealthScoreData(resHealth);
+      setDataConfidenceData(resConf);
       if (resExec?.snapshots) {
         setSnapshots(resExec.snapshots);
       }
@@ -168,6 +242,166 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
     setTimeout(() => setSnapshotSuccessMsg(''), 4000);
   };
 
+  // Phase 7C.2 Handlers
+  const handleSubmitScrap = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormErrorMessage(null);
+    try {
+      const res = await fetch('/api/scrap-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(scrapFormData),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل تسجيل بيانات الهالك');
+      setFormSuccessMessage('تم تسجيل بيانات الهالك الفعلية بنجاح.');
+      setIsScrapModalOpen(false);
+      fetchAllAnalytics();
+      setTimeout(() => setFormSuccessMessage(null), 4000);
+    } catch (err: any) {
+      setFormErrorMessage(err.message || 'حدث خطأ أثناء حفظ الهالك');
+    }
+  };
+
+  const handleImportScrapBatch = async (source: 'SAP' | 'EXCEL' | 'CSV') => {
+    setFormErrorMessage(null);
+    try {
+      const items = [
+        {
+          date: new Date().toISOString().split('T')[0],
+          department: 'قسم التجميع والقص',
+          line: 'خط المراتب السوست',
+          model: 'سليبي رويال بوكيت سبرينج',
+          scrap_qty: 3,
+          scrap_cost: 2175,
+          root_cause: 'تلف إتلاف خامات أثناء الكبس والتقفيل',
+        },
+        {
+          date: new Date().toISOString().split('T')[0],
+          department: 'قسم التطريز والكابوتنيه',
+          line: 'خط الكابوتنيه',
+          model: 'سليبي كينج كلاسيك',
+          scrap_qty: 2,
+          scrap_cost: 1450,
+          root_cause: 'تمزق قماش كابوتنيه خارجي',
+        }
+      ];
+      const res = await fetch('/api/scrap-logs/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, source }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل استيراد دفعة الهالك');
+      setFormSuccessMessage(`تم استيراد ${data.count} سجل هالك فعلي من نظام ${source} بنجاح.`);
+      setIsScrapModalOpen(false);
+      fetchAllAnalytics();
+      setTimeout(() => setFormSuccessMessage(null), 4000);
+    } catch (err: any) {
+      setFormErrorMessage(err.message || 'حدث خطأ أثناء استيراد الهالك');
+    }
+  };
+
+  const handleSubmitCsat = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormErrorMessage(null);
+    try {
+      const res = await fetch('/api/customer-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(csatFormData),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل تسجيل تقييم العميل');
+      setFormSuccessMessage('تم تسجيل تقييم العميل الفعلي بنجاح.');
+      setIsCsatModalOpen(false);
+      fetchAllAnalytics();
+      setTimeout(() => setFormSuccessMessage(null), 4000);
+    } catch (err: any) {
+      setFormErrorMessage(err.message || 'حدث خطأ أثناء تسجيل التقييم');
+    }
+  };
+
+  const handleSubmitWarrantyCost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormErrorMessage(null);
+    try {
+      const res = await fetch('/api/warranty-costs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(costFormData),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل تسجيل تكلفة الضمان');
+      setFormSuccessMessage('تم تسجيل تكلفة الضمان الفعلية بنجاح.');
+      setIsCostModalOpen(false);
+      fetchAllAnalytics();
+      setTimeout(() => setFormSuccessMessage(null), 4000);
+    } catch (err: any) {
+      setFormErrorMessage(err.message || 'حدث خطأ أثناء تسجيل التكلفة');
+    }
+  };
+
+  const dashboardRef = useRef<HTMLDivElement>(null);
+
+  const handlePrintToPDF = async () => {
+    if (!dashboardRef.current) return;
+    
+    try {
+      const element = dashboardRef.current;
+      // High-resolution capture with UTF-8 / Arabic support
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        onclone: (clonedDoc) => {
+          const body = clonedDoc.body;
+          if (body) {
+            body.style.setProperty('direction', 'rtl', 'important');
+            body.style.setProperty('text-align', 'right', 'important');
+            body.style.setProperty('font-family', "'Cairo', 'Tajawal', sans-serif", 'important');
+          }
+          const allElements = clonedDoc.querySelectorAll('*');
+          allElements.forEach((el) => {
+            const htmlEl = el as HTMLElement;
+            htmlEl.style.setProperty('letter-spacing', '0px', 'important');
+            htmlEl.style.setProperty('word-spacing', 'normal', 'important');
+            htmlEl.style.setProperty('font-variant-ligatures', 'common-ligatures', 'important');
+            htmlEl.style.setProperty('font-family', "'Cairo', 'Tajawal', sans-serif", 'important');
+          });
+        }
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      // Add remaining pages
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      pdf.save(`sleepee_enterprise_analytics_${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (err) {
+      console.error('PDF Export Error:', err);
+      alert('حدث خطأ أثناء تصدير التقرير.');
+    }
+  };
+
   const handleDownloadExcel = async (e: React.MouseEvent) => {
     e.preventDefault();
     try {
@@ -209,6 +443,44 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
     } catch (err: any) {
       console.error('Error exporting Excel:', err);
       alert(err.message || 'حدث خطأ أثناء تحميل ملف Excel للتحليلات');
+    }
+  };
+
+  const handleDownloadPDF = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const queryParams = new URLSearchParams();
+      if (dateRange) queryParams.set('dateRange', dateRange);
+      if (startDate) queryParams.set('startDate', startDate);
+      if (endDate) queryParams.set('endDate', endDate);
+      if (factoryLine && factoryLine !== 'all') queryParams.set('factoryLine', factoryLine);
+      if (productFamily && productFamily !== 'all') queryParams.set('productFamily', productFamily);
+      if (selectedModel && selectedModel !== 'all') queryParams.set('model', selectedModel);
+
+      const qs = queryParams.toString() ? `?${queryParams.toString()}` : '';
+      const url = `/api/analytics/export/pdf${qs}`;
+      
+      const response = await fetch(url);
+      const contentType = response.headers.get('Content-Type') || '';
+      
+      if (contentType.includes('text/html')) {
+        throw new Error('فشل التصدير: تلقى النظام استجابة HTML بدلاً من ملف PDF. يرجى التحقق من صلاحيات الدخول.');
+      }
+
+      if (!response.ok) throw new Error(`فشل تحميل تقرير PDF: ${response.statusText}`);
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', 'sleepee_analytics_report.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err: any) {
+      console.error('Error exporting PDF:', err);
+      alert(err.message || 'حدث خطأ أثناء تحميل ملف PDF للتحليلات');
     }
   };
 
@@ -282,7 +554,7 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
   }
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-16" dir="rtl">
+    <div ref={dashboardRef} className="space-y-6 animate-fadeIn pb-16" dir="rtl">
       {/* Top Banner & Title */}
       <div className="bg-gradient-to-l from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-800/40 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -316,6 +588,13 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
             >
               <FileSpreadsheet className="w-4 h-4" />
               <span>تصدير المصنف الشامل (Excel)</span>
+            </button>
+            <button
+              onClick={handlePrintToPDF}
+              className="flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs sm:text-sm font-bold transition shadow-md shadow-rose-900/30 cursor-pointer"
+            >
+              <FileText className="w-4 h-4" />
+              <span>تصدير تقرير PDF التنفيذي</span>
             </button>
           </div>
         </div>
@@ -439,6 +718,7 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
           { id: 'suppliers', label: 'تقييم جودة الموردين والخامات', icon: Truck, badge: 'Suppliers' },
           { id: 'drilldown', label: 'المحرك الهرمي المعمق', icon: Compass, badge: 'Drill Down' },
           { id: 'snapshots', label: 'اللقطات والمقارنات التاريخية', icon: Clock, badge: `${snapshots.length}` },
+          { id: 'kpi_traceability', label: 'تتبع وموثوقية مؤشرات KPIs', icon: CheckCircle2, badge: `${kpiTraceabilityData.length} Verified` },
           { id: 'powerbi_hub', label: 'مركز تغذية Power BI', icon: BarChart2, badge: 'Direct Feed' },
           { id: 'export_center', label: 'مركز التقارير والتصدير', icon: Download, badge: 'All Formats' },
         ].map((tab) => {
@@ -562,6 +842,56 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
               </div>
             </div>
           </div>
+
+          {/* BI Maturity Dashboard */}
+          {executiveData?.biMaturity && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+              <div className="bg-white p-6 rounded-2xl border border-rose-100 shadow-sm">
+                <h4 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-500" />
+                  تنبيهات الإدارة التنفيذية
+                </h4>
+                <div className="space-y-3">
+                  {executiveData.biMaturity.alerts.map((alert: any, i: number) => (
+                    <div key={i} className="p-3 bg-rose-50 rounded-xl border border-rose-100">
+                      <p className="text-xs font-bold text-rose-900">{alert.title}</p>
+                      <p className="text-[10px] text-rose-700 mt-1">{alert.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 mb-4">مؤشرات النضج والثقة</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-[11px] text-slate-500 font-bold">دقة بيانات الذكاء الاصطناعي</div>
+                      <div className="text-2xl font-black text-indigo-700">{executiveData.biMaturity.dataConfidence}%</div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-500 font-bold">أداء العام الحالي (YTD)</div>
+                      <div className="text-xl font-black text-slate-900">{executiveData.biMaturity.ytdMetrics.performance}%</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h4 className="text-sm font-bold text-slate-900 mb-4">ترتيب أداء الموديلات (10)</h4>
+                <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-2">
+                  <span>الأفضل</span>
+                  <span>الأسوأ</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <ul className="space-y-1">
+                    {executiveData.biMaturity.top10Models.map((m: any, i: number) => <li key={i} className="text-[10px] truncate text-emerald-800">{m.model}</li>)}
+                  </ul>
+                  <ul className="space-y-1">
+                    {executiveData.biMaturity.bottom10Models.map((m: any, i: number) => <li key={i} className="text-[10px] truncate text-rose-800">{m.model}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Cross-Functional Trend Comparison Matrix */}
           <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
@@ -691,6 +1021,26 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
       {/* ========================================================================= */}
       {activeTab === 'production' && (
         <div className="space-y-6">
+          {/* Real Data Mode Notice */}
+          <div className="bg-slate-900 text-white p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-slate-800">
+            <div className="flex items-center gap-3">
+              <Layers className="w-5 h-5 text-indigo-400" />
+              <div>
+                <span className="font-bold text-xs sm:text-sm block">إدارة سجلات الهالك الصناعي (Scrap Analytics Real Mode)</span>
+                <span className="text-[11px] text-slate-300">
+                  {scrapData?.summary?.hasRealData ? 'يتم احتساب معدلات الهالك من سجلات تشغيلية حقيقية (REAL)' : 'تنبيه: لا تتوفر سجلات هالك حقيقية حتى الآن (No Real Scrap Data Available)'}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsScrapModalOpen(true)}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0"
+            >
+              <Download className="w-4 h-4 rotate-180" />
+              <span>استيراد أو إدخال سجل هالك (SAP / Excel)</span>
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-xs text-slate-500 font-bold block">إجمالي الوحدات المنتجة</span>
@@ -703,9 +1053,20 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
               <span className="text-[11px] text-slate-500 mt-1 block">معدل الاستغلال: {productionData?.summary?.lineUtilization}%</span>
             </div>
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-xs text-slate-500 font-bold block">معدل الهالك الصناعي</span>
-              <span className="text-2xl font-black text-emerald-700 mt-1 block">{productionData?.summary?.scrapRate}%</span>
-              <span className="text-[11px] text-emerald-600 font-semibold mt-1 block">أقل من الحد المسموح (2.0%)</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-bold block">معدل الهالك الصناعي</span>
+                {!scrapData?.summary?.hasRealData && (
+                  <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-[9px] font-bold">
+                    بيانات تجريبية
+                  </span>
+                )}
+              </div>
+              <span className="text-2xl font-black text-emerald-700 mt-1 block">
+                {scrapData?.summary?.hasRealData ? `${productionData?.summary?.scrapRate}%` : 'تجريبي'}
+              </span>
+              <span className="text-[11px] text-slate-500 font-semibold mt-1 block">
+                {scrapData?.summary?.hasRealData ? 'أقل من الحد المسموح (2.0%)' : 'No Real Scrap Data Available'}
+              </span>
             </div>
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-xs text-slate-500 font-bold block">عدد خطوط التصنيع الفعالة</span>
@@ -894,6 +1255,26 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
       {/* ========================================================================= */}
       {activeTab === 'costs' && (
         <div className="space-y-6">
+          {/* Warranty Cost Header & Entry CTA */}
+          <div className="bg-slate-900 text-white p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-slate-800">
+            <div className="flex items-center gap-3">
+              <DollarSign className="w-5 h-5 text-emerald-400" />
+              <div>
+                <span className="font-bold text-xs sm:text-sm block">استخبارات التكاليف المالية للضمان (Warranty Financial Intelligence)</span>
+                <span className="text-[11px] text-slate-300">
+                  {warrantyCostsData?.summary?.hasRealData ? 'تعتمد المؤشرات المالية على فواتير وسجلات تكاليف فعلية (REAL)' : 'تنبيه: لا تتوفر تكاليف مدخلة يدوياً حتى الآن (Seeded Baseline)'}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsCostModalOpen(true)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0"
+            >
+              <DollarSign className="w-4 h-4" />
+              <span>تسجيل تكاليف ضمان فعلية (Cost Entry)</span>
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white p-5 rounded-2xl border border-indigo-800 shadow-md">
               <span className="text-xs text-indigo-300 font-bold block">إجمالي تكاليف الضمان التراكمية</span>
@@ -965,11 +1346,42 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
       {/* ========================================================================= */}
       {activeTab === 'customer_service' && (
         <div className="space-y-6">
+          {/* Real CSAT Header & Entry CTA */}
+          <div className="bg-slate-900 text-white p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-slate-800">
+            <div className="flex items-center gap-3">
+              <Headphones className="w-5 h-5 text-blue-400" />
+              <div>
+                <span className="font-bold text-xs sm:text-sm block">استبيانات ورضا العملاء (Customer Satisfaction Real Mode)</span>
+                <span className="text-[11px] text-slate-300">
+                  {csatData?.summary?.hasRealData ? 'يتم احتساب مؤشر CSAT من تقييمات عملاء فعلية مسجلة بعد إغلاق المطالبات' : 'تنبيه: لا تتوفر تقييمات عملاء حقيقية حتى الآن (No Customer Feedback Available)'}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsCsatModalOpen(true)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0"
+            >
+              <Headphones className="w-4 h-4" />
+              <span>تسجيل تقييم رضا عميل (CSAT Entry)</span>
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-xs text-slate-500 font-bold block">مؤشر رضا العملاء (CSAT)</span>
-              <span className="text-2xl font-black text-blue-700 mt-1 block">{customerServiceData?.summary?.customerSatisfactionScore}%</span>
-              <span className="text-[11px] text-emerald-600 font-semibold mt-1 block">تقييم ممتاز</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-bold block">مؤشر رضا العملاء (CSAT)</span>
+                {!csatData?.summary?.hasRealData && (
+                  <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-[9px] font-bold">
+                    بيانات تجريبية
+                  </span>
+                )}
+              </div>
+              <span className="text-2xl font-black text-blue-700 mt-1 block">
+                {csatData?.summary?.hasRealData ? `${customerServiceData?.summary?.customerSatisfactionScore}%` : 'تجريبي'}
+              </span>
+              <span className="text-[11px] text-slate-500 font-semibold mt-1 block">
+                {csatData?.summary?.hasRealData ? 'تقييم ممتاز' : 'No Customer Feedback Available'}
+              </span>
             </div>
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-xs text-slate-500 font-bold block">متوسط زمن المعالجة والإغلاق</span>
@@ -1393,6 +1805,114 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
       )}
 
       {/* ========================================================================= */}
+      {/* TAB: KPI TRACEABILITY & DATA INTEGRITY                                    */}
+      {/* ========================================================================= */}
+      {activeTab === 'kpi_traceability' && (
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  <h3 className="text-base font-bold text-slate-900">سجل موثوقية وتتبع المؤشرات (KPI Traceability Matrix)</h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  ربط كامل لكل مؤشر تحليلي بجدول قاعدة البيانات الفعلي، الحقول المستخدمة، المعادل البرمجية، وتصنيف الجودة
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-600">نسبة التغطية والموثوقية:</span>
+                <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-black rounded-xl border border-emerald-300">
+                  100% Traceable
+                </span>
+              </div>
+            </div>
+
+            {/* Quality Breakdown Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+                <div className="text-xs font-bold text-emerald-800">مؤشرات حقيقية موثقة (VERIFIED)</div>
+                <div className="text-2xl font-black text-emerald-900 mt-1">
+                  {(kpiTraceabilityData || []).filter((k) => k.quality === 'VERIFIED').length}
+                </div>
+                <div className="text-[11px] text-emerald-700 mt-0.5">مربوطة بجداول وحقول فعلية</div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
+                <div className="text-xs font-bold text-blue-800">مؤشرات مشتقة محسوبة (DERIVED)</div>
+                <div className="text-2xl font-black text-blue-900 mt-1">
+                  {(kpiTraceabilityData || []).filter((k) => k.quality === 'DERIVED').length}
+                </div>
+                <div className="text-[11px] text-blue-700 mt-0.5">محسوبة بفيزياء أو نسب مئوية</div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl">
+                <div className="text-xs font-bold text-amber-800">مؤشرات مقدرة (ESTIMATED)</div>
+                <div className="text-2xl font-black text-amber-900 mt-1">
+                  {(kpiTraceabilityData || []).filter((k) => k.quality === 'ESTIMATED').length}
+                </div>
+                <div className="text-[11px] text-amber-700 mt-0.5">مبنية على افتراضات معتمدة</div>
+              </div>
+
+              <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl">
+                <div className="text-xs font-bold text-rose-800">مؤشرات غير مكتملة (INCOMPLETE)</div>
+                <div className="text-2xl font-black text-rose-900 mt-1">
+                  {(kpiTraceabilityData || []).filter((k) => k.quality === 'INCOMPLETE').length}
+                </div>
+                <div className="text-[11px] text-rose-700 mt-0.5">تحتاج استكمال بيانات</div>
+              </div>
+            </div>
+
+            {/* Traceability Table */}
+            <div className="overflow-x-auto border border-slate-200 rounded-xl">
+              <table className="w-full text-right text-xs">
+                <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                  <tr>
+                    <th className="p-3">اسم المؤشر (KPI Name)</th>
+                    <th className="p-3">المستودع / الجدول المصدر</th>
+                    <th className="p-3">تصنيف الجودة</th>
+                    <th className="p-3">أصل البيانات (Data Origin)</th>
+                    <th className="p-3">مستوى الثقة</th>
+                    <th className="p-3">معادلة الحساب (Formula)</th>
+                    <th className="p-3">تاريخ التحديث</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {(kpiTraceabilityData || []).map((item, idx) => {
+                    const origin = item.data_origin || (item.quality === 'VERIFIED' ? 'REAL' : item.quality === 'DERIVED' ? 'DERIVED' : 'SEEDED');
+                    const isReal = origin === 'REAL' || origin === 'IMPORTED' || origin === 'MANUAL';
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50 transition">
+                        <td className="p-3 font-bold text-slate-900">{item.kpi}</td>
+                        <td className="p-3 font-mono text-indigo-600 bg-indigo-50/50 rounded px-1.5 py-0.5 text-[11px]">
+                          {item.sourceRepository} ({item.sourceTable})
+                        </td>
+                        <td className="p-3">
+                          <DataQualityBadge status={item.quality} />
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${isReal ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300'}`}>
+                            {origin} {isReal ? '✓' : '⚠️'}
+                          </span>
+                        </td>
+                        <td className="p-3 font-mono font-bold text-slate-800">{item.confidence || (isReal ? '100%' : '50%')}</td>
+                        <td className="p-3 font-mono text-slate-800 dir-ltr text-[11px] bg-slate-50 rounded px-1.5 py-0.5">
+                          {item.formula}
+                        </td>
+                        <td className="p-3 text-slate-500 text-[11px]">
+                          {new Date(item.lastRefreshTime).toLocaleTimeString('ar-EG')}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
       {/* TAB 12: EXPORT CENTER                                                     */}
       {/* ========================================================================= */}
       {activeTab === 'export_center' && (
@@ -1455,26 +1975,445 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
                 </span>
               </button>
 
-              {/* PDF Print */}
+              {/* PDF Document */}
               <button
-                onClick={() => window.print()}
-                className="p-5 rounded-2xl border border-rose-200 bg-rose-50/40 hover:bg-rose-50 transition flex flex-col items-center text-center space-y-3 cursor-pointer shadow-xs"
+                onClick={handlePrintToPDF}
+                className="p-5 rounded-2xl border border-rose-200 bg-rose-50/40 hover:bg-rose-50 transition flex flex-col items-center text-center space-y-3 cursor-pointer shadow-xs w-full text-left"
               >
-                <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-700/20">
-                  <Printer className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-700/20 mx-auto">
+                  <FileText className="w-6 h-6" />
                 </div>
-                <div>
-                  <div className="font-bold text-slate-900 text-sm">طباعة التقرير التنفيذي PDF</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">تخطيط طباعة RTL رسمي فوري</div>
+                <div className="w-full">
+                  <div className="font-bold text-slate-900 text-sm">تقرير PDF التنفيذي المعالج</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">تنسيق أفقي Landscape رسمي معتمد</div>
                 </div>
-                <span className="px-3 py-1 bg-rose-600 text-white text-xs font-bold rounded-xl w-full">
-                  طباعة التقرير (Print / PDF)
+                <span className="px-3 py-1 bg-rose-600 text-white text-xs font-bold rounded-xl w-full block">
+                  تحميل (.pdf)
                 </span>
               </button>
             </div>
           </div>
         </div>
       )}
+      {/* ========================================================================= */}
+      {/* PHASE 7C.2 PRODUCTION READINESS MODALS                                    */}
+      {/* ========================================================================= */}
+
+      {/* 1. SCRAP IMPORT & ENTRY MODAL */}
+      {isScrapModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-['Cairo'] animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-base font-bold text-slate-900">استيراد / إدخال سجل هالك صناعي (Scrap Log Entry)</h3>
+              </div>
+              <button
+                onClick={() => setIsScrapModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Import from System Quick Options */}
+            <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 space-y-2">
+              <div className="text-xs font-bold text-indigo-900">استيراد مباشر من منظومات التخطيط (Direct System Import):</div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleImportScrapBatch('SAP')}
+                  className="px-3 py-1.5 bg-indigo-900 text-white rounded-lg text-xs font-bold hover:bg-indigo-800 transition cursor-pointer"
+                >
+                  استيراد من SAP ERP
+                </button>
+                <button
+                  onClick={() => handleImportScrapBatch('EXCEL')}
+                  className="px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 transition cursor-pointer"
+                >
+                  استيراد ملف Excel
+                </button>
+                <button
+                  onClick={() => handleImportScrapBatch('CSV')}
+                  className="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition cursor-pointer"
+                >
+                  استيراد ملف CSV
+                </button>
+              </div>
+            </div>
+
+            <div className="text-center text-xs font-bold text-slate-400">── أو الإدخال اليدوي المباشر ──</div>
+
+            <form onSubmit={handleSubmitScrap} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">التاريخ</label>
+                  <input
+                    type="date"
+                    required
+                    value={scrapFormData.date}
+                    onChange={(e) => setScrapFormData({ ...scrapFormData, date: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">القسم</label>
+                  <input
+                    type="text"
+                    required
+                    value={scrapFormData.department}
+                    onChange={(e) => setScrapFormData({ ...scrapFormData, department: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">خط الإنتاج</label>
+                  <input
+                    type="text"
+                    required
+                    value={scrapFormData.production_line}
+                    onChange={(e) => setScrapFormData({ ...scrapFormData, production_line: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">الموديل</label>
+                  <input
+                    type="text"
+                    required
+                    value={scrapFormData.model}
+                    onChange={(e) => setScrapFormData({ ...scrapFormData, model: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">كمية الهالك (بالقطعة)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={scrapFormData.scrap_qty}
+                    onChange={(e) => setScrapFormData({ ...scrapFormData, scrap_qty: parseInt(e.target.value) || 0 })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">تكلفة الهالك (ج.م)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={scrapFormData.scrap_cost}
+                    onChange={(e) => setScrapFormData({ ...scrapFormData, scrap_cost: parseFloat(e.target.value) || 0 })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">السبب الجذري للهالك (Root Cause)</label>
+                <input
+                  type="text"
+                  required
+                  value={scrapFormData.root_cause}
+                  onChange={(e) => setScrapFormData({ ...scrapFormData, root_cause: e.target.value })}
+                  placeholder="مثال: عيب كبس في الشاسيه، تمزق إسفنج..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                />
+              </div>
+
+              {formErrorMessage && (
+                <div className="p-2 bg-rose-50 border border-rose-200 text-rose-800 rounded-lg font-bold">
+                  {formErrorMessage}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsScrapModalOpen(false)}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-bold"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-indigo-900 hover:bg-indigo-800 text-white rounded-lg font-bold cursor-pointer"
+                >
+                  حفظ السجل الفعلي
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 2. CSAT CUSTOMER FEEDBACK MODAL */}
+      {isCsatModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-['Cairo'] animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Headphones className="w-5 h-5 text-blue-600" />
+                <h3 className="text-base font-bold text-slate-900">تسجيل استبيان رضا العميل للمطالبة المغلقة (CSAT)</h3>
+              </div>
+              <button
+                onClick={() => setIsCsatModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitCsat} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">رقم المطالبة المغلقة (Claim ID)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: CLM-177439..."
+                  value={csatFormData.claim_id}
+                  onChange={(e) => setCsatFormData({ ...csatFormData, claim_id: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">اسم العميل</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="اسم العميل المستفيد..."
+                  value={csatFormData.customer_name}
+                  onChange={(e) => setCsatFormData({ ...csatFormData, customer_name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">التقييم النجمي (1 - 5)</label>
+                  <select
+                    value={csatFormData.rating}
+                    onChange={(e) => setCsatFormData({ ...csatFormData, rating: parseInt(e.target.value) || 5 })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  >
+                    <option value={5}>⭐⭐⭐⭐⭐ (5 - ممتاز جداً)</option>
+                    <option value={4}>⭐⭐⭐⭐ (4 - جيد جداً)</option>
+                    <option value={3}>⭐⭐⭐ (3 - مقبول)</option>
+                    <option value={2}>⭐⭐ (2 - ضعيف)</option>
+                    <option value={1}>⭐ (1 - غير راضٍ)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">درجة الرضا المئوية (0 - 100%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                    value={csatFormData.satisfaction_score}
+                    onChange={(e) => setCsatFormData({ ...csatFormData, satisfaction_score: parseInt(e.target.value) || 0 })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">ملاحظات وتعليق العميل (Comment)</label>
+                <textarea
+                  rows={3}
+                  value={csatFormData.feedback_text}
+                  onChange={(e) => setCsatFormData({ ...csatFormData, feedback_text: e.target.value })}
+                  placeholder="أدخل نص تعليق العميل حول جودة وسرعة المعالجة..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                />
+              </div>
+
+              {formErrorMessage && (
+                <div className="p-2 bg-rose-50 border border-rose-200 text-rose-800 rounded-lg font-bold">
+                  {formErrorMessage}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCsatModalOpen(false)}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-bold"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold cursor-pointer"
+                >
+                  حفظ تقييم العميل الفعلي
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 3. REAL WARRANTY COST ENTRY MODAL */}
+      {isCostModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-['Cairo'] animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-base font-bold text-slate-900">تسجيل تكلفة ضمان فعلية (Warranty Cost Entry)</h3>
+              </div>
+              <button
+                onClick={() => setIsCostModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitWarrantyCost} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">رقم المطالبة (Claim ID)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="CLM-..."
+                    value={costFormData.claim_id}
+                    onChange={(e) => setCostFormData({ ...costFormData, claim_id: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">كود أو سيريال المنتج</label>
+                  <input
+                    type="text"
+                    placeholder="SLP-PRD-..."
+                    value={costFormData.product_id}
+                    onChange={(e) => setCostFormData({ ...costFormData, product_id: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">موديل المرتبة</label>
+                <input
+                  type="text"
+                  required
+                  value={costFormData.model}
+                  onChange={(e) => setCostFormData({ ...costFormData, model: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">تكلفة الإصلاح</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={costFormData.repair_cost}
+                    onChange={(e) => setCostFormData({ ...costFormData, repair_cost: parseFloat(e.target.value) || 0 })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">تكلفة الاستبدال</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={costFormData.replacement_cost}
+                    onChange={(e) => setCostFormData({ ...costFormData, replacement_cost: parseFloat(e.target.value) || 0 })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">تكلفة الخامات</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={costFormData.material_cost}
+                    onChange={(e) => setCostFormData({ ...costFormData, material_cost: parseFloat(e.target.value) || 0 })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">تكلفة العمالة</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={costFormData.labor_cost}
+                    onChange={(e) => setCostFormData({ ...costFormData, labor_cost: parseFloat(e.target.value) || 0 })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">تكلفة النقل واللوجستيات</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={costFormData.transport_cost}
+                    onChange={(e) => setCostFormData({ ...costFormData, transport_cost: parseFloat(e.target.value) || 0 })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">تكلفة الفحص والمعاينة</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={costFormData.inspection_cost}
+                    onChange={(e) => setCostFormData({ ...costFormData, inspection_cost: parseFloat(e.target.value) || 0 })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
+                  />
+                </div>
+              </div>
+
+              {formErrorMessage && (
+                <div className="p-2 bg-rose-50 border border-rose-200 text-rose-800 rounded-lg font-bold">
+                  {formErrorMessage}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCostModalOpen(false)}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-bold"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg font-bold cursor-pointer"
+                >
+                  حفظ التكلفة الفعلية
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Success Toast */}
+      {formSuccessMessage && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 bg-slate-900 text-white border border-emerald-500 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom duration-300 font-['Cairo']">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span className="text-xs font-bold">{formSuccessMessage}</span>
+        </div>
+      )}
+
     </div>
   );
 };

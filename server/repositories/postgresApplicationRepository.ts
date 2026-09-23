@@ -1198,6 +1198,34 @@ export class PostgresApplicationRepository implements IApplicationRepository {
     return this.memDb.getDrillDownAnalytics(type);
   }
 
+  public getScrapLogs() {
+    return this.memDb.getScrapLogs();
+  }
+
+  public addScrapLog(log: any) {
+    return this.memDb.addScrapLog(log);
+  }
+
+  public bulkAddScrapLogs(logs: any[]) {
+    return this.memDb.bulkAddScrapLogs(logs);
+  }
+
+  public getCustomerFeedbacks() {
+    return this.memDb.getCustomerFeedbacks();
+  }
+
+  public addCustomerFeedback(fb: any) {
+    return this.memDb.addCustomerFeedback(fb);
+  }
+
+  public getWarrantyCosts() {
+    return this.memDb.getWarrantyCosts();
+  }
+
+  public addWarrantyCost(cost: any) {
+    return this.memDb.addWarrantyCost(cost);
+  }
+
   public persist() {
     return this.memDb.persist();
   }

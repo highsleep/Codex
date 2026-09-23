@@ -68,19 +68,39 @@ interface ExecutiveData {
     defectRate: number;
     scrapRate: number;
     reworkRate: number;
+    hasRealScrap?: boolean;
+    scrapStatusMessage?: string;
   };
   customerServiceKPIs: {
     openCases: number;
     escalatedCases: number;
     avgResponseTimeHours: number;
     avgClosureTimeDays: number;
+    hasRealCSAT?: boolean;
+    csatStatusMessage?: string;
   };
+  dataConfidence?: {
+    confidenceScore: number;
+    realRecords: number;
+    totalRecords: number;
+    hasRealScrap: boolean;
+    hasRealCSAT: boolean;
+    hasRealWarrantyCost: boolean;
+  };
+  kpiMetadata?: Record<string, {
+    name: string;
+    source: string;
+    classification: 'VERIFIED' | 'DERIVED' | 'ESTIMATED' | 'INCOMPLETE';
+    dataOrigin: 'REAL' | 'SEEDED' | 'IMPORTED' | 'MANUAL';
+    confidence: string;
+  }>;
 }
 
 export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentUser }) => {
   const [data, setData] = useState<ExecutiveData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showTransparencyModal, setShowTransparencyModal] = useState(false);
 
   // Filters State
   const [dateRange, setDateRange] = useState<string>('all');
@@ -496,6 +516,38 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
         </div>
       </div>
 
+      {/* DATA CONFIDENCE & SEEDED WARNING BANNER */}
+      {data.dataConfidence && (
+        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-4 border border-slate-800 shadow-md flex flex-wrap items-center justify-between gap-4 font-['Cairo']">
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl ${data.dataConfidence.confidenceScore >= 80 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-black">مؤشر موثوقية وجودة بيانات التحليلات (Data Confidence)</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-bold font-mono ${data.dataConfidence.confidenceScore >= 80 ? 'bg-emerald-500/30 text-emerald-300' : 'bg-amber-500/30 text-amber-300'}`}>
+                  {data.dataConfidence.confidenceScore}% موثوق
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                السجلات الفعلية المعتمدة: {data.dataConfidence.realRecords} من إجمالي {data.dataConfidence.totalRecords} سجل. يتم تمييز وتنبيه أي مؤشر يعتمد على بيانات تجريبية (Seeded Data).
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowTransparencyModal(true)}
+              className="no-print flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold transition cursor-pointer"
+            >
+              <FileCheck className="w-3.5 h-3.5 text-amber-300" />
+              <span>شفافية المؤشرات ومصدر البيانات (KPI Traceability)</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* FILTER BAR */}
       <div className="no-print bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -540,7 +592,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#D62828]"
             >
               <option value="">كافة عائلات المنتجات</option>
-              {data.filters.availableFamilies.map((fam) => (
+              {(data?.filters?.availableFamilies || []).map((fam) => (
                 <option key={fam} value={fam}>{fam}</option>
               ))}
             </select>
@@ -555,7 +607,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#D62828]"
             >
               <option value="">كافة الموديلات</option>
-              {data.filters.availableModels.map((m) => (
+              {(data?.filters?.availableModels || []).map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
@@ -570,7 +622,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#D62828]"
             >
               <option value="">كافة الخطوط والمصانع</option>
-              {data.filters.availableFactories.map((fac) => (
+              {(data?.filters?.availableFactories || []).map((fac) => (
                 <option key={fac} value={fac}>{fac}</option>
               ))}
             </select>
@@ -707,15 +759,24 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
           {/* Card 7: Customer Satisfaction Rate */}
           <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-[#D62828] transition">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-500">معدل رضا العملاء (CSAT)</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-500">معدل رضا العملاء (CSAT)</span>
+                {!customerServiceKPIs.hasRealCSAT && (
+                  <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded text-[9px] font-black">
+                    بيانات تجريبية (Seeded Data)
+                  </span>
+                )}
+              </div>
               <div className="p-2 rounded-xl bg-rose-50 text-[#D62828]">
                 <Smile className="w-4 h-4" />
               </div>
             </div>
             <div className="text-2xl sm:text-3xl font-black text-[#D62828] font-mono tabular-nums">
-              {summaryCards.customerSatisfactionRate}%
+              {customerServiceKPIs.hasRealCSAT ? `${summaryCards.customerSatisfactionRate}%` : 'تجريبي'}
             </div>
-            <span className="text-[10px] font-bold text-rose-600 mt-1 block">بناءً على التقييم والتزام SLA</span>
+            <span className="text-[10px] font-bold text-rose-600 mt-1 block">
+              {customerServiceKPIs.hasRealCSAT ? 'تقييمات عملاء فعلية مؤكدة' : 'لا تتوفر تقييمات عملاء حقيقية (No Real Feedback)'}
+            </span>
           </div>
 
           {/* Card 8: Average Claim Resolution Time */}
@@ -753,9 +814,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
               <span className="p-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold">تفعيل</span>
             </div>
             <div className="h-44 flex items-end justify-between gap-2 pt-6 pb-2 px-2 bg-slate-50/50 rounded-xl border border-slate-100">
-              {trends.months.map((m, idx) => {
-                const val = trends.activationsByMonth[idx] || 0;
-                const maxVal = Math.max(...trends.activationsByMonth, 1);
+              {(trends?.months || []).map((m, idx) => {
+                const val = trends?.activationsByMonth?.[idx] || 0;
+                const maxVal = Math.max(...(trends?.activationsByMonth || [1]), 1);
                 const heightPct = Math.round((val / maxVal) * 100);
                 return (
                   <div key={m} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group">
@@ -783,9 +844,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
               <span className="p-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold">مطالبة</span>
             </div>
             <div className="h-44 flex items-end justify-between gap-2 pt-6 pb-2 px-2 bg-slate-50/50 rounded-xl border border-slate-100">
-              {trends.months.map((m, idx) => {
-                const val = trends.claimsByMonth[idx] || 0;
-                const maxVal = Math.max(...trends.claimsByMonth, 1);
+              {(trends?.months || []).map((m, idx) => {
+                const val = trends?.claimsByMonth?.[idx] || 0;
+                const maxVal = Math.max(...(trends?.claimsByMonth || [1]), 1);
                 const heightPct = Math.round((val / maxVal) * 100);
                 return (
                   <div key={m} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group">
@@ -813,9 +874,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
               <span className="p-1.5 rounded-lg bg-purple-50 text-purple-700 text-xs font-bold">بديل</span>
             </div>
             <div className="h-44 flex items-end justify-between gap-2 pt-6 pb-2 px-2 bg-slate-50/50 rounded-xl border border-slate-100">
-              {trends.months.map((m, idx) => {
-                const val = trends.replacementsByMonth[idx] || 0;
-                const maxVal = Math.max(...trends.replacementsByMonth, 1);
+              {(trends?.months || []).map((m, idx) => {
+                const val = trends?.replacementsByMonth?.[idx] || 0;
+                const maxVal = Math.max(...(trends?.replacementsByMonth || [1]), 1);
                 const heightPct = Math.round((val / maxVal) * 100);
                 return (
                   <div key={m} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group">
@@ -843,9 +904,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
               <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold">مرتبة</span>
             </div>
             <div className="h-44 flex items-end justify-between gap-2 pt-6 pb-2 px-2 bg-slate-50/50 rounded-xl border border-slate-100">
-              {trends.months.map((m, idx) => {
-                const val = trends.registrationsByMonth[idx] || 0;
-                const maxVal = Math.max(...trends.registrationsByMonth, 1);
+              {(trends?.months || []).map((m, idx) => {
+                const val = trends?.registrationsByMonth?.[idx] || 0;
+                const maxVal = Math.max(...(trends?.registrationsByMonth || [1]), 1);
                 const heightPct = Math.round((val / maxVal) * 100);
                 return (
                   <div key={m} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group">
@@ -882,7 +943,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
               </div>
             </div>
             <div className="px-3 py-1 bg-rose-50 text-[#D62828] border border-rose-200 rounded-full text-xs font-bold font-mono">
-              معدل الفشل: {qualityKPIs.warrantyFailureRate}%
+              معدل الفشل: {qualityKPIs?.warrantyFailureRate || 0}%
             </div>
           </div>
 
@@ -891,7 +952,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
             <div className="space-y-2">
               <h4 className="text-xs font-bold text-slate-700">أبرز أنواع الشكاوى والعيوب المصنعية</h4>
               <div className="space-y-2">
-                {qualityKPIs.topComplaintTypes.map((c) => (
+                {(qualityKPIs?.topComplaintTypes || []).map((c) => (
                   <div key={c.type} className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                     <div className="flex items-center justify-between text-xs font-bold mb-1">
                       <span className="text-slate-800">{c.type}</span>
@@ -912,7 +973,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
             <div className="space-y-3">
               <h4 className="text-xs font-bold text-slate-700">الموديلات الأكثر استبدالاً ومطالبة</h4>
               <div className="border border-slate-100 rounded-xl overflow-hidden divide-y divide-slate-100">
-                {qualityKPIs.mostReturnedModels.map((m) => (
+                {(qualityKPIs?.mostReturnedModels || []).map((m) => (
                   <div key={m.model} className="p-2.5 bg-white flex items-center justify-between text-xs">
                     <div>
                       <div className="font-bold text-slate-800">{m.model}</div>
@@ -943,7 +1004,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {qualityKPIs.claimsPerModel.map((item) => (
+                  {(qualityKPIs?.claimsPerModel || []).map((item) => (
                     <tr key={item.model} className="hover:bg-slate-50/80 transition">
                       <td className="p-2.5 font-bold text-slate-800">{item.model}</td>
                       <td className="p-2.5 font-mono">{item.totalUnits}</td>
@@ -992,11 +1053,20 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
               </div>
 
               <div className="bg-amber-50/60 p-3 rounded-xl border border-amber-100">
-                <span className="text-[11px] text-amber-800 font-bold block">معدل الهالك (Scrap)</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-amber-800 font-bold block">معدل الهالك (Scrap Rate)</span>
+                  {!manufacturingKPIs.hasRealScrap && (
+                    <span className="px-1.5 py-0.5 bg-amber-200 text-amber-900 border border-amber-400 rounded text-[9px] font-black">
+                      Test Data
+                    </span>
+                  )}
+                </div>
                 <span className="text-xl font-black text-amber-800 font-mono tabular-nums block mt-1">
-                  {manufacturingKPIs.scrapRate}%
+                  {manufacturingKPIs.hasRealScrap ? `${manufacturingKPIs.scrapRate}%` : 'تجريبي'}
                 </span>
-                <span className="text-[10px] text-amber-700/80">إتلاف الخامات والإسفنج</span>
+                <span className="text-[10px] text-amber-700/80 block truncate">
+                  {manufacturingKPIs.hasRealScrap ? 'إتلاف الخامات والإسفنج' : 'No Real Scrap Data Available'}
+                </span>
               </div>
 
               <div className="bg-blue-50/60 p-3 rounded-xl border border-blue-100">
@@ -1059,6 +1129,76 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
         </div>
 
       </div>
+
+      {/* KPI TRANSPARENCY & TRACEABILITY MODAL */}
+      {showTransparencyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-['Cairo'] animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileCheck className="w-5 h-5 text-amber-400" />
+                <div>
+                  <h3 className="text-sm font-black">شفافية وتتبع مؤشرات الأداء التنفيذي (KPI Traceability & Data Origin)</h3>
+                  <p className="text-[11px] text-slate-300">تصنيف كل مؤشر، مصدر البيانات، ونوع السجلات (حقيقية vs تجريبية)</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTransparencyModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                      <th className="p-3">اسم المؤشر (KPI Name)</th>
+                      <th className="p-3">مصدر البيانات (Source)</th>
+                      <th className="p-3">التصنيف (Classification)</th>
+                      <th className="p-3">أصل البيانات (Data Origin)</th>
+                      <th className="p-3">مستوى الثقة (Confidence)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium">
+                    {data.kpiMetadata && Object.entries(data.kpiMetadata).map(([key, meta]: [string, any]) => {
+                      const isReal = meta.dataOrigin === 'REAL' || meta.dataOrigin === 'IMPORTED' || meta.dataOrigin === 'MANUAL';
+                      return (
+                        <tr key={key} className="hover:bg-slate-50 transition">
+                          <td className="p-3 font-bold text-slate-900">{meta.name}</td>
+                          <td className="p-3 text-slate-600">{meta.source}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${meta.classification === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : meta.classification === 'DERIVED' ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-amber-100 text-amber-800 border-amber-300'}`}>
+                              {meta.classification}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-black ${isReal ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                              {meta.dataOrigin} {isReal ? '✓' : '⚠️'}
+                            </span>
+                          </td>
+                          <td className="p-3 font-mono font-bold text-slate-800">{meta.confidence}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button
+                onClick={() => setShowTransparencyModal(false)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

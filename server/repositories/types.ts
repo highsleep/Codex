@@ -39,6 +39,10 @@ import type {
   CustomerServiceAnalyticsData,
   ExecutiveAnalyticsData,
   AnalyticsSnapshot,
+  DataOrigin,
+  ScrapLog,
+  CustomerFeedback,
+  WarrantyCost,
 } from '../db/index.js';
 
 // Re-export domain types for consumers of the repository boundary
@@ -76,6 +80,10 @@ export type {
   CustomerServiceAnalyticsData,
   ExecutiveAnalyticsData,
   AnalyticsSnapshot,
+  DataOrigin,
+  ScrapLog,
+  CustomerFeedback,
+  WarrantyCost,
 };
 
 /**
