@@ -7,6 +7,26 @@ import fs from 'fs';
 import path from 'path';
 import * as XLSX from 'xlsx';
 import { ZebraZPLGenerator } from '../zebra/zplGenerator.js';
+import {
+  UnifiedAnalyticsEngine,
+  AnalyticsFilterParams,
+  ProductionAnalyticsData,
+  QualityAnalyticsData,
+  WarrantyAnalyticsData,
+  CustomerServiceAnalyticsData,
+  ExecutiveAnalyticsData,
+  AnalyticsSnapshot,
+} from '../analytics/analyticsEngine.js';
+
+export type {
+  AnalyticsFilterParams,
+  ProductionAnalyticsData,
+  QualityAnalyticsData,
+  WarrantyAnalyticsData,
+  CustomerServiceAnalyticsData,
+  ExecutiveAnalyticsData,
+  AnalyticsSnapshot,
+};
 
 export type ComplaintType =
   | 'Spring Collapse'
@@ -4745,6 +4765,34 @@ let
     })
 in
     TypedWarranties`;
+  }
+
+  // =========================================================================
+  // Enterprise Analytics & Unified KPI Engine Methods
+  // =========================================================================
+
+  public getProductionAnalytics(filters?: AnalyticsFilterParams): ProductionAnalyticsData {
+    return UnifiedAnalyticsEngine.calculateProductionAnalytics(this, filters);
+  }
+
+  public getQualityAnalytics(filters?: AnalyticsFilterParams): QualityAnalyticsData {
+    return UnifiedAnalyticsEngine.calculateQualityAnalytics(this, filters);
+  }
+
+  public getWarrantyAnalytics(filters?: AnalyticsFilterParams): WarrantyAnalyticsData {
+    return UnifiedAnalyticsEngine.calculateWarrantyAnalytics(this, filters);
+  }
+
+  public getCustomerServiceAnalytics(filters?: AnalyticsFilterParams): CustomerServiceAnalyticsData {
+    return UnifiedAnalyticsEngine.calculateCustomerServiceAnalytics(this, filters);
+  }
+
+  public getExecutiveAnalytics(filters?: AnalyticsFilterParams): ExecutiveAnalyticsData {
+    return UnifiedAnalyticsEngine.calculateExecutiveAnalytics(this, filters);
+  }
+
+  public getDrillDownAnalytics(type?: 'warranty' | 'quality') {
+    return UnifiedAnalyticsEngine.calculateDrillDown(this, type);
   }
 }
 

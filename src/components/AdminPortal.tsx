@@ -39,6 +39,8 @@ import { CustomerClaimModal } from './CustomerClaimModal';
 import { ProductionImportCenter } from './ProductionImportCenter';
 import { PowerBIIntegrationHub } from './PowerBIIntegrationHub';
 import { ProductManagement } from './ProductManagement';
+import { DatabaseManagementCenter } from './DatabaseManagementCenter';
+import { EnterpriseAnalyticsCenter } from './EnterpriseAnalyticsCenter';
 import { UserAvatar } from './UserAvatar';
 import { RoleBadge, RoleIcon } from './RoleBadge';
 import {
@@ -50,7 +52,7 @@ import {
 
 interface AdminPortalProps {
   onViewCertificate: (activation: WarrantyActivation, product: Product) => void;
-  initialAdminTab?: 'dashboard' | 'production' | 'quality' | 'customer360' | 'rbac' | 'warranties' | 'products' | 'logs' | 'schema' | 'powerbi' | 'claims' | 'replacements';
+  initialAdminTab?: 'dashboard' | 'production' | 'quality' | 'customer360' | 'rbac' | 'warranties' | 'products' | 'logs' | 'schema' | 'powerbi' | 'claims' | 'replacements' | 'db_center' | 'analytics_center';
   currentUser?: AppUser;
   onSelectUser?: (user: AppUser) => void;
   systemUsers?: AppUser[];
@@ -79,11 +81,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const systemUsers = propSystemUsers && propSystemUsers.length > 0 ? propSystemUsers : internalSystemUsers;
 
   // Active Admin Sub-tab (claims, replacements, repairs, warranties & logs consolidated into Customer Service 360 Case Management Center)
-  const getResolvedAdminTab = (tab?: string): 'executive' | 'dashboard' | 'production' | 'quality' | 'customer360' | 'rbac' | 'products' | 'schema' | 'powerbi' => {
+  const getResolvedAdminTab = (tab?: string): 'executive' | 'dashboard' | 'analytics_center' | 'production' | 'quality' | 'customer360' | 'rbac' | 'products' | 'schema' | 'powerbi' | 'db_center' => {
     if (tab === 'claims' || tab === 'replacements' || tab === 'repairs' || tab === 'warranties' || tab === 'logs' || tab === 'customer360') {
       return 'customer360';
     }
     if (tab === 'executive') return 'executive';
+    if (tab === 'analytics_center') return 'analytics_center';
     if (tab) return tab as any;
     return canAccessTab(currentUser?.role || 'SUPER_ADMIN', 'executive') ? 'executive' : 'dashboard';
   };
@@ -97,7 +100,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   };
 
   const [adminTab, setAdminTab] = useState<
-    'executive' | 'dashboard' | 'production' | 'quality' | 'customer360' | 'rbac' | 'products' | 'schema' | 'powerbi'
+    'executive' | 'dashboard' | 'analytics_center' | 'production' | 'quality' | 'customer360' | 'rbac' | 'products' | 'schema' | 'powerbi' | 'db_center'
   >(getResolvedAdminTab(initialAdminTab));
 
   useEffect(() => {
@@ -528,6 +531,21 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           </button>
         )}
 
+        {canAccessTab(currentUser.role, 'analytics_center') && (
+          <button
+            onClick={() => setAdminTab('analytics_center')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl whitespace-nowrap transition cursor-pointer ${
+              adminTab === 'analytics_center'
+                ? 'bg-gradient-to-r from-indigo-900 to-indigo-800 text-white shadow-sm ring-1 ring-indigo-700'
+                : 'text-slate-600 hover:text-[#111111] hover:bg-[#F5F5F5]'
+            }`}
+          >
+            <BarChart2 className="w-4 h-4 text-indigo-400" />
+            <span>مركز التحليلات المؤسسية وذكاء الأعمال</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-indigo-200 text-indigo-950 text-[10px] font-bold">BI Center</span>
+          </button>
+        )}
+
         {canAccessTab(currentUser.role, 'dashboard') && (
           <button
             onClick={() => setAdminTab('dashboard')}
@@ -640,7 +658,32 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">مباشر</span>
           </button>
         )}
+
+        {canAccessTab(currentUser.role, 'db_center') && (
+          <button
+            onClick={() => setAdminTab('db_center')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl whitespace-nowrap transition cursor-pointer ${
+              adminTab === 'db_center'
+                ? 'bg-rose-700 text-white shadow-sm'
+                : 'text-slate-600 hover:text-[#111111] hover:bg-[#F5F5F5]'
+            }`}
+          >
+            <Database className="w-4 h-4 text-rose-500" />
+            <span>إدارة البيانات</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-950 text-[10px] font-bold">Health</span>
+          </button>
+        )}
       </div>
+
+      {/* TAB: DATABASE MANAGEMENT CENTER */}
+      {adminTab === 'db_center' && (
+        <DatabaseManagementCenter currentUser={currentUser} />
+      )}
+
+      {/* TAB: ENTERPRISE ANALYTICS & BI CENTER (PHASE 7C) */}
+      {adminTab === 'analytics_center' && (
+        <EnterpriseAnalyticsCenter currentUser={currentUser} />
+      )}
 
       {/* TAB 0: EXECUTIVE MANAGEMENT DASHBOARD */}
       {adminTab === 'executive' && <ExecutiveDashboard currentUser={currentUser} />}

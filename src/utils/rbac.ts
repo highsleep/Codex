@@ -31,6 +31,7 @@ export interface RoleConfig {
 export const ALL_SYSTEM_SCREENS: RoleScreenInfo[] = [
   { id: 'executive', name: 'لوحة القيادة التنفيذية (Executive Dashboard)', category: 'الإدارة العليا' },
   { id: 'dashboard', name: 'لوحة المؤشرات العامة (KPI Dashboard)', category: 'تقارير ورؤى' },
+  { id: 'analytics_center', name: 'مركز التحليلات المؤسسية وذكاء الأعمال (Enterprise Analytics & BI)', category: 'الإدارة العليا' },
   { id: 'products', name: 'إدارة المنتجات والمواصفات والموديلات', category: 'العمليات' },
   { id: 'production', name: 'خطوط الإنتاج ومزامنة أوامر التشغيل والباركود', category: 'الإنتاج' },
   { id: 'quality', name: 'رقابة الجودة وسجل المعاينات الفنية والهبوط', category: 'الجودة' },
@@ -38,6 +39,7 @@ export const ALL_SYSTEM_SCREENS: RoleScreenInfo[] = [
   { id: 'rbac', name: 'إدارة الصلاحيات والأدوار المصنعية (RBAC Engine)', category: 'الإدارة العليا' },
   { id: 'schema', name: 'مخطط قواعد بيانات Cloud SQL PostgreSQL المعتمد', category: 'الإدارة العليا' },
   { id: 'powerbi', name: 'لوحة تحليلات Power BI للأداء التشغيلي', category: 'تقارير ورؤى' },
+  { id: 'db_center', name: 'مركز إدارة وقوة بيانات النظام (Database Management Center)', category: 'الإدارة العليا' },
 ];
 
 export const AUTHORIZED_SYSTEM_USERS: AppUser[] = [
@@ -135,7 +137,7 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
       'Reports (التقارير المتقدمة وتصدير البيانات)',
       'System settings (إعدادات النظام والتهيئة)',
     ],
-    allowedTabs: ['executive', 'dashboard', 'products', 'production', 'quality', 'customer360', 'rbac', 'schema', 'powerbi'],
+    allowedTabs: ['executive', 'dashboard', 'analytics_center', 'products', 'production', 'quality', 'customer360', 'rbac', 'schema', 'powerbi', 'db_center'],
     defaultTab: 'executive',
     detailed: {
       screensAllowed: ALL_SYSTEM_SCREENS,
@@ -155,12 +157,13 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
     iconName: 'Crown',
     permissions: [
       'Executive dashboard (لوحة القيادة التنفيذية ومؤشرات الأداء)',
+      'Enterprise Analytics & BI (مركز التحليلات المؤسسية وذكاء الأعمال)',
       'Quality KPIs (مؤشرات الجودة ومعدلات الهبوط والعيوب)',
       'Manufacturing KPIs (مؤشرات الإنتاج ونسب الهالك وتكلفة الضمان)',
       'Customer Service KPIs (رضا العملاء وأوقات الاستجابة والإغلاق)',
       'Executive export (تصدير التقارير التنفيذية PDF / Excel / CSV)',
     ],
-    allowedTabs: ['executive', 'dashboard', 'products', 'quality', 'customer360', 'powerbi'],
+    allowedTabs: ['executive', 'dashboard', 'analytics_center', 'products', 'quality', 'customer360', 'powerbi', 'db_center'],
     defaultTab: 'executive',
     detailed: {
       screensAllowed: ALL_SYSTEM_SCREENS,
@@ -189,7 +192,7 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
     defaultTab: 'quality',
     detailed: {
       screensAllowed: ALL_SYSTEM_SCREENS.filter((s) => ['quality', 'customer360', 'products', 'dashboard'].includes(s.id)),
-      screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'production', 'powerbi', 'executive'].includes(s.id)),
+      screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'production', 'powerbi', 'executive', 'db_center', 'analytics_center'].includes(s.id)),
       canCreate: { allowed: true, description: 'إنشاء تقارير الفحص والمعاينة الفنية الميدانية للعيوب' },
       canEdit: { allowed: true, description: 'اعتماد نتائج الفحص وتحديد نسب الهبوط والقرارات الفنية' },
       canDelete: { allowed: false, description: 'محظور حذف أي سجلات جودة أو مطالبات معتمدة' },
@@ -205,16 +208,17 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
     iconName: 'Factory',
     permissions: [
       'Executive dashboard (لوحة القيادة التنفيذية)',
+      'Enterprise Analytics & BI (مركز التحليلات المؤسسية وذكاء الأعمال)',
       'Production data (بيانات الإنتاج والتشغيل)',
       'Product records (سجلات المنتجات وأوامر التشغيل)',
       'Import/export (استيراد وتصدير بيانات التصنيع)',
       'Production reports (تقارير الإنتاج ومعدلات الإنجاز)',
       'Read-only warranty access (اطلاع فقط على وثائق الضمان)',
     ],
-    allowedTabs: ['executive', 'production', 'products', 'dashboard', 'customer360'],
+    allowedTabs: ['executive', 'dashboard', 'analytics_center', 'production', 'products', 'customer360', 'db_center'],
     defaultTab: 'executive',
     detailed: {
-      screensAllowed: ALL_SYSTEM_SCREENS.filter((s) => ['executive', 'production', 'products', 'dashboard', 'customer360'].includes(s.id)),
+      screensAllowed: ALL_SYSTEM_SCREENS.filter((s) => ['executive', 'production', 'products', 'dashboard', 'customer360', 'db_center'].includes(s.id)),
       screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'quality', 'powerbi'].includes(s.id)),
       canCreate: { allowed: true, description: 'استيراد دفعات التصنيع، إضافة سجلات خطوط الإنتاج وأوامر التشغيل' },
       canEdit: { allowed: true, description: 'تحديث بيانات أوامر التشغيل ومزامنة بيانات التصنيع مع SAP' },
@@ -239,7 +243,7 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
     defaultTab: 'production',
     detailed: {
       screensAllowed: ALL_SYSTEM_SCREENS.filter((s) => ['production', 'products'].includes(s.id)),
-      screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'quality', 'customer360', 'dashboard', 'powerbi'].includes(s.id)),
+      screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'quality', 'customer360', 'dashboard', 'powerbi', 'executive', 'db_center', 'analytics_center'].includes(s.id)),
       canCreate: { allowed: true, description: 'تسجيل مراتب جديدة، استيراد دفعات التصنيع، وتوليد رموز QR والباركود' },
       canEdit: { allowed: true, description: 'تحديث حالة الإنتاج وطباعة ملصقات التغليف والباركود' },
       canDelete: { allowed: false, description: 'محظور حذف أي سجل منتج أو دفعة تصنيع' },
@@ -264,7 +268,7 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
     defaultTab: 'customer360',
     detailed: {
       screensAllowed: ALL_SYSTEM_SCREENS.filter((s) => ['customer360', 'dashboard'].includes(s.id)),
-      screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'products', 'production', 'quality', 'powerbi'].includes(s.id)),
+      screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'products', 'production', 'quality', 'powerbi', 'executive', 'db_center', 'analytics_center'].includes(s.id)),
       canCreate: { allowed: true, description: 'تفعيل وثائق الضمان، تسجيل شكاوى ومطالبات العملاء وبلاغات الصيانة' },
       canEdit: { allowed: true, description: 'تحديث بيانات اتصال العميل، إضافة اتصالات وملاحظات المتابعة' },
       canDelete: { allowed: false, description: 'محظور حذف أي وثيقة ضمان أو شكوى مسجلة' },
@@ -287,7 +291,7 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
     defaultTab: 'dashboard',
     detailed: {
       screensAllowed: ALL_SYSTEM_SCREENS.filter((s) => ['dashboard', 'products', 'customer360'].includes(s.id)),
-      screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'production', 'quality', 'powerbi'].includes(s.id)),
+      screensBlocked: ALL_SYSTEM_SCREENS.filter((s) => ['rbac', 'schema', 'production', 'quality', 'powerbi', 'executive', 'db_center', 'analytics_center'].includes(s.id)),
       canCreate: { allowed: false, description: 'محظور الإضافة نهائياً (حساب تدقيق واطلاع فقط)' },
       canEdit: { allowed: false, description: 'محظور التعديل نهائياً على أي سجل' },
       canDelete: { allowed: false, description: 'محظور الحذف نهائياً' },
@@ -368,6 +372,10 @@ export function canAccessQualityDashboard(role: UserRole): boolean {
 }
 
 export function canAccessExecutiveDashboard(role: UserRole): boolean {
+  return role === 'SUPER_ADMIN' || role === 'PLANT_MANAGER' || role === 'GENERAL_MANAGER';
+}
+
+export function canAccessAnalyticsCenter(role: UserRole): boolean {
   return role === 'SUPER_ADMIN' || role === 'PLANT_MANAGER' || role === 'GENERAL_MANAGER';
 }
 

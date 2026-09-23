@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Crown,
   TrendingUp,
@@ -26,6 +26,8 @@ import {
   FileCheck,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { AppUser } from '../types';
 
 interface ExecutiveDashboardProps {
@@ -218,9 +220,145 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
     XLSX.writeFile(wb, `sleepee_executive_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  // Export PDF / Print Function
-  const exportPDF = () => {
-    window.print();
+  // Helper to parse any CSS color (oklch, color-mix, etc.) to standard rgb/rgba
+  const parseCssColorToRgb = (colorStr: string): string => {
+    if (!colorStr || colorStr === 'transparent' || colorStr === 'inherit' || colorStr === 'initial') return colorStr;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return colorStr;
+      ctx.fillStyle = colorStr;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+      if (a === 0) return 'transparent';
+      if (a === 255) return `rgb(${r}, ${g}, ${b})`;
+      return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
+    } catch {
+      return colorStr;
+    }
+  };
+
+  const replaceUnsupportedColors = (cssText: string): string => {
+    if (!cssText) return cssText;
+    if (!cssText.includes('oklch') && !cssText.includes('oklab') && !cssText.includes('color-mix')) return cssText;
+    return cssText
+      .replace(/oklch\([^)]+\)/gi, (match) => parseCssColorToRgb(match))
+      .replace(/oklab\([^)]+\)/gi, (match) => parseCssColorToRgb(match))
+      .replace(/color-mix\([^)]+\)/gi, (match) => parseCssColorToRgb(match));
+  };
+
+  // Export PDF Function
+  const [isExportingPDF, setIsExportingPDF] = useState<boolean>(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const dashboardRef = useRef<HTMLDivElement>(null);
+
+  const exportPDF = async () => {
+    if (!data) return;
+    setIsExportingPDF(true);
+    setPdfError(null);
+
+    try {
+      const element = dashboardRef.current;
+      if (!element) {
+        throw new Error('عنصر التقرير التنفيذي غير متاح للطباعة');
+      }
+
+      // Render the DOM node to canvas using html2canvas
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#f8fafc',
+        onclone: (clonedDoc) => {
+          const noPrintEls = clonedDoc.querySelectorAll('.no-print');
+          noPrintEls.forEach((el) => {
+            (el as HTMLElement).style.display = 'none';
+          });
+
+          // Convert oklch/color-mix in <style> elements
+          const styleTags = clonedDoc.querySelectorAll('style');
+          styleTags.forEach((styleTag) => {
+            if (styleTag.textContent) {
+              styleTag.textContent = replaceUnsupportedColors(styleTag.textContent);
+            }
+          });
+
+          // Force global RTL and Arabic-friendly font rendering overrides on the cloned document body
+          const body = clonedDoc.body;
+          if (body) {
+            body.style.setProperty('direction', 'rtl', 'important');
+            body.style.setProperty('text-align', 'right', 'important');
+            body.style.setProperty('font-family', "'Cairo', 'Tajawal', sans-serif", 'important');
+          }
+
+          // Convert oklch/color-mix in element attributes and computed styles
+          const clonedElements = clonedDoc.querySelectorAll('*');
+          clonedElements.forEach((el) => {
+            const htmlEl = el as HTMLElement;
+
+            // CRITICAL RTL/ARABIC LIGATURES FIX:
+            // Force letter-spacing to 0px and font-variant-ligatures.
+            // This prevents html2canvas from rendering character-by-character, which completely
+            // breaks Arabic ligatures (disjointed letters) and reverses RTL layout rendering.
+            htmlEl.style.setProperty('letter-spacing', '0px', 'important');
+            htmlEl.style.setProperty('word-spacing', 'normal', 'important');
+            htmlEl.style.setProperty('font-variant-ligatures', 'common-ligatures', 'important');
+            htmlEl.style.setProperty('font-family', "'Cairo', 'Tajawal', sans-serif", 'important');
+
+            if (htmlEl.getAttribute('style')) {
+              htmlEl.setAttribute('style', replaceUnsupportedColors(htmlEl.getAttribute('style') || ''));
+            }
+
+            try {
+              const comp = window.getComputedStyle(htmlEl);
+              if (comp.color && comp.color.includes('oklch')) {
+                htmlEl.style.color = parseCssColorToRgb(comp.color);
+              }
+              if (comp.backgroundColor && comp.backgroundColor.includes('oklch')) {
+                htmlEl.style.backgroundColor = parseCssColorToRgb(comp.backgroundColor);
+              }
+              if (comp.borderColor && comp.borderColor.includes('oklch')) {
+                htmlEl.style.borderColor = parseCssColorToRgb(comp.borderColor);
+              }
+            } catch {
+              // Ignore computed style errors
+            }
+          });
+        },
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const margin = 8;
+      const imgWidth = pdfWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = margin;
+
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= (pdfHeight - margin * 2);
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + margin;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= (pdfHeight - margin * 2);
+      }
+
+      const fileName = `sleepee_executive_kpi_report_${new Date().toISOString().slice(0, 10)}.pdf`;
+      pdf.save(fileName);
+    } catch (err: any) {
+      console.error('PDF Export Error:', err);
+      setPdfError(`تعذر إنشاء ملف PDF: ${err?.message || 'حدث خطأ أثناء معالجة التقرير'}`);
+    } finally {
+      setIsExportingPDF(false);
+    }
   };
 
   if (loading) {
@@ -254,8 +392,24 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
   const { summaryCards, trends, qualityKPIs, manufacturingKPIs, customerServiceKPIs } = data;
 
   return (
-    <div className="space-y-6 text-right print:space-y-4 font-['Cairo']">
+    <div ref={dashboardRef} className="space-y-6 text-right print:space-y-4 font-['Cairo'] p-1">
       
+      {/* PDF Export Error Notification */}
+      {pdfError && (
+        <div className="no-print bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-2xl text-xs font-bold flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{pdfError}</span>
+          </div>
+          <button
+            onClick={() => setPdfError(null)}
+            className="text-rose-600 hover:text-rose-900 font-bold px-2 py-1 rounded-lg hover:bg-rose-100 transition cursor-pointer"
+          >
+            إغلاق
+          </button>
+        </div>
+      )}
+
       {/* EXECUTIVE HEADER CARD */}
       <div className="bg-gradient-to-l from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl p-6 shadow-xl border border-slate-800 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -283,11 +437,16 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
           <div className="no-print flex items-center gap-2 bg-white/10 backdrop-blur-md p-2 rounded-2xl border border-white/10 shrink-0">
             <button
               onClick={exportPDF}
-              className="flex items-center gap-2 px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition cursor-pointer"
-              title="طباعة وتصدير تقرير تنفيذي PDF"
+              disabled={isExportingPDF}
+              className="flex items-center gap-2 px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50"
+              title="تصدير تقرير تنفيذي PDF"
             >
-              <FileText className="w-4 h-4 text-rose-400" />
-              <span>تقرير PDF</span>
+              {isExportingPDF ? (
+                <RefreshCw className="w-4 h-4 text-rose-400 animate-spin" />
+              ) : (
+                <FileText className="w-4 h-4 text-rose-400" />
+              )}
+              <span>{isExportingPDF ? 'جاري التصدير...' : 'تقرير PDF'}</span>
             </button>
 
             <button
@@ -308,6 +467,32 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
               <span>تصدير CSV</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* EXPORT METADATA BANNER (Included in PDF Capture) */}
+      <div className="bg-slate-100 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 flex flex-wrap items-center justify-between gap-2 font-['Cairo']">
+        <div className="flex flex-wrap items-center gap-2 font-bold text-slate-800">
+          <span>تقرير مؤشرات الأداء التنفيذي | Sleepee Executive KPI Report</span>
+          <span className="text-slate-400">|</span>
+          <span className="text-slate-600">تاريخ التصدير: <span className="font-mono">{new Date().toLocaleString('ar-EG')}</span></span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-[11px] bg-white px-3 py-1 rounded-lg border border-slate-200 font-bold">
+          <span className="text-slate-500">الفلاتر النشطة:</span>
+          <span className="text-[#D62828]">
+            {dateRange === 'all'
+              ? 'كافة السجلات الزمنية'
+              : dateRange === 'this_month'
+              ? 'الشهر الحالي'
+              : dateRange === 'this_quarter'
+              ? 'الربع الحالي'
+              : dateRange === 'this_year'
+              ? 'السنة الحالية'
+              : `${startDate || 'بداية'} إلى ${endDate || 'نهاية'}`}
+          </span>
+          {productFamily && <span>• عائلة: {productFamily}</span>}
+          {model && <span>• موديل: {model}</span>}
+          {factoryLine && <span>• خط الإنتاج: {factoryLine}</span>}
         </div>
       </div>
 

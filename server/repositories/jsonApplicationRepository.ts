@@ -424,6 +424,30 @@ export class JsonApplicationRepository implements IApplicationRepository {
     return this.db.getPowerBIQueryScript(baseUrl);
   }
 
+  public getProductionAnalytics(filters?: any) {
+    return this.db.getProductionAnalytics(filters);
+  }
+
+  public getQualityAnalytics(filters?: any) {
+    return this.db.getQualityAnalytics(filters);
+  }
+
+  public getWarrantyAnalytics(filters?: any) {
+    return this.db.getWarrantyAnalytics(filters);
+  }
+
+  public getCustomerServiceAnalytics(filters?: any) {
+    return this.db.getCustomerServiceAnalytics(filters);
+  }
+
+  public getExecutiveAnalytics(filters?: any) {
+    return this.db.getExecutiveAnalytics(filters);
+  }
+
+  public getDrillDownAnalytics(type?: 'warranty' | 'quality') {
+    return this.db.getDrillDownAnalytics(type);
+  }
+
   public persist() {
     return this.db.persist();
   }

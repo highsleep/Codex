@@ -1174,6 +1174,30 @@ export class PostgresApplicationRepository implements IApplicationRepository {
     return this.memDb.getPowerBIQueryScript(baseUrl);
   }
 
+  public getProductionAnalytics(filters?: any) {
+    return this.memDb.getProductionAnalytics(filters);
+  }
+
+  public getQualityAnalytics(filters?: any) {
+    return this.memDb.getQualityAnalytics(filters);
+  }
+
+  public getWarrantyAnalytics(filters?: any) {
+    return this.memDb.getWarrantyAnalytics(filters);
+  }
+
+  public getCustomerServiceAnalytics(filters?: any) {
+    return this.memDb.getCustomerServiceAnalytics(filters);
+  }
+
+  public getExecutiveAnalytics(filters?: any) {
+    return this.memDb.getExecutiveAnalytics(filters);
+  }
+
+  public getDrillDownAnalytics(type?: 'warranty' | 'quality') {
+    return this.memDb.getDrillDownAnalytics(type);
+  }
+
   public persist() {
     return this.memDb.persist();
   }

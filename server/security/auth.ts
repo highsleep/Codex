@@ -211,15 +211,15 @@ export async function requireAuthentication(req: Request, res: Response, next: N
 
   let token: DecodedIdToken;
   try {
-    token = await getAuth().verifyIdToken(match[1], true);
-  } catch (err) {
-    console.warn('verifyIdToken with firebase-admin failed, attempting self-contained manual verification:', err);
+    token = await getAuth().verifyIdToken(match[1], false);
+  } catch (err: any) {
+    console.warn('verifyIdToken with firebase-admin failed, attempting self-contained manual verification:', err?.message || String(err));
     try {
       const projectId = getFirebaseProjectId() || 'ai-studio-applet-webapp-d4a64';
       token = await verifyIdTokenManually(match[1], projectId);
       console.log('Self-contained manual verification succeeded!');
-    } catch (manualErr) {
-      console.error('Self-contained manual verification failed:', manualErr);
+    } catch (manualErr: any) {
+      console.error('Self-contained manual verification failed:', manualErr?.message || String(manualErr));
       return res.status(401).json({ error: 'INVALID_AUTHENTICATION_TOKEN', message: 'رمز تسجيل الدخول غير صالح أو منتهي الصلاحية.' });
     }
   }

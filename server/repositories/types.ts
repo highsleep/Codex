@@ -32,6 +32,13 @@ import type {
   CustomerCommunication,
   SLAStatus,
   DatabaseService,
+  AnalyticsFilterParams,
+  ProductionAnalyticsData,
+  QualityAnalyticsData,
+  WarrantyAnalyticsData,
+  CustomerServiceAnalyticsData,
+  ExecutiveAnalyticsData,
+  AnalyticsSnapshot,
 } from '../db/index.js';
 
 // Re-export domain types for consumers of the repository boundary
@@ -62,6 +69,13 @@ export type {
   CustomerCommunicationType,
   CustomerCommunication,
   SLAStatus,
+  AnalyticsFilterParams,
+  ProductionAnalyticsData,
+  QualityAnalyticsData,
+  WarrantyAnalyticsData,
+  CustomerServiceAnalyticsData,
+  ExecutiveAnalyticsData,
+  AnalyticsSnapshot,
 };
 
 /**
@@ -156,5 +170,11 @@ export type IAnalyticsRepository = Pick<
   | 'getPowerBICSV'
   | 'getPowerBIPBIDS'
   | 'getPowerBIQueryScript'
+  | 'getProductionAnalytics'
+  | 'getQualityAnalytics'
+  | 'getWarrantyAnalytics'
+  | 'getCustomerServiceAnalytics'
+  | 'getExecutiveAnalytics'
+  | 'getDrillDownAnalytics'
   | 'persist'
 >;
