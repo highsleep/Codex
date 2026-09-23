@@ -8,7 +8,7 @@
  * 3. Archive Old Closed Claims: Archives settled claims older than retention threshold and logs audit trail.
  */
 
-import { DatabaseService } from '../db/index.js';
+import type { IApplicationRepository } from '../repositories/types.js';
 
 export interface AutomationJobResult {
   job: string;
@@ -19,12 +19,12 @@ export interface AutomationJobResult {
 }
 
 export class ScheduledJobsRunner {
-  private db: DatabaseService;
+  private repository: IApplicationRepository;
   private intervalId: NodeJS.Timeout | null = null;
   private lastRunResults: AutomationJobResult[] = [];
 
-  constructor(db: DatabaseService) {
-    this.db = db;
+  constructor(repository: IApplicationRepository) {
+    this.repository = repository;
   }
 
   /**
@@ -39,18 +39,18 @@ export class ScheduledJobsRunner {
     let eventsCreated = 0;
 
     try {
-      const warranties = this.db.getWarranties();
+      const warranties = this.repository.getWarranties();
       for (const wrn of warranties) {
         if (wrn.expiry_date && wrn.expiry_date < todayStr) {
           expiredDetected++;
           // Check if expired lifecycle event already registered
-          const lifecycleEvents = this.db.getLifecycleBySerial(wrn.serial_number);
+          const lifecycleEvents = this.repository.getLifecycleBySerial(wrn.serial_number);
           const hasExpiredEvent = lifecycleEvents.some(
             (e) => e.event_type === 'Warranty Expired' && e.reference_id === wrn.warranty_id
           );
 
           if (!hasExpiredEvent) {
-            this.db.addLifecycleEvent({
+            this.repository.addLifecycleEvent({
               serial_number: wrn.serial_number,
               event_type: 'Warranty Expired',
               event_date: `${wrn.expiry_date}T23:59:59Z`,
@@ -59,7 +59,7 @@ export class ScheduledJobsRunner {
               reference_id: wrn.warranty_id,
             });
 
-            this.db.addLog(
+            this.repository.addLog(
               wrn.warranty_id,
               wrn.serial_number,
               `[فحص انتهاء الصلاحية الآلي] انتهى ضمان الوثيقة (${wrn.warranty_id}) للمرتبة ${wrn.serial_number}`
@@ -101,16 +101,16 @@ export class ScheduledJobsRunner {
     let syncedEvents = 0;
 
     try {
-      const products = this.db.getProducts();
-      const warranties = this.db.getWarranties();
+      const products = this.repository.getProducts();
+      const warranties = this.repository.getWarranties();
 
       for (const prod of products) {
-        const events = this.db.getLifecycleBySerial(prod.serial_number);
+        const events = this.repository.getLifecycleBySerial(prod.serial_number);
         const hasProduced = events.some((e) => e.event_type === 'Produced');
 
         // 1. Ensure Produced milestone
         if (!hasProduced) {
-          this.db.addLifecycleEvent({
+          this.repository.addLifecycleEvent({
             serial_number: prod.serial_number,
             event_type: 'Produced',
             event_date: `${prod.production_date}T08:00:00Z`,
@@ -128,7 +128,7 @@ export class ScheduledJobsRunner {
             (e) => e.event_type === 'Warranty Activated' || e.reference_id === wrn.warranty_id
           );
           if (!hasActivationEvent) {
-            this.db.addLifecycleEvent({
+            this.repository.addLifecycleEvent({
               serial_number: prod.serial_number,
               event_type: 'Warranty Activated',
               event_date: wrn.activation_date,
@@ -169,7 +169,7 @@ export class ScheduledJobsRunner {
     let archivedCount = 0;
 
     try {
-      const claims = this.db.getClaims();
+      const claims = this.repository.getClaims();
       const now = Date.now();
 
       for (const claim of claims) {
@@ -183,7 +183,7 @@ export class ScheduledJobsRunner {
             (claim as any).archived_at = new Date().toISOString();
             archivedCount++;
 
-            this.db.addLog(
+            this.repository.addLog(
               claim.warranty_id,
               claim.serial_number,
               `[أرشفة الطلبات المغلقة] تمت أرشفة طلب الضمان رقم (${claim.claim_id}) بعد مرور فترة التسوية القانونية`
@@ -193,7 +193,7 @@ export class ScheduledJobsRunner {
       }
 
       if (archivedCount > 0) {
-        this.db.persist();
+        this.repository.persist();
       }
 
       return {

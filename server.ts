@@ -1,23 +1,69 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { db } from './server/db/index.js';
+import { repository } from './server/repositories/applicationRepository.js';
 import { ScheduledJobsRunner } from './server/cron/jobs.js';
 import { ProductionDataProvider } from './server/providers/ProductionDataProvider.js';
 import { ExcelProvider } from './server/providers/ExcelProvider.js';
 import { CSVProvider } from './server/providers/CSVProvider.js';
 import { ZebraZPLGenerator } from './server/zebra/zplGenerator.js';
 import fs from 'fs';
+import { apiSecurity } from './server/security/apiSecurity.js';
+import { authenticatedActor } from './server/security/auth.js';
+import { checkDatabaseConnection } from './server/db/pool.js';
 
 const app = express();
 const PORT = 3000;
 
 // Initialize scheduled background automation engine
-const jobsRunner = new ScheduledJobsRunner(db);
-const productionEngine = new ProductionDataProvider(db);
+const jobsRunner = new ScheduledJobsRunner(repository);
+const productionEngine = new ProductionDataProvider(repository);
 
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.disable('x-powered-by');
+// Every /api route is classified here. Unknown routes fail closed.
+app.use('/api', apiSecurity);
+
+function toPublicProduct(product: any) {
+  return {
+    serial_number: product.serial_number,
+    model: product.model,
+    size: product.size,
+    warranty_years: product.warranty_years,
+    image_url: product.image_url,
+  };
+}
+
+function toPublicActivation(activation: any) {
+  return {
+    warranty_id: activation.warranty_id,
+    serial_number: activation.serial_number,
+    activation_date: activation.activation_date,
+    expiry_date: activation.expiry_date,
+    status: activation.status,
+  };
+}
+
+function validateIntegrationUrl(value: unknown): string | null {
+  if (typeof value !== 'string' || value.length === 0 || value.length > 2048) return null;
+  try {
+    const parsed = new URL(value);
+    const hostname = parsed.hostname.toLowerCase();
+    const configured = (process.env.INTEGRATION_ALLOWED_HOSTS || '')
+      .split(',')
+      .map((host) => host.trim().toLowerCase())
+      .filter(Boolean);
+    const allowed = [
+      '1drv.ms',
+      's4hana-gateway.sleepee.com',
+      ...configured,
+    ].some((host) => hostname === host) || hostname.endsWith('.sharepoint.com');
+    return parsed.protocol === 'https:' && allowed ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
 
 // ----------------------------------------------------
 // Health & Diagnostic API
@@ -31,6 +77,22 @@ app.get('/api/health', (req, res) => {
     database: 'Cloud SQL PostgreSQL Schema Compatible',
     timestamp: new Date().toISOString(),
   });
+});
+
+// PostgreSQL Database Connection Health Check
+app.get('/api/health/database', async (req, res) => {
+  try {
+    const health = await checkDatabaseConnection();
+    res.json(health);
+  } catch (err: any) {
+    res.status(500).json({
+      ok: false,
+      configured: false,
+      database: 'postgres',
+      timestamp: new Date().toISOString(),
+      error: err?.message || String(err),
+    });
+  }
 });
 
 // Download/View PostgreSQL DDL Schema
@@ -61,7 +123,7 @@ app.get('/api/products/search', (req, res) => {
       return res.status(400).json({ error: 'يرجى إدخال الرقم التسلسلي للمرتبة' });
     }
 
-    const product = db.getProductBySerial(serial);
+    const product = repository.getProductBySerial(serial);
     if (!product) {
       return res.status(404).json({
         found: false,
@@ -79,7 +141,7 @@ app.get('/api/products/search', (req, res) => {
 app.get('/api/products', (req, res) => {
   try {
     const search = req.query.search as string;
-    const products = db.getProducts(search);
+    const products = repository.getProducts(search);
     res.json(products);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -89,7 +151,7 @@ app.get('/api/products', (req, res) => {
 // Bulk Import Products (XLSX / CSV JSON payload)
 app.post('/api/products/bulk-import', (req, res) => {
   try {
-    const { products, acting_user } = req.body;
+    const { products } = req.body;
     if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({
         success: false,
@@ -97,7 +159,7 @@ app.post('/api/products/bulk-import', (req, res) => {
       });
     }
 
-    const result = db.bulkAddProducts(products, acting_user || 'مسؤول إدارة المنتجات');
+    const result = repository.bulkAddProducts(products, authenticatedActor(req));
     res.status(200).json({
       success: true,
       summary: {
@@ -125,7 +187,7 @@ app.get(['/api/products/verify-qr/:serial', '/api/verify/qr/:serial'], (req, res
     }
 
     const cleanSerial = serial.trim().toUpperCase();
-    const product = db.getProductBySerial(cleanSerial);
+    const product = repository.getProductBySerial(cleanSerial);
 
     if (!product) {
       return res.status(404).json({
@@ -144,31 +206,17 @@ app.get(['/api/products/verify-qr/:serial', '/api/verify/qr/:serial'], (req, res
     res.json({
       valid: true,
       serial_number: product.serial_number,
-      model: product.model,
-      size: product.size,
-      warranty_years: product.warranty_years,
-      production_date: product.production_date,
-      status: product.status || (isActivated ? 'مفعل بالضمان' : 'جاهز للضمان'),
+      product: toPublicProduct(product),
+      status: isActivated ? 'ACTIVATED' : 'READY_FOR_ACTIVATION',
       ready_for_activation: !isActivated,
       activation_status: isActivated ? 'ALREADY_ACTIVATED' : 'READY_FOR_ACTIVATION',
       verification_timestamp: new Date().toISOString(),
       activation_endpoint: '/api/warranty/activate',
       qr_payload: {
-        serial_number: product.serial_number,
-        model: product.model,
-        size: product.size,
-        warranty_years: product.warranty_years,
         action: 'warranty_activation',
         activation_url: `${protocol}://${host}/?verify=${encodeURIComponent(product.serial_number)}`,
       },
-      warranty_details: product.activation
-        ? {
-            warranty_id: product.activation.warranty_id,
-            customer_name: product.activation.customer_name,
-            activation_date: product.activation.activation_date,
-            expiry_date: product.activation.expiry_date,
-          }
-        : null,
+      warranty_details: product.activation ? toPublicActivation(product.activation) : null,
       message: isActivated
         ? `المنتج أصلي ومعتمد، ومسجل له وثيقة ضمان نشطة رقم (${product.activation?.warranty_id}).`
         : `المنتج أصلي ومعتمد في قاعدة بيانات الإنتاج وجاهز للتفعيل الفوري للضمان الإلكتروني (${product.warranty_years} سنوات).`,
@@ -181,7 +229,7 @@ app.get(['/api/products/verify-qr/:serial', '/api/verify/qr/:serial'], (req, res
 // 2. Get single product by serial
 app.get('/api/products/:serial', (req, res) => {
   try {
-    const product = db.getProductBySerial(req.params.serial);
+    const product = repository.getProductBySerial(req.params.serial);
     if (!product) {
       return res.status(404).json({ error: 'المنتج غير مسجل' });
     }
@@ -205,7 +253,7 @@ app.post('/api/warranty/activate', (req, res) => {
     const finalInvoiceNumber = (invoice_number && invoice_number.trim()) ? invoice_number.trim() : 'بدون فاتورة';
 
     // Check 1: serial_number exists?
-    const product = db.getProductBySerial(cleanSerial);
+    const product = repository.getProductBySerial(cleanSerial);
     if (!product) {
       // If serial_number does not exist: Reject Request
       return res.status(404).json({
@@ -233,7 +281,7 @@ app.post('/api/warranty/activate', (req, res) => {
       return res.status(400).json({ error: 'رقم الهاتف غير صحيح' });
     }
 
-    const result = db.activateWarranty({
+    const result = repository.activateWarranty({
       serial_number: cleanSerial,
       customer_name: customer_name.trim(),
       phone: cleanPhone,
@@ -258,11 +306,11 @@ app.post('/api/warranty/activate', (req, res) => {
 app.get('/api/warranty/verify/:idOrSerial', (req, res) => {
   try {
     const identifier = req.params.idOrSerial;
-    const data = db.getWarrantyByIdOrSerial(identifier);
+    const data = repository.getWarrantyByIdOrSerial(identifier);
 
     if (!data) {
       // Check if product exists but not yet activated
-      const unactivatedProduct = db.getProductBySerial(identifier);
+      const unactivatedProduct = repository.getProductBySerial(identifier);
       if (unactivatedProduct && !unactivatedProduct.activation) {
         return res.json({
           status: 'UNACTIVATED',
@@ -278,13 +326,13 @@ app.get('/api/warranty/verify/:idOrSerial', (req, res) => {
     }
 
     // Log verification check
-    db.addLog(data.activation.warranty_id, data.product.serial_number, `تم التحقق من سريان الضمان عبر مسح رمز QR`);
+    repository.addLog(data.activation.warranty_id, data.product.serial_number, `تم التحقق من سريان الضمان عبر مسح رمز QR`);
 
     res.json({
       status: data.is_valid ? 'VALID' : 'EXPIRED',
       message: data.is_valid ? 'شهادة الضمان معتمدة وسارية المفعول لدى شركة سليبي' : 'شهادة الضمان منتهية الصلاحية',
-      activation: data.activation,
-      product: data.product,
+      activation: toPublicActivation(data.activation),
+      product: toPublicProduct(data.product),
       days_remaining: data.days_remaining,
     });
   } catch (err: any) {
@@ -314,12 +362,12 @@ app.get('/api/warranty/search', (req, res) => {
       });
     }
 
-    const results = db.searchWarranties(q, type);
+    const results = repository.searchWarranties(q, type);
 
     // If no direct warranty activation found, check if it's an unactivated product serial
     let unactivatedProduct: any = null;
     if (results.length === 0 && (type === 'all' || type === 'serial')) {
-      const prod = db.getProductBySerial(q);
+      const prod = repository.getProductBySerial(q);
       if (prod && !prod.activation) {
         unactivatedProduct = prod;
       }
@@ -363,7 +411,7 @@ app.post('/api/admin/login', (req, res) => {
 // Admin Stats
 app.get('/api/admin/stats', (req, res) => {
   try {
-    const stats = db.getStats();
+    const stats = repository.getStats();
     res.json(stats);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -374,7 +422,7 @@ app.get('/api/admin/stats', (req, res) => {
 app.get('/api/admin/products', (req, res) => {
   try {
     const search = req.query.search as string;
-    const products = db.getProducts(search);
+    const products = repository.getProducts(search);
     res.json(products);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -390,7 +438,7 @@ app.post('/api/admin/products', (req, res) => {
       return res.status(400).json({ error: 'يرجى استكمال جميع بيانات المنتج' });
     }
 
-    const product = db.addProduct({
+    const product = repository.addProduct({
       serial_number,
       model,
       size,
@@ -410,7 +458,7 @@ app.post('/api/admin/products', (req, res) => {
 app.put('/api/admin/products/:id', (req, res) => {
   try {
     const id = Number(req.params.id);
-    const updated = db.updateProduct(id, req.body);
+    const updated = repository.updateProduct(id, req.body);
     res.json({ success: true, product: updated });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -420,7 +468,7 @@ app.put('/api/admin/products/:id', (req, res) => {
 app.delete('/api/admin/products/:id', (req, res) => {
   try {
     const id = Number(req.params.id);
-    const ok = db.deleteProduct(id);
+    const ok = repository.deleteProduct(id);
     if (!ok) return res.status(404).json({ error: 'المنتج غير موجود' });
     res.json({ success: true });
   } catch (err: any) {
@@ -432,7 +480,7 @@ app.delete('/api/admin/products/:id', (req, res) => {
 app.get('/api/admin/warranties', (req, res) => {
   try {
     const search = req.query.search as string;
-    const warranties = db.getWarranties(search);
+    const warranties = repository.getWarranties(search);
     res.json(warranties);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -443,7 +491,7 @@ app.get('/api/admin/warranties', (req, res) => {
 app.get('/api/admin/logs', (req, res) => {
   try {
     const limit = Number(req.query.limit) || 100;
-    const logs = db.getLogs(limit);
+    const logs = repository.getLogs(limit);
     res.json(logs);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -455,7 +503,7 @@ app.get('/api/admin/logs', (req, res) => {
 // ----------------------------------------------------
 app.get('/api/users', (req, res) => {
   try {
-    const users = db.getUsers();
+    const users = repository.getUsers();
     res.json(users);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -464,7 +512,7 @@ app.get('/api/users', (req, res) => {
 
 app.get('/api/users/role-logs', (req, res) => {
   try {
-    const logs = db.getRoleChangeLogs();
+    const logs = repository.getRoleChangeLogs();
     res.json(logs);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -473,9 +521,9 @@ app.get('/api/users/role-logs', (req, res) => {
 
 app.patch('/api/users/:id/role', (req, res) => {
   try {
-    const { role, acting_user } = req.body;
+    const { role } = req.body;
     if (!role) return res.status(400).json({ error: 'الدور مطلوب' });
-    const result = db.updateUserRole(req.params.id, role, acting_user);
+    const result = repository.updateUserRole(req.params.id, role, authenticatedActor(req));
     res.json({ success: true, user: result.user, log: result.log });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -484,11 +532,11 @@ app.patch('/api/users/:id/role', (req, res) => {
 
 app.patch('/api/users/:id/status', (req, res) => {
   try {
-    const { status, acting_user } = req.body;
+    const { status } = req.body;
     if (!status || !['ACTIVE', 'INACTIVE', 'SUSPENDED'].includes(status)) {
       return res.status(400).json({ error: 'حالة الحساب غير صالحة' });
     }
-    const result = db.updateUserStatus(req.params.id, status, acting_user);
+    const result = repository.updateUserStatus(req.params.id, status, authenticatedActor(req));
     res.json({ success: true, user: result.user, log: result.log });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -501,7 +549,7 @@ app.patch('/api/users/:id/status', (req, res) => {
 app.get('/api/claims', (req, res) => {
   try {
     const { status, search, type } = req.query as { status?: string; search?: string; type?: string };
-    const claims = db.getClaims({ status, search, type });
+    const claims = repository.getClaims({ status, search, type });
     res.json(claims);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -510,7 +558,7 @@ app.get('/api/claims', (req, res) => {
 
 app.get('/api/claims/:id', (req, res) => {
   try {
-    const claim = db.getClaimById(req.params.id);
+    const claim = repository.getClaimById(req.params.id);
     if (!claim) return res.status(404).json({ error: 'طلب الضمان غير موجود' });
     res.json(claim);
   } catch (err: any) {
@@ -520,12 +568,12 @@ app.get('/api/claims/:id', (req, res) => {
 
 app.post('/api/claims', (req, res) => {
   try {
-    const { warranty_id, serial_number, customer_name, phone, complaint_type, complaint_description, images, acting_user } = req.body;
+    const { warranty_id, serial_number, customer_name, phone, complaint_type, complaint_description, images } = req.body;
     if (!serial_number || !customer_name || !phone || !complaint_type || !complaint_description) {
       return res.status(400).json({ error: 'يرجى استكمال جميع بيانات تقديم الشكوى' });
     }
 
-    const claim = db.createClaim(
+    const claim = repository.createClaim(
       {
         warranty_id,
         serial_number,
@@ -535,7 +583,7 @@ app.post('/api/claims', (req, res) => {
         complaint_description,
         images: images || [],
       },
-      acting_user
+      req.principal ? authenticatedActor(req) : 'public-customer-submission'
     );
 
     res.status(201).json({ success: true, claim });
@@ -546,8 +594,8 @@ app.post('/api/claims', (req, res) => {
 
 app.patch('/api/claims/:id/workflow', (req, res) => {
   try {
-    const { claim_status, assigned_to, inspection_date, inspection_result, resolution, acting_user } = req.body;
-    const updated = db.updateClaimWorkflow(
+    const { claim_status, assigned_to, inspection_date, inspection_result, resolution } = req.body;
+    const updated = repository.updateClaimWorkflow(
       req.params.id,
       {
         claim_status,
@@ -556,7 +604,7 @@ app.patch('/api/claims/:id/workflow', (req, res) => {
         inspection_result,
         resolution,
       },
-      acting_user
+      authenticatedActor(req)
     );
 
     res.json({ success: true, claim: updated });
@@ -567,8 +615,8 @@ app.patch('/api/claims/:id/workflow', (req, res) => {
 
 app.patch('/api/claims/:id/sla', (req, res) => {
   try {
-    const { next_follow_up_date, last_action_date, target_resolution_days, pending_tasks, acting_user } = req.body;
-    const updated = db.updateClaimSLA(
+    const { next_follow_up_date, last_action_date, target_resolution_days, pending_tasks } = req.body;
+    const updated = repository.updateClaimSLA(
       req.params.id,
       {
         next_follow_up_date,
@@ -576,7 +624,7 @@ app.patch('/api/claims/:id/sla', (req, res) => {
         target_resolution_days,
         pending_tasks,
       },
-      acting_user
+      authenticatedActor(req)
     );
 
     res.json({ success: true, claim: updated });
@@ -591,7 +639,7 @@ app.patch('/api/claims/:id/sla', (req, res) => {
 app.get('/api/replacements', (req, res) => {
   try {
     const search = req.query.search as string;
-    const replacements = db.getReplacements(search);
+    const replacements = repository.getReplacements(search);
     res.json(replacements);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -600,7 +648,7 @@ app.get('/api/replacements', (req, res) => {
 
 app.get('/api/replacements/:id', (req, res) => {
   try {
-    const replacement = db.getReplacementById(req.params.id);
+    const replacement = repository.getReplacementById(req.params.id);
     if (!replacement) return res.status(404).json({ error: 'إذن الاستبدال غير موجود' });
     res.json(replacement);
   } catch (err: any) {
@@ -610,21 +658,21 @@ app.get('/api/replacements/:id', (req, res) => {
 
 app.post('/api/replacements', (req, res) => {
   try {
-    const { old_serial_number, new_serial_number, old_warranty_id, replacement_reason, approved_by, notes, acting_user } = req.body;
-    if (!old_serial_number || !new_serial_number || !old_warranty_id || !replacement_reason || !approved_by) {
+    const { old_serial_number, new_serial_number, old_warranty_id, replacement_reason, notes } = req.body;
+    if (!old_serial_number || !new_serial_number || !old_warranty_id || !replacement_reason) {
       return res.status(400).json({ error: 'يرجى استكمال جميع بيانات طلب الاستبدال' });
     }
 
-    const replacement = db.createReplacement(
+    const replacement = repository.createReplacement(
       {
         old_serial_number,
         new_serial_number,
         old_warranty_id,
         replacement_reason,
-        approved_by,
+        approved_by: authenticatedActor(req),
         notes,
       },
-      acting_user
+      authenticatedActor(req)
     );
 
     res.status(201).json({ success: true, replacement });
@@ -640,10 +688,10 @@ app.get('/api/lifecycle', (req, res) => {
   try {
     const serial = (req.query.serial as string) || (req.query.serial_number as string);
     if (serial) {
-      const timeline = db.getLifecycleBySerial(serial);
+      const timeline = repository.getLifecycleBySerial(serial);
       return res.json(timeline);
     }
-    const allLifecycle = (db as any).data?.product_lifecycle || [];
+    const allLifecycle = repository.getAllLifecycleEvents();
     res.json(allLifecycle);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -654,7 +702,7 @@ app.get('/api/lifecycle/:serial', (req, res) => {
   try {
     const serial = req.params.serial;
     if (!serial) return res.status(400).json({ error: 'الرقم التسلسلي مطلوب' });
-    const timeline = db.getLifecycleBySerial(serial);
+    const timeline = repository.getLifecycleBySerial(serial);
     res.json(timeline);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -667,7 +715,7 @@ app.post('/api/lifecycle', (req, res) => {
     if (!serial_number || !event_type || !performed_by) {
       return res.status(400).json({ error: 'البيانات الأساسية للحدث غير مكتملة' });
     }
-    const event = db.addLifecycleEvent({
+    const event = repository.addLifecycleEvent({
       serial_number,
       event_type,
       performed_by,
@@ -691,7 +739,7 @@ app.get('/api/attachments', (req, res) => {
       entity_id?: string;
       category?: string;
     };
-    const attachments = db.getAttachments({ entity_type, entity_id, category });
+    const attachments = repository.getAttachments({ entity_type, entity_id, category });
     res.json(attachments);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -711,14 +759,13 @@ app.post('/api/attachments', (req, res) => {
       storage_url,
       description,
       category,
-      uploaded_by,
     } = req.body;
 
     if (!entity_type || !entity_id || !file_name) {
       return res.status(400).json({ error: 'بيانات الملف المرفق غير مكتملة' });
     }
 
-    const attachment = db.addAttachment(
+    const attachment = repository.addAttachment(
       {
         entity_type,
         entity_id,
@@ -730,9 +777,9 @@ app.post('/api/attachments', (req, res) => {
         storage_url: download_url || storage_url,
         description: description || '',
         category: category || 'عام',
-        uploaded_by: uploaded_by || 'النظام',
+        uploaded_by: authenticatedActor(req),
       },
-      uploaded_by
+      authenticatedActor(req)
     );
 
     res.status(201).json({ success: true, attachment });
@@ -743,8 +790,8 @@ app.post('/api/attachments', (req, res) => {
 
 app.delete('/api/attachments/:id', (req, res) => {
   try {
-    const actingUser = (req.query.acting_user as string) || 'مدير النظام';
-    db.deleteAttachment(req.params.id, actingUser);
+    const actingUser = authenticatedActor(req);
+    repository.deleteAttachment(req.params.id, actingUser);
     res.json({ success: true, message: 'تم حذف المرفق بنجاح وتوثيق العملية في سجل التدقيق' });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -753,8 +800,8 @@ app.delete('/api/attachments/:id', (req, res) => {
 
 app.post('/api/attachments/:id/audit-download', (req, res) => {
   try {
-    const actingUser = (req.body.acting_user as string) || 'المستخدم';
-    db.auditAttachmentDownload(req.params.id, actingUser);
+    const actingUser = authenticatedActor(req);
+    repository.auditAttachmentDownload(req.params.id, actingUser);
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -764,13 +811,13 @@ app.post('/api/attachments/:id/audit-download', (req, res) => {
 // Secure download/view URL resolution with automatic audit logging
 app.get('/api/attachments/:id/download-url', (req, res) => {
   try {
-    const attachment = db.getAttachmentById(req.params.id);
+    const attachment = repository.getAttachmentById(req.params.id);
     if (!attachment) {
       return res.status(404).json({ error: 'المرفق غير موجود' });
     }
 
-    const actingUser = (req.query.acting_user as string) || 'مستخدم النظام';
-    db.auditAttachmentDownload(attachment.attachment_id, actingUser);
+    const actingUser = authenticatedActor(req);
+    repository.auditAttachmentDownload(attachment.attachment_id, actingUser);
 
     res.json({
       success: true,
@@ -788,7 +835,7 @@ app.get('/api/attachments/:id/download-url', (req, res) => {
 // Attachment migration API
 app.post('/api/attachments/migrate', (req, res) => {
   try {
-    const stats = db.migrateAttachments();
+    const stats = repository.migrateAttachments();
     res.json({
       success: true,
       message: 'تم فحص وترقية جميع المرفقات إلى نمط التخزين السحابي الجديد بنجاح',
@@ -849,7 +896,7 @@ app.get([
       return res.status(400).json({ error: 'يرجى إدخال الرقم التسلسلي، رقم الضمان، أو رقم هاتف العميل' });
     }
 
-    const data = db.getCustomer360(query);
+    const data = repository.getCustomer360(query);
     if (!data) {
       return res.status(404).json({ error: `لم يتم العثور على أي مرتبة أو سجل مطابق للبحث (${query})` });
     }
@@ -868,11 +915,11 @@ app.get('/api/customer-service/communications', (req, res) => {
     const warrantyId = req.query.warranty_id as string;
 
     if (serial || phone || warrantyId) {
-      const communications = db.getCommunicationsForCustomer(serial, phone, warrantyId);
+      const communications = repository.getCommunicationsForCustomer(serial, phone, warrantyId);
       return res.json(communications);
     }
 
-    const all = db.getAllCommunications();
+    const all = repository.getAllCommunications();
     res.json(all);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -916,7 +963,7 @@ app.post('/api/customer-service/communications', (req, res) => {
       });
     }
 
-    const newComm = db.addCommunication({
+    const newComm = repository.addCommunication({
       serial_number: serial_number || '',
       warranty_id: warranty_id || undefined,
       customer_name: customer_name || undefined,
@@ -941,7 +988,7 @@ app.post('/api/customer-service/communications', (req, res) => {
 // DELETE /api/customer-service/communications/:id
 app.delete('/api/customer-service/communications/:id', (req, res) => {
   try {
-    const deleted = db.deleteCommunication(req.params.id);
+    const deleted = repository.deleteCommunication(req.params.id);
     if (!deleted) {
       return res.status(404).json({ error: 'سجل التواصل غير موجود' });
     }
@@ -957,7 +1004,7 @@ app.delete('/api/customer-service/communications/:id', (req, res) => {
 app.get('/api/search/omni', (req, res) => {
   try {
     const query = (req.query.q as string) || '';
-    const results = db.omniSearch(query);
+    const results = repository.omniSearch(query);
     res.json(results);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -969,7 +1016,7 @@ app.get('/api/search/omni', (req, res) => {
 // ----------------------------------------------------
 app.get('/api/quality/stats', (req, res) => {
   try {
-    const stats = db.getQualityStats();
+    const stats = repository.getQualityStats();
     res.json(stats);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -979,7 +1026,7 @@ app.get('/api/quality/stats', (req, res) => {
 // Admin CSV Export
 app.get('/api/admin/export-csv', (req, res) => {
   try {
-    const csvData = db.exportCSV();
+    const csvData = repository.exportCSV();
     const filename = `sleepee_warranties_${new Date().toISOString().slice(0, 10)}.csv`;
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -1000,7 +1047,7 @@ app.get('/api/powerbi/feed', (req, res) => {
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.get('host');
     const baseUrl = `${protocol}://${host}`;
-    const feed = db.getPowerBIFeed(baseUrl);
+    const feed = repository.getPowerBIFeed(baseUrl);
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -1016,7 +1063,7 @@ app.get('/api/powerbi/pbids', (req, res) => {
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.get('host');
     const baseUrl = `${protocol}://${host}`;
-    const pbidsContent = db.getPowerBIPBIDS(baseUrl);
+    const pbidsContent = repository.getPowerBIPBIDS(baseUrl);
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="sleepee_warranty_powerbi.pbids"');
@@ -1035,7 +1082,7 @@ app.get('/api/powerbi/csv/:table', (req, res) => {
       return res.status(400).json({ error: `جدول غير مدعوم: ${table}` });
     }
 
-    const csvData = db.getPowerBICSV(table);
+    const csvData = repository.getPowerBICSV(table);
     const filename = `sleepee_powerbi_${table}_${new Date().toISOString().slice(0, 10)}.csv`;
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -1053,7 +1100,7 @@ app.get('/api/powerbi/query-script', (req, res) => {
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.get('host');
     const baseUrl = `${protocol}://${host}`;
-    const script = db.getPowerBIQueryScript(baseUrl);
+    const script = repository.getPowerBIQueryScript(baseUrl);
 
     if (req.query.download === 'true') {
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -1073,7 +1120,7 @@ app.get('/api/powerbi/overview', (req, res) => {
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.get('host');
     const baseUrl = `${protocol}://${host}`;
-    const feed = db.getPowerBIFeed(baseUrl);
+    const feed = repository.getPowerBIFeed(baseUrl);
 
     res.json({
       status: 'ONLINE',
@@ -1106,7 +1153,7 @@ app.get('/api/powerbi/overview', (req, res) => {
 // Reset / Re-seed
 app.post('/api/admin/reset-data', (req, res) => {
   try {
-    db.resetToDefault();
+    repository.resetToDefault();
     res.json({ success: true, message: 'تمت إعادة ضبط البيانات النموذجية بنجاح' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1120,7 +1167,7 @@ app.post('/api/admin/reset-data', (req, res) => {
 // 1. Production Dashboard Stats
 app.get('/api/production/stats', (req, res) => {
   try {
-    const stats = db.getProductionStats();
+    const stats = repository.getProductionStats();
     res.json(stats);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1130,7 +1177,7 @@ app.get('/api/production/stats', (req, res) => {
 // 2. Product Models & Warranty Years Mapping
 app.get('/api/production/models', (req, res) => {
   try {
-    const models = db.getProductModels();
+    const models = repository.getProductModels();
     res.json(models);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1139,7 +1186,7 @@ app.get('/api/production/models', (req, res) => {
 
 app.post('/api/production/models', (req, res) => {
   try {
-    const model = db.addProductModel(req.body);
+    const model = repository.addProductModel(req.body);
     res.status(201).json(model);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -1150,17 +1197,17 @@ app.post('/api/production/models', (req, res) => {
 app.put('/api/production/models/:modelId/warranty', (req, res) => {
   try {
     const { modelId } = req.params;
-    const { warranty_years, changed_by, user_role, reason } = req.body;
+    const { warranty_years, reason } = req.body;
 
     if (!warranty_years) {
       return res.status(400).json({ error: 'حقل سنوات الضمان مطلوب' });
     }
 
-    const result = db.updateModelWarrantyYears(
+    const result = repository.updateModelWarrantyYears(
       modelId,
       Number(warranty_years),
-      changed_by || 'المشرف العام',
-      user_role || '',
+      authenticatedActor(req),
+      req.principal?.role || '',
       reason || 'تحديث دوري لسياسة الضمان'
     );
 
@@ -1178,7 +1225,7 @@ app.put('/api/production/models/:modelId/warranty', (req, res) => {
 // 4. Warranty Policy Audits
 app.get('/api/production/warranty-audits', (req, res) => {
   try {
-    const audits = db.getWarrantyPolicyAudits();
+    const audits = repository.getWarrantyPolicyAudits();
     res.json(audits);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1188,7 +1235,7 @@ app.get('/api/production/warranty-audits', (req, res) => {
 // 5. Cloud Sync States (SharePoint, OneDrive, SAP, Excel, CSV)
 app.get('/api/production/sync-states', (req, res) => {
   try {
-    const states = db.getSyncStates();
+    const states = repository.getSyncStates();
     res.json(states);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1198,7 +1245,7 @@ app.get('/api/production/sync-states', (req, res) => {
 // 6. Import Logs
 app.get('/api/production/import-logs', (req, res) => {
   try {
-    const logs = db.getImportLogs();
+    const logs = repository.getImportLogs();
     res.json(logs);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1208,7 +1255,7 @@ app.get('/api/production/import-logs', (req, res) => {
 // 7. Production Batches
 app.get('/api/production/batches', (req, res) => {
   try {
-    const batches = db.getProductionBatches();
+    const batches = repository.getProductionBatches();
     res.json(batches);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1238,7 +1285,7 @@ app.post('/api/production/validate', (req, res) => {
     const validation = productionEngine.validateRecords(rawRecords, sourceType || 'Manual');
     
     // Check duplicates against database
-    const existingSerials = new Set(db.getProducts().map((p) => p.serial_number));
+    const existingSerials = new Set(repository.getProducts().map((p) => p.serial_number));
     const duplicatesInDb = validation.validRecords.filter((r) => existingSerials.has(r.serial_number));
     const newToInsert = validation.validRecords.filter((r) => !existingSerials.has(r.serial_number));
 
@@ -1262,7 +1309,7 @@ app.post('/api/production/validate', (req, res) => {
 // 9. Execute Production Import
 app.post('/api/production/import', async (req, res) => {
   try {
-    const { sourceType, fileName, fileData, rawText, records, performedBy } = req.body;
+    const { sourceType, fileName, fileData, rawText, records } = req.body;
     let rawRecords: any[] = [];
     let detectedFileName = fileName || 'Production_Data.xlsx';
 
@@ -1287,7 +1334,7 @@ app.post('/api/production/import', async (req, res) => {
       sourceType || 'Manual',
       detectedFileName,
       rawRecords,
-      performedBy || 'إدارة الإنتاج'
+      authenticatedActor(req)
     );
 
     res.json(result);
@@ -1299,8 +1346,10 @@ app.post('/api/production/import', async (req, res) => {
 // 10. Trigger SharePoint Sync
 app.post('/api/production/sync/sharepoint', async (req, res) => {
   try {
-    const { performedBy, customUrl } = req.body;
-    const result = await productionEngine.syncSharePoint(performedBy || 'SharePoint Sync Button', customUrl);
+    const { customUrl } = req.body;
+    const approvedUrl = customUrl ? validateIntegrationUrl(customUrl) : undefined;
+    if (customUrl && !approvedUrl) return res.status(400).json({ error: 'رابط التكامل غير مسموح به.' });
+    const result = await productionEngine.syncSharePoint(authenticatedActor(req), approvedUrl);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1310,8 +1359,10 @@ app.post('/api/production/sync/sharepoint', async (req, res) => {
 // 11. Trigger OneDrive Sync
 app.post('/api/production/sync/onedrive', async (req, res) => {
   try {
-    const { performedBy, customUrl } = req.body;
-    const result = await productionEngine.syncOneDrive(performedBy || 'OneDrive Sync Button', customUrl);
+    const { customUrl } = req.body;
+    const approvedUrl = customUrl ? validateIntegrationUrl(customUrl) : undefined;
+    if (customUrl && !approvedUrl) return res.status(400).json({ error: 'رابط التكامل غير مسموح به.' });
+    const result = await productionEngine.syncOneDrive(authenticatedActor(req), approvedUrl);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1322,7 +1373,9 @@ app.post('/api/production/sync/onedrive', async (req, res) => {
 app.post('/api/production/sync/sap', async (req, res) => {
   try {
     const { performedBy, customUrl } = req.body;
-    const result = await productionEngine.syncSAP(performedBy || 'SAP S/4HANA OData Connector', customUrl);
+    const approvedUrl = customUrl ? validateIntegrationUrl(customUrl) : undefined;
+    if (customUrl && !approvedUrl) return res.status(400).json({ error: 'رابط التكامل غير مسموح به.' });
+    const result = await productionEngine.syncSAP(authenticatedActor(req), approvedUrl);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1336,15 +1389,22 @@ app.post('/api/production/sync-config', (req, res) => {
     if (!sync_source) {
       return res.status(400).json({ error: 'اسم مزود المزامنة (sync_source) مطلوب' });
     }
+    if (api_key_or_token) {
+      return res.status(400).json({ error: 'INTEGRATION_SECRETS_MUST_NOT_BE_SENT_BY_BROWSER' });
+    }
+    const approvedUrl = sync_url ? validateIntegrationUrl(sync_url) : undefined;
+    if (sync_url && !approvedUrl) {
+      return res.status(400).json({ error: 'رابط التكامل غير مسموح به. استخدم نقطة HTTPS معتمدة فقط.' });
+    }
 
-    const updated = db.updateSyncState({
+    const updated = repository.updateSyncState({
       sync_source,
-      sync_url,
+      sync_url: approvedUrl,
       target_file_name,
-      connection_mode: connection_mode || (sync_url ? 'live_url' : 'simulated_fallback'),
-      connection_status: sync_url ? 'connected' : 'simulated',
+      connection_mode: connection_mode || (approvedUrl ? 'live_url' : 'simulated_fallback'),
+      connection_status: approvedUrl ? 'connected' : 'simulated',
       auth_type,
-      api_key_or_token,
+      // Secrets are intentionally never persisted in application records.
       notes,
     });
 
@@ -1369,12 +1429,12 @@ app.post('/api/production/test-connection', async (req, res) => {
       });
     }
 
-    const trimmedUrl = sync_url.trim();
-    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
-      return res.status(400).json({
-        success: false,
-        error: 'يجب أن يبدأ الرابط بـ https:// أو http://',
-      });
+    if (api_key_or_token) {
+      return res.status(400).json({ success: false, error: 'لا يتم قبول رموز وصول من المتصفح. اضبط سر التكامل على الخادم.' });
+    }
+    const trimmedUrl = validateIntegrationUrl(sync_url);
+    if (!trimmedUrl) {
+      return res.status(400).json({ success: false, error: 'رابط التكامل غير مسموح به. يلزم رابط HTTPS معتمد.' });
     }
 
     const startTime = Date.now();
@@ -1446,7 +1506,7 @@ app.post('/api/production/test-connection', async (req, res) => {
 // 13. Download Cumulative Production_Master.xlsx
 app.get('/api/production/export-master', (req, res) => {
   try {
-    const buffer = db.exportProductionMasterExcel();
+    const buffer = repository.exportProductionMasterExcel();
     const filename = `Production_Master_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -1461,7 +1521,7 @@ app.get('/api/production/export-master', (req, res) => {
 app.get('/api/production/zebra-label/:serial', (req, res) => {
   try {
     const { serial } = req.params;
-    const labelData = db.getZebraLabelData(serial);
+    const labelData = repository.getZebraLabelData(serial);
     res.json(labelData);
   } catch (err: any) {
     res.status(404).json({ error: err.message });
@@ -1494,7 +1554,7 @@ app.post('/api/production/zebra-test-print', (req, res) => {
 // 15. Backup & Retention Policy
 app.get('/api/production/backup-policy', (req, res) => {
   try {
-    const policy = db.getBackupAndRetentionPolicy();
+    const policy = repository.getBackupAndRetentionPolicy();
     res.json(policy);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1521,6 +1581,22 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Sleepee Warranty Server running on http://0.0.0.0:${PORT}`);
+    // Database readiness check
+    if (process.env.DATABASE_URL) {
+      console.log('[PostgreSQL] DATABASE_URL detected. Testing connection readiness...');
+      checkDatabaseConnection().then((res) => {
+        if (res.ok) {
+          console.log(`[PostgreSQL] Connection verified successfully (database: ${res.database}).`);
+        } else {
+          console.warn(`[PostgreSQL] Connection check warning: ${res.error}`);
+        }
+      }).catch((err) => {
+        console.warn('[PostgreSQL] Connection check error:', err);
+      });
+    } else {
+      console.log('[PostgreSQL] DATABASE_URL is not configured in environment. Connectivity ready on demand.');
+    }
+    console.log('[Repository] Active storage engine: JsonApplicationRepository (Phase 1)');
     // Start automated background tasks runner
     jobsRunner.start(60);
   });

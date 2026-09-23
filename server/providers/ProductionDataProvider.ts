@@ -9,13 +9,13 @@ import { CSVProvider } from './CSVProvider.js';
 import { SharePointProvider } from './SharePointProvider.js';
 import { OneDriveProvider } from './OneDriveProvider.js';
 import { SAPProvider } from './SAPProvider.js';
-import { DatabaseService } from '../db/index.js';
+import type { IApplicationRepository } from '../repositories/types.js';
 
 export class ProductionDataProvider {
-  private db: DatabaseService;
+  private repository: IApplicationRepository;
 
-  constructor(db: DatabaseService) {
-    this.db = db;
+  constructor(repository: IApplicationRepository) {
+    this.repository = repository;
   }
 
   /**
@@ -32,7 +32,7 @@ export class ProductionDataProvider {
     const skippedRecords: { row: number; data: any; reason: string }[] = [];
     const failedRecords: { row: number; data: any; reason: string }[] = [];
 
-    const activeModels = this.db.getProductModels();
+    const activeModels = this.repository.getProductModels();
 
     records.forEach((raw, idx) => {
       const rowNum = idx + 2; // Accounting for 1-based indexing + header row
@@ -197,7 +197,7 @@ export class ProductionDataProvider {
     // Step 2: Ingest Valid Records with Duplicate Collision Detection
     for (const rec of validation.validRecords) {
       try {
-        const existing = this.db.getProductBySerial(rec.serial_number);
+        const existing = this.repository.getProductBySerial(rec.serial_number);
         if (existing) {
           skippedCount++;
           // Never overwrite existing serials!
@@ -205,7 +205,7 @@ export class ProductionDataProvider {
         }
 
         // Add Product via DB Service
-        this.db.addProduct({
+        this.repository.addProduct({
           serial_number: rec.serial_number,
           model: rec.model,
           size: rec.size,
@@ -228,7 +228,7 @@ export class ProductionDataProvider {
         });
 
         // Ensure lifecycle event 'Produced' is recorded
-        this.db.addLifecycleEvent({
+        this.repository.addLifecycleEvent({
           serial_number: rec.serial_number,
           event_type: 'Produced',
           event_date: `${rec.production_date}T08:00:00Z`,
@@ -238,7 +238,7 @@ export class ProductionDataProvider {
         });
 
         // Update Batch Summary
-        this.db.upsertProductionBatch({
+        this.repository.upsertProductionBatch({
           batch_no: rec.batch_no,
           production_order: rec.production_order,
           production_date: rec.production_date,
@@ -264,7 +264,7 @@ export class ProductionDataProvider {
         : 'SUCCESS';
 
     // Step 3: Write Import Log
-    this.db.addImportLog({
+    this.repository.addImportLog({
       import_id: importId,
       file_name: fileName,
       source_type: sourceType,
@@ -279,7 +279,7 @@ export class ProductionDataProvider {
     });
 
     // Step 4: Update Sync State
-    this.db.updateSyncState({
+    this.repository.updateSyncState({
       sync_source: sourceType as any,
       last_sync_time: new Date().toISOString(),
       last_successful_sync:
@@ -289,7 +289,7 @@ export class ProductionDataProvider {
     });
 
     // Step 5: Log to security audit
-    this.db.addLog(
+    this.repository.addLog(
       null,
       `IMPORT_${importId}`,
       `تم استيراد ${importedCount} مرتبة بنجاح، وتخطي ${skippedCount} سجل مكرر/توقعي بواسطة ${performedBy} من مصدر [${sourceType}: ${fileName}]`
@@ -387,7 +387,7 @@ export class ProductionDataProvider {
     performedBy: string = 'Automated SharePoint Sync',
     customUrl?: string
   ): Promise<SyncExecutionResult> {
-    const syncState = this.db.getSyncStates().find((s) => s.sync_source === 'SharePoint');
+    const syncState = this.repository.getSyncStates().find((s) => s.sync_source === 'SharePoint');
     const targetUrl = customUrl || syncState?.sync_url;
     const isLiveMode = syncState?.connection_mode === 'live_url';
 
@@ -401,7 +401,7 @@ export class ProductionDataProvider {
           performedBy,
           liveData.hash
         );
-        this.db.updateSyncState({
+        this.repository.updateSyncState({
           sync_source: 'SharePoint',
           connection_status: 'connected',
           last_successful_sync: new Date().toISOString(),
@@ -441,7 +441,7 @@ export class ProductionDataProvider {
     performedBy: string = 'Automated OneDrive Sync',
     customUrl?: string
   ): Promise<SyncExecutionResult> {
-    const syncState = this.db.getSyncStates().find((s) => s.sync_source === 'OneDrive');
+    const syncState = this.repository.getSyncStates().find((s) => s.sync_source === 'OneDrive');
     const targetUrl = customUrl || syncState?.sync_url;
     const isLiveMode = syncState?.connection_mode === 'live_url';
 
@@ -455,7 +455,7 @@ export class ProductionDataProvider {
           performedBy,
           liveData.hash
         );
-        this.db.updateSyncState({
+        this.repository.updateSyncState({
           sync_source: 'OneDrive',
           connection_status: 'connected',
           last_successful_sync: new Date().toISOString(),
@@ -495,7 +495,7 @@ export class ProductionDataProvider {
     performedBy: string = 'SAP OData Sync',
     customUrl?: string
   ): Promise<SyncExecutionResult> {
-    const syncState = this.db.getSyncStates().find((s) => s.sync_source === 'SAP');
+    const syncState = this.repository.getSyncStates().find((s) => s.sync_source === 'SAP');
     const targetUrl = customUrl || syncState?.sync_url;
     const isLiveMode = syncState?.connection_mode === 'live_url';
 
@@ -509,7 +509,7 @@ export class ProductionDataProvider {
           performedBy,
           liveData.hash
         );
-        this.db.updateSyncState({
+        this.repository.updateSyncState({
           sync_source: 'SAP',
           connection_status: 'connected',
           last_successful_sync: new Date().toISOString(),

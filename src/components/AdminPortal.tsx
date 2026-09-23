@@ -65,9 +65,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 }) => {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('sleepee2026');
-  const [loginError, setLoginError] = useState<string | null>(null);
+    const [loginError, setLoginError] = useState<string | null>(null);
 
   // Active Admin Sub-tab (claims, replacements, repairs, warranties & logs consolidated into Customer Service 360 Case Management Center)
   const getResolvedAdminTab = (tab?: string): 'dashboard' | 'production' | 'quality' | 'customer360' | 'rbac' | 'products' | 'schema' | 'powerbi' => {
@@ -185,12 +183,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
   // Check existing session or Firebase auth state
   useEffect(() => {
-    const token = localStorage.getItem('sleepee_admin_token');
-    if (token) {
-      setIsAuthenticated(true);
-      fetchDashboardData();
-    }
-
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setFirebaseUser(user);
@@ -218,28 +210,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     }
   };
 
-  const handleLogin = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setLoginError(null);
-    try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل تسجيل الدخول');
-
-      localStorage.setItem('sleepee_admin_token', data.token);
-      setIsAuthenticated(true);
-      fetchDashboardData();
-    } catch (err: any) {
-      setLoginError(err.message);
-    }
+  const handleLogin = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setLoginError('تم إيقاف تسجيل الدخول التقليدي. يرجى استخدام حساب Google المعتمد.');
   };
 
   const handleLogout = async () => {
-    localStorage.removeItem('sleepee_admin_token');
     try {
       await signOut(auth);
     } catch {}
@@ -373,32 +349,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-[#111111] mb-1">اسم المستخدم</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-[#E5E7EB] bg-[#F5F5F5] focus:bg-white text-sm font-semibold outline-none focus:ring-4 focus:ring-[#D62828]/10 focus:border-[#D62828] transition"
-              />
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-900">
+              تم إيقاف اسم المستخدم وكلمة المرور التقليديين. استخدم حساب Google المعتمد للوصول إلى لوحة الإدارة.
             </div>
-            <div>
-              <label className="block text-xs font-bold text-[#111111] mb-1">كلمة المرور</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-[#E5E7EB] bg-[#F5F5F5] focus:bg-white text-sm font-semibold outline-none focus:ring-4 focus:ring-[#D62828]/10 focus:border-[#D62828] transition"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full py-3 rounded-xl bg-[#D62828] hover:bg-[#B71C1C] text-white font-bold text-sm shadow-md shadow-[#D62828]/20 transition cursor-pointer"
-            >
-              تسجيل الدخول إلى لوحة التحكم
-            </button>
-          </form>
 
           {/* Google Sign In (Firebase) */}
           <div className="mt-4 pt-4 border-t border-[#E5E7EB] space-y-2.5">
@@ -426,14 +379,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 />
               </svg>
               <span>تسجيل الدخول عبر Google (حساب الجودة والرقابة)</span>
-            </button>
-
-            {/* Quick Demo Button */}
-            <button
-              onClick={() => handleLogin()}
-              className="w-full text-xs text-[#D62828] hover:text-[#B71C1C] font-bold bg-[#D62828]/10 hover:bg-[#D62828]/15 py-2.5 rounded-xl transition text-center cursor-pointer"
-            >
-              ⚡ دخول سريع مباشر (حساب المشرف التجريبي)
             </button>
           </div>
         </div>

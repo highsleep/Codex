@@ -1593,7 +1593,7 @@ const INITIAL_COMMUNICATIONS: CustomerCommunication[] = [
 ];
 
 export class DatabaseService {
-  private data: DatabaseData = {
+  public data: DatabaseData = {
     products: [],
     warranty_activations: [],
     warranty_claims: [],
@@ -3159,6 +3159,12 @@ export class DatabaseService {
   }
 
   // --- PRODUCT LIFECYCLE API METHODS ---
+  public getAllLifecycleEvents(): ProductLifecycle[] {
+    return [...this.data.product_lifecycle].sort(
+      (a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+    );
+  }
+
   public getLifecycleBySerial(serial: string): ProductLifecycle[] {
     const clean = serial.trim().toUpperCase();
     return this.data.product_lifecycle
