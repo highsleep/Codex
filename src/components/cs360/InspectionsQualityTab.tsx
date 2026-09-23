@@ -28,17 +28,18 @@ interface InspectionsQualityTabProps {
 }
 
 export const InspectionsQualityTab: React.FC<InspectionsQualityTabProps> = ({
-  claims,
+  claims = [],
   selectedClaimId,
   currentUser,
   onRefresh,
   onApproveReplacement,
 }) => {
+  const safeClaims = claims || [];
   const [activeClaimId, setActiveClaimId] = useState<string>(
-    selectedClaimId || (claims.length > 0 ? claims[0].claim_id : '')
+    selectedClaimId || (safeClaims.length > 0 ? safeClaims[0].claim_id : '')
   );
 
-  const activeClaim = claims.find((c) => c.claim_id === activeClaimId) || claims[0] || null;
+  const activeClaim = safeClaims.find((c) => c.claim_id === activeClaimId) || safeClaims[0] || null;
 
   // Form states for inspection & quality decisions
   const [assignedTo, setAssignedTo] = useState(
@@ -124,18 +125,18 @@ export const InspectionsQualityTab: React.FC<InspectionsQualityTabProps> = ({
   return (
     <div className="space-y-6 text-right font-sans">
       {/* 1. Claim Selector if multiple */}
-      {claims.length > 1 && (
+      {safeClaims.length > 1 && (
         <div className="bg-white rounded-2xl p-4 border border-[#E5E7EB] shadow-xs flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
             <span>اختر البلاغ المطلوب معاينته:</span>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto">
-            {claims.map((c) => (
+            {safeClaims.map((c) => (
               <button
                 key={c.claim_id}
                 onClick={() => setActiveClaimId(c.claim_id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition cursor-pointer ${
-                  activeClaim.claim_id === c.claim_id
+                  activeClaim && activeClaim.claim_id === c.claim_id
                     ? 'bg-[#D62828] text-white shadow-xs'
                     : 'bg-[#F5F5F5] text-slate-700 hover:bg-slate-200'
                 }`}

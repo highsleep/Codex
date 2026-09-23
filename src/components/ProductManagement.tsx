@@ -292,7 +292,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ currentUse
       }
 
       // Existing DB serial numbers set for duplicate detection
-      const existingSerialsSet = new Set(products.map((p) => p.serial_number.toUpperCase()));
+      const existingSerialsSet = new Set((products || []).map((p) => p.serial_number?.toUpperCase() || ''));
       const fileSeenSerials = new Set<string>();
 
       const processedRows: ParsedRow[] = [];

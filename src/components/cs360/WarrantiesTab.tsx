@@ -29,11 +29,11 @@ export const WarrantiesTab: React.FC<WarrantiesTabProps> = ({
       ]);
       if (warRes.ok) {
         const warData = await warRes.json();
-        setWarranties(warData);
+        setWarranties(Array.isArray(warData) ? warData : []);
       }
       if (prodRes.ok) {
         const prodData = await prodRes.json();
-        setProducts(prodData);
+        setProducts(Array.isArray(prodData) ? prodData : []);
       }
     } catch (err) {
       console.error('Error fetching warranties in CS360:', err);
@@ -46,14 +46,14 @@ export const WarrantiesTab: React.FC<WarrantiesTabProps> = ({
     fetchWarrantiesData();
   }, []);
 
-  const filteredWarranties = warranties.filter((w) => {
+  const filteredWarranties = (warranties || []).filter((w) => {
     const q = warrantySearch.toLowerCase();
     return (
-      w.warranty_id.toLowerCase().includes(q) ||
-      w.serial_number.toLowerCase().includes(q) ||
-      w.customer_name.toLowerCase().includes(q) ||
-      w.phone.includes(q) ||
-      w.invoice_number.toLowerCase().includes(q) ||
+      w.warranty_id?.toLowerCase().includes(q) ||
+      w.serial_number?.toLowerCase().includes(q) ||
+      w.customer_name?.toLowerCase().includes(q) ||
+      w.phone?.includes(q) ||
+      w.invoice_number?.toLowerCase().includes(q) ||
       (w.governorate && w.governorate.toLowerCase().includes(q)) ||
       (w.city && w.city.toLowerCase().includes(q))
     );

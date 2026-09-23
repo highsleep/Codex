@@ -24,7 +24,7 @@ export const ActivityLogsTab: React.FC<ActivityLogsTabProps> = ({
       const res = await fetch('/api/admin/logs');
       if (res.ok) {
         const data = await res.json();
-        setAllLogs(data);
+        setAllLogs(Array.isArray(data) ? data : []);
       }
     } catch (err) {
       console.error('Error fetching logs in CS360:', err);
@@ -38,10 +38,10 @@ export const ActivityLogsTab: React.FC<ActivityLogsTabProps> = ({
   }, []);
 
   const logsToFilter = filterMode === 'case' && currentSerial
-    ? allLogs.filter((l) => l.serial_number === currentSerial)
-    : allLogs;
+    ? (allLogs || []).filter((l) => l.serial_number === currentSerial)
+    : (allLogs || []);
 
-  const filteredLogs = logsToFilter.filter((l) => {
+  const filteredLogs = (logsToFilter || []).filter((l) => {
     const q = logSearch.toLowerCase();
     return (
       (l.serial_number && l.serial_number.toLowerCase().includes(q)) ||

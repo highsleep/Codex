@@ -243,9 +243,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       ]);
 
       if (statsRes.ok) setStats(await statsRes.json());
-      if (warRes.ok) setWarranties(await warRes.json());
-      if (prodRes.ok) setProducts(await prodRes.json());
-      if (logsRes.ok) setLogs(await logsRes.json());
+      if (warRes.ok) {
+        const warData = await warRes.json();
+        setWarranties(Array.isArray(warData) ? warData : []);
+      }
+      if (prodRes.ok) {
+        const prodData = await prodRes.json();
+        setProducts(Array.isArray(prodData) ? prodData : []);
+      }
+      if (logsRes.ok) {
+        const logData = await logsRes.json();
+        setLogs(Array.isArray(logData) ? logData : []);
+      }
       if (schemaRes.ok) setSchemaSql(await schemaRes.text());
       if (usersRes && usersRes.ok) {
         const uList = await usersRes.json();
@@ -309,28 +318,28 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   };
 
   // Filtered Warranties
-  const filteredWarranties = warranties.filter((w) => {
+  const filteredWarranties = (warranties || []).filter((w) => {
     const q = warrantySearch.trim().toLowerCase();
     if (!q) return true;
     return (
-      w.warranty_id.toLowerCase().includes(q) ||
-      w.serial_number.toLowerCase().includes(q) ||
-      w.customer_name.toLowerCase().includes(q) ||
-      w.phone.includes(q) ||
-      w.invoice_number.toLowerCase().includes(q) ||
-      w.governorate.toLowerCase().includes(q)
+      w.warranty_id?.toLowerCase().includes(q) ||
+      w.serial_number?.toLowerCase().includes(q) ||
+      w.customer_name?.toLowerCase().includes(q) ||
+      w.phone?.includes(q) ||
+      w.invoice_number?.toLowerCase().includes(q) ||
+      w.governorate?.toLowerCase().includes(q)
     );
   });
 
   // Filtered Products
-  const filteredProducts = products.filter((p) => {
+  const filteredProducts = (products || []).filter((p) => {
     const q = productSearch.trim().toLowerCase();
     if (!q) return true;
     return (
-      p.serial_number.toLowerCase().includes(q) ||
-      p.model.toLowerCase().includes(q) ||
-      p.batch_no.toLowerCase().includes(q) ||
-      p.production_order.toLowerCase().includes(q)
+      p.serial_number?.toLowerCase().includes(q) ||
+      p.model?.toLowerCase().includes(q) ||
+      p.batch_no?.toLowerCase().includes(q) ||
+      p.production_order?.toLowerCase().includes(q)
     );
   });
 

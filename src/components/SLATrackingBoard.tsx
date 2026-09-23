@@ -215,7 +215,7 @@ export const SLATrackingBoard: React.FC<SLATrackingBoardProps> = ({
 
   // Process all claims with SLA metrics
   const analyzedClaims = useMemo(() => {
-    return claims.map((claim) => {
+    return (claims || []).map((claim) => {
       const sla = getClaimSLAMetrics(claim);
       return {
         ...claim,
@@ -226,15 +226,16 @@ export const SLATrackingBoard: React.FC<SLATrackingBoardProps> = ({
 
   // Summary Counters
   const summary = useMemo(() => {
-    const totalClaims = analyzedClaims.length;
-    const openClaims = analyzedClaims.filter((c) => !c.sla.isClosed).length;
-    const breachedClaims = analyzedClaims.filter((c) => c.sla.status === 'BREACHED' && !c.sla.isClosed);
-    const nearingDueClaims = analyzedClaims.filter((c) => c.sla.status === 'NEARING_DUE' && !c.sla.isClosed);
-    const withinSlaClaims = analyzedClaims.filter((c) => c.sla.status === 'WITHIN_SLA' && !c.sla.isClosed);
+    const safeAnalyzed = analyzedClaims || [];
+    const totalClaims = safeAnalyzed.length;
+    const openClaims = safeAnalyzed.filter((c) => !c.sla.isClosed).length;
+    const breachedClaims = safeAnalyzed.filter((c) => c.sla.status === 'BREACHED' && !c.sla.isClosed);
+    const nearingDueClaims = safeAnalyzed.filter((c) => c.sla.status === 'NEARING_DUE' && !c.sla.isClosed);
+    const withinSlaClaims = safeAnalyzed.filter((c) => c.sla.status === 'WITHIN_SLA' && !c.sla.isClosed);
     
     // Total pending tasks across active claims
-    const totalPendingTasks = analyzedClaims.reduce((acc, c) => acc + c.sla.pendingTasksCount, 0);
-    const totalCompletedTasks = analyzedClaims.reduce((acc, c) => acc + c.sla.completedTasksCount, 0);
+    const totalPendingTasks = safeAnalyzed.reduce((acc, c) => acc + c.sla.pendingTasksCount, 0);
+    const totalCompletedTasks = safeAnalyzed.reduce((acc, c) => acc + c.sla.completedTasksCount, 0);
 
     return {
       totalClaims,
@@ -250,13 +251,14 @@ export const SLATrackingBoard: React.FC<SLATrackingBoardProps> = ({
 
   // Filtered Claims
   const filteredClaims = useMemo(() => {
-    if (filterStatus === 'ALL') return analyzedClaims;
-    return analyzedClaims.filter((c) => c.sla.status === filterStatus);
+    const safeAnalyzed = analyzedClaims || [];
+    if (filterStatus === 'ALL') return safeAnalyzed;
+    return safeAnalyzed.filter((c) => c.sla.status === filterStatus);
   }, [analyzedClaims, filterStatus]);
 
   // Toggle task completion
   const handleToggleTask = async (claimId: string, taskId: string, currentStatus: boolean) => {
-    const claim = claims.find((c) => c.claim_id === claimId);
+    const claim = (claims || []).find((c) => c.claim_id === claimId);
     if (!claim || !onUpdateClaimSLA) return;
 
     const currentTasks = claim.pending_tasks || [];

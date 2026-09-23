@@ -119,9 +119,9 @@ export const ClaimsHistoryTab: React.FC<ClaimsHistoryTabProps> = ({
     }
   }, [viewScope]);
 
-  const activeClaimsList = viewScope === 'current' ? claims : allSystemClaims;
+  const activeClaimsList = (viewScope === 'current' ? claims : allSystemClaims) || [];
 
-  const filteredClaims = activeClaimsList.filter((claim) => {
+  const filteredClaims = (activeClaimsList || []).filter((claim) => {
     if (statusFilter !== 'ALL' && claim.claim_status !== statusFilter) return false;
     if (searchFilter.trim()) {
       const q = searchFilter.toLowerCase();
@@ -169,7 +169,7 @@ export const ClaimsHistoryTab: React.FC<ClaimsHistoryTabProps> = ({
                     : 'text-slate-600 hover:text-[#111111]'
                 }`}
               >
-                شكاوى هذه الحالة ({claims.length})
+                شكاوى هذه الحالة ({(claims || []).length})
               </button>
               <button
                 type="button"

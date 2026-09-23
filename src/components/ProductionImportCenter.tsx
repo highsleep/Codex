@@ -216,15 +216,26 @@ export const ProductionImportCenter: React.FC<ProductionImportCenterProps> = ({
   const fetchData = async () => {
     try {
       setLoading(true);
+
+      const safeFetch = async (url: string, fallback: any) => {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) return fallback;
+          return await res.json();
+        } catch {
+          return fallback;
+        }
+      };
+
       const [statsRes, modelsRes, syncRes, logsRes, batchesRes, auditsRes, backupRes] =
         await Promise.all([
-          fetch('/api/production/stats').then((r) => r.json()),
-          fetch('/api/production/models').then((r) => r.json()),
-          fetch('/api/production/sync-states').then((r) => r.json()),
-          fetch('/api/production/import-logs').then((r) => r.json()),
-          fetch('/api/production/batches').then((r) => r.json()),
-          fetch('/api/production/warranty-audits').then((r) => r.json()),
-          fetch('/api/production/backup-policy').then((r) => r.json()),
+          safeFetch('/api/production/stats', null),
+          safeFetch('/api/production/models', []),
+          safeFetch('/api/production/sync-states', []),
+          safeFetch('/api/production/import-logs', []),
+          safeFetch('/api/production/batches', []),
+          safeFetch('/api/production/warranty-audits', []),
+          safeFetch('/api/production/backup-policy', null),
         ]);
 
       setStats(statsRes);

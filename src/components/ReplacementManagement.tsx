@@ -57,7 +57,7 @@ export const ReplacementManagement: React.FC<ReplacementManagementProps> = ({
       if (search.trim()) url += `?search=${encodeURIComponent(search.trim())}`;
       const res = await fetch(url);
       const data = await res.json();
-      setReplacements(data);
+      setReplacements(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error fetching replacements:', err);
     } finally {
@@ -217,7 +217,7 @@ export const ReplacementManagement: React.FC<ReplacementManagementProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB]">
-                {replacements.map((rep) => (
+                {(replacements || []).map((rep) => (
                   <tr key={rep.replacement_id} className="hover:bg-[#F5F5F5]/60 transition">
                     <td className="p-3.5 font-mono font-bold text-[#D62828]">
                       {rep.replacement_id}

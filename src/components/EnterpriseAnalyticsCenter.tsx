@@ -157,6 +157,24 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
   // Copy URL state
   const [copiedUrlKey, setCopiedUrlKey] = useState<string | null>(null);
 
+  const safeFetchJson = async (url: string, fallback: any = null) => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.warn(`Analytics fetch warning for ${url}: status ${res.status}`);
+        return fallback;
+      }
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        return fallback;
+      }
+      return await res.json();
+    } catch (e) {
+      console.warn(`Analytics fetch error for ${url}:`, e);
+      return fallback;
+    }
+  };
+
   const fetchAllAnalytics = async () => {
     try {
       setRefreshing(true);
@@ -171,32 +189,32 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
       const qs = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
       const [resProd, resQual, resWarr, resCs, resExec, resDrill, resTrace, resScrap, resCsat, resCosts, resHealth, resConf] = await Promise.all([
-        fetch(`/api/analytics/production${qs}`).then((r) => r.json()),
-        fetch(`/api/analytics/quality${qs}`).then((r) => r.json()),
-        fetch(`/api/analytics/warranty${qs}`).then((r) => r.json()),
-        fetch(`/api/analytics/customer-service${qs}`).then((r) => r.json()),
-        fetch(`/api/analytics/executive${qs}`).then((r) => r.json()),
-        fetch(`/api/analytics/drill-down?type=${drillDownType}`).then((r) => r.json()),
-        fetch(`/api/analytics/kpi-traceability`).then((r) => r.json()),
-        fetch(`/api/analytics/scrap${qs}`).then((r) => r.json()),
-        fetch(`/api/analytics/csat${qs}`).then((r) => r.json()),
-        fetch(`/api/analytics/warranty-costs${qs}`).then((r) => r.json()),
-        fetch(`/api/analytics/health-score${qs}`).then((r) => r.json()),
-        fetch(`/api/analytics/data-confidence`).then((r) => r.json()),
+        safeFetchJson(`/api/analytics/production${qs}`),
+        safeFetchJson(`/api/analytics/quality${qs}`),
+        safeFetchJson(`/api/analytics/warranty${qs}`),
+        safeFetchJson(`/api/analytics/customer-service${qs}`),
+        safeFetchJson(`/api/analytics/executive${qs}`),
+        safeFetchJson(`/api/analytics/drill-down?type=${drillDownType}`),
+        safeFetchJson(`/api/analytics/kpi-traceability`, []),
+        safeFetchJson(`/api/analytics/scrap${qs}`),
+        safeFetchJson(`/api/analytics/csat${qs}`),
+        safeFetchJson(`/api/analytics/warranty-costs${qs}`),
+        safeFetchJson(`/api/analytics/health-score${qs}`),
+        safeFetchJson(`/api/analytics/data-confidence`),
       ]);
 
-      setProductionData(resProd);
-      setQualityData(resQual);
-      setWarrantyData(resWarr);
-      setCustomerServiceData(resCs);
-      setExecutiveData(resExec);
-      setDrillDownData(resDrill);
+      if (resProd) setProductionData(resProd);
+      if (resQual) setQualityData(resQual);
+      if (resWarr) setWarrantyData(resWarr);
+      if (resCs) setCustomerServiceData(resCs);
+      if (resExec) setExecutiveData(resExec);
+      if (resDrill) setDrillDownData(resDrill);
       setKpiTraceabilityData(Array.isArray(resTrace) ? resTrace : []);
-      setScrapData(resScrap);
-      setCsatData(resCsat);
-      setWarrantyCostsData(resCosts);
-      setHealthScoreData(resHealth);
-      setDataConfidenceData(resConf);
+      if (resScrap) setScrapData(resScrap);
+      if (resCsat) setCsatData(resCsat);
+      if (resCosts) setWarrantyCostsData(resCosts);
+      if (resHealth) setHealthScoreData(resHealth);
+      if (resConf) setDataConfidenceData(resConf);
       if (resExec?.snapshots) {
         setSnapshots(resExec.snapshots);
       }

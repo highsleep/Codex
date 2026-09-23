@@ -82,21 +82,21 @@ export const RepairsReplacementsTab: React.FC<RepairsReplacementsTabProps> = ({
   }, [viewScope]);
 
   // Filter approved repair claims
-  const caseRepairClaims = claims.filter(
+  const caseRepairClaims = (claims || []).filter(
     (c) =>
       c.claim_status === 'Approved' &&
       c.resolution &&
       (c.resolution.includes('إصلاح') || c.resolution.includes('صيانة'))
   );
 
-  const allSystemRepairClaims = allClaims.filter(
+  const allSystemRepairClaims = (allClaims || []).filter(
     (c) =>
       c.claim_status === 'Approved' &&
       c.resolution &&
       (c.resolution.includes('إصلاح') || c.resolution.includes('صيانة'))
   );
 
-  const displayedReplacements = (viewScope === 'case' ? replacements : allReplacements).filter((rep) => {
+  const displayedReplacements = ((viewScope === 'case' ? replacements : allReplacements) || []).filter((rep) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (

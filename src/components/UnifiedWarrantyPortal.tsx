@@ -626,9 +626,9 @@ export const UnifiedWarrantyPortal: React.FC<UnifiedWarrantyPortalProps> = ({
 
   const visibleLifecycleEvents = useMemo(() => {
     if (isManagementRole && lifecycleViewMode === 'MANAGEMENT') {
-      return lifecycleEvents;
+      return lifecycleEvents || [];
     }
-    return lifecycleEvents.filter((ev) =>
+    return (lifecycleEvents || []).filter((ev) =>
       CUSTOMER_LIFECYCLE_TYPES.includes(ev.event_type as LifecycleEventType)
     );
   }, [lifecycleEvents, isManagementRole, lifecycleViewMode]);

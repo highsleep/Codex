@@ -439,9 +439,9 @@ export const CustomerService360: React.FC<CustomerService360Props> = ({
               {[
                 { id: 'customer_profile', label: '1- بيانات العميل', icon: User, badge: null },
                 { id: 'product_warranty', label: '2- بيانات المنتج والضمان', icon: ShieldCheck, badge: null },
-                { id: 'claims_history', label: '3- سجل الشكاوى', icon: AlertTriangle, badge: data.claims.length },
+                { id: 'claims_history', label: '3- سجل الشكاوى', icon: AlertTriangle, badge: data.claims?.length || 0 },
                 { id: 'inspections_quality', label: '4- المعاينات وقرارات الجودة', icon: Award, badge: null },
-                { id: 'repairs_replacements', label: '5- الإصلاحات والاستبدالات', icon: ArrowLeftRight, badge: data.replacements.length },
+                { id: 'repairs_replacements', label: '5- الإصلاحات والاستبدالات', icon: ArrowLeftRight, badge: data.replacements?.length || 0 },
                 { id: 'attachments_photos', label: '6- المرفقات والصور', icon: FolderOpen, badge: data.attachments?.length || 0 },
                 { id: 'lifecycle_timeline', label: '7- السجل الزمني الكامل للحالة', icon: Clock, badge: data.unified_timeline?.length || 0 },
                 { id: 'warranties', label: '8- وثائق الضمان', icon: ShieldCheck, badge: null },
