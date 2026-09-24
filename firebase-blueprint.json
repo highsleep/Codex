@@ -122,37 +122,72 @@
       },
       "required": ["warranty_id", "serial_number", "customer_name", "phone", "governorate", "invoice_number", "purchase_date", "expiry_date"]
     },
-    "ActivationLog": {
-      "title": "ActivationLog",
-      "description": "Audit and activity log tracking all system events, activations, and verifications",
+    "ProductionOrder": {
+      "title": "ProductionOrder",
+      "description": "Factory production order record",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Log record ID"
-        },
-        "warranty_id": {
-          "type": "string",
-          "description": "Referenced warranty certificate ID",
-          "maxLength": 64
-        },
-        "serial_number": {
-          "type": "string",
-          "description": "Referenced product serial number",
-          "maxLength": 64
-        },
-        "action": {
-          "type": "string",
-          "description": "Description of action performed",
-          "maxLength": 256
-        },
-        "created_at": {
-          "type": "string",
-          "description": "Log event timestamp",
-          "maxLength": 64
-        }
+        "id": { "type": "string" },
+        "orderNumber": { "type": "string", "maxLength": 64 },
+        "batchNumber": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["Draft", "Approved", "Serial Generated", "Printed", "Completed"] },
+        "productionDate": { "type": "string" },
+        "mattressModel": { "type": "string" },
+        "productionQuantity": { "type": "number" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "modifiedBy": { "type": "string" },
+        "modifiedAt": { "type": "string" },
+        "approvalUser": { "type": "string" },
+        "approvalDate": { "type": "string" }
       },
-      "required": ["action", "created_at"]
+      "required": ["orderNumber", "batchNumber", "status", "productionQuantity"]
+    },
+    "Serial": {
+      "title": "Serial",
+      "description": "Individually generated and locked serial number for a product",
+      "type": "object",
+      "properties": {
+        "serial_number": { "type": "string", "pattern": "^[A-Z0-9\\-]+$" },
+        "productionOrder_id": { "type": "string" },
+        "batchNumber": { "type": "string" },
+        "model": { "type": "string" },
+        "status": { "type": "string", "enum": ["Generated", "Locked", "Printed", "Shipped"] },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["serial_number", "productionOrder_id", "status"]
+    },
+    "PrintJob": {
+      "title": "PrintJob",
+      "description": "Tracked printing job execution",
+      "type": "object",
+      "properties": {
+        "jobId": { "type": "string" },
+        "printer": { "type": "string" },
+        "user": { "type": "string" },
+        "template": { "type": "string" },
+        "quantity": { "type": "number" },
+        "timestamp": { "type": "string" },
+        "status": { "type": "string", "enum": ["Success", "Failed", "Queued"] }
+      },
+      "required": ["jobId", "printer", "user", "status"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Unified system-wide audit trail",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "action": { "type": "string" },
+        "actor": { "type": "string" },
+        "category": { "type": "string", "enum": ["CREATE", "UPDATE", "DELETE", "APPROVE", "PRINT", "IMPORT", "SYNC", "SECURITY"] },
+        "details": { "type": "string" },
+        "beforeValue": { "type": "object" },
+        "afterValue": { "type": "object" }
+      },
+      "required": ["action", "actor", "category", "timestamp"]
     },
     "Admin": {
       "title": "Admin",
@@ -448,6 +483,22 @@
     }
   },
   "firestore": {
+    "/production_orders/{orderId}": {
+      "schema": "ProductionOrder",
+      "description": "Factory production orders"
+    },
+    "/serials/{serialId}": {
+      "schema": "Serial",
+      "description": "Individually generated product serials"
+    },
+    "/print_jobs/{jobId}": {
+      "schema": "PrintJob",
+      "description": "Tracked printing job execution"
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Unified system-wide audit trail"
+    },
     "/products/{productId}": {
       "schema": "Product",
       "description": "Mattress catalog indexed by product id or serial number"
@@ -463,10 +514,6 @@
     "/replacements/{replacementId}": {
       "schema": "Replacement",
       "description": "Official replacement records linking old and new mattresses"
-    },
-    "/activation_logs/{logId}": {
-      "schema": "ActivationLog",
-      "description": "Immutable audit trail of warranty activations, claims, verifications and replacements"
     },
     "/admins/{adminId}": {
       "schema": "Admin",

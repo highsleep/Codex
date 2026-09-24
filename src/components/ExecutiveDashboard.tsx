@@ -130,6 +130,10 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
         throw new Error(`تعذر استرجاع مؤشرات القيادة التنفيذية (كود: ${res.status})`);
       }
       const json = await res.json();
+      const isValid = json && json.summaryCards && json.trends && json.qualityKPIs && json.manufacturingKPIs && json.customerServiceKPIs;
+      if (!isValid) {
+        throw new Error('بيانات لوحة القيادة التنفيذية غير صالحة');
+      }
       setData(json);
     } catch (err: any) {
       console.error('Error loading executive dashboard:', err);
@@ -218,18 +222,18 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
     XLSX.utils.book_append_sheet(wb, wsSummary, 'الملخص التنفيذي');
 
     // Sheet 2: Trends
-    const trendRows = data.trends.months.map((m, idx) => ({
+    const trendRows = (data.trends?.months || []).map((m, idx) => ({
       الشهر: m,
-      'تفعيلات الضمان': data.trends.activationsByMonth[idx] || 0,
-      'المطالبات والشكاوى': data.trends.claimsByMonth[idx] || 0,
-      'استبدالات المنتجات': data.trends.replacementsByMonth[idx] || 0,
-      'تسجيلات وتصنيع المنتجات': data.trends.registrationsByMonth[idx] || 0,
+      'تفعيلات الضمان': data.trends?.activationsByMonth?.[idx] || 0,
+      'المطالبات والشكاوى': data.trends?.claimsByMonth?.[idx] || 0,
+      'استبدالات المنتجات': data.trends?.replacementsByMonth?.[idx] || 0,
+      'تسجيلات وتصنيع المنتجات': data.trends?.registrationsByMonth?.[idx] || 0,
     }));
     const wsTrends = XLSX.utils.json_to_sheet(trendRows);
     XLSX.utils.book_append_sheet(wb, wsTrends, 'اتجاهات الأداء الشهري');
 
     // Sheet 3: Quality & Manufacturing KPIs
-    const qualityRows = data.qualityKPIs.topComplaintTypes.map((c) => ({
+    const qualityRows = (data.qualityKPIs?.topComplaintTypes || []).map((c) => ({
       'نوع الشكوى / العيب': c.type,
       'عدد الحالات': c.count,
       'النسبة المئوية': `${c.percentage}%`,
@@ -248,7 +252,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
       canvas.width = 1;
       canvas.height = 1;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (!ctx) return colorStr;
+      if (!ctx) return 'rgb(100, 116, 139)';
       ctx.fillStyle = colorStr;
       ctx.fillRect(0, 0, 1, 1);
       const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
@@ -256,7 +260,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
       if (a === 255) return `rgb(${r}, ${g}, ${b})`;
       return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
     } catch {
-      return colorStr;
+      return 'rgb(100, 116, 139)';
     }
   };
 
@@ -409,7 +413,13 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
     );
   }
 
-  const { summaryCards, trends, qualityKPIs, manufacturingKPIs, customerServiceKPIs } = data;
+  const summaryCards = data.summaryCards || {
+    totalProducts: 0, activeWarranties: 0, activationsThisMonth: 0, openClaims: 0, approvedReplacements: 0, closedClaims: 0, customerSatisfactionRate: 0, avgClaimResolutionTimeDays: 0,
+  };
+  const trends = data.trends || { months: [], activationsByMonth: [], claimsByMonth: [], replacementsByMonth: [], registrationsByMonth: [] };
+  const qualityKPIs = data.qualityKPIs || { topComplaintTypes: [], mostReturnedModels: [], claimsPerModel: [], warrantyFailureRate: 0 };
+  const manufacturingKPIs = data.manufacturingKPIs || { productionVolume: 0, defectRate: 0, scrapRate: 0, reworkRate: 0 };
+  const customerServiceKPIs = data.customerServiceKPIs || { openCases: 0, escalatedCases: 0, avgResponseTimeHours: 0, avgClosureTimeDays: 0 };
 
   return (
     <div ref={dashboardRef} className="space-y-6 text-right print:space-y-4 font-['Cairo'] p-1">
@@ -1163,23 +1173,24 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ currentU
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium">
-                    {data.kpiMetadata && Object.entries(data.kpiMetadata).map(([key, meta]: [string, any]) => {
+                    {data.kpiMetadata && typeof data.kpiMetadata === 'object' && Object.entries(data.kpiMetadata).map(([key, meta]: [string, any]) => {
+                      if (!meta) return null;
                       const isReal = meta.dataOrigin === 'REAL' || meta.dataOrigin === 'IMPORTED' || meta.dataOrigin === 'MANUAL';
                       return (
                         <tr key={key} className="hover:bg-slate-50 transition">
-                          <td className="p-3 font-bold text-slate-900">{meta.name}</td>
-                          <td className="p-3 text-slate-600">{meta.source}</td>
+                          <td className="p-3 font-bold text-slate-900">{meta.name || 'غير معروف'}</td>
+                          <td className="p-3 text-slate-600">{meta.source || 'غير معروف'}</td>
                           <td className="p-3">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${meta.classification === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : meta.classification === 'DERIVED' ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-amber-100 text-amber-800 border-amber-300'}`}>
-                              {meta.classification}
+                              {meta.classification || 'N/A'}
                             </span>
                           </td>
                           <td className="p-3">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-black ${isReal ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-                              {meta.dataOrigin} {isReal ? '✓' : '⚠️'}
+                              {meta.dataOrigin || 'UNKNOWN'} {isReal ? '✓' : '⚠️'}
                             </span>
                           </td>
-                          <td className="p-3 font-mono font-bold text-slate-800">{meta.confidence}</td>
+                          <td className="p-3 font-mono font-bold text-slate-800">{meta.confidence || '0%'}</td>
                         </tr>
                       );
                     })}

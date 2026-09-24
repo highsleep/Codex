@@ -736,6 +736,214 @@ app.post('/api/lifecycle', (req, res) => {
 });
 
 // ----------------------------------------------------
+// PRODUCTION ORDERS & SERIALS ENGINE API (PHASE 8C)
+// ----------------------------------------------------
+app.get('/api/production-orders', (req, res) => {
+  try {
+    const search = req.query.search as string;
+    const orders = repository.getProductionOrders(search);
+    res.json(orders);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/production-orders/:id', (req, res) => {
+  try {
+    const order = repository.getProductionOrderById(req.params.id);
+    if (!order) return res.status(404).json({ error: 'أمر الإنتاج غير موجود' });
+    res.json(order);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/production-orders', (req, res) => {
+  try {
+    const { mattressModel, mattressSize, warrantyYears, productionQuantity, productionLine, productionDate, batchNumber } = req.body;
+    if (!mattressModel || !productionQuantity) {
+      return res.status(400).json({ error: 'اسم الموديل والكمية مطلوبان' });
+    }
+    const actor = req.principal ? authenticatedActor(req) : 'المشغل';
+    const newOrder = repository.createProductionOrder(
+      { mattressModel, mattressSize, warrantyYears, productionQuantity, productionLine, productionDate, batchNumber },
+      actor
+    );
+    res.status(201).json({ success: true, order: newOrder });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/production-orders/:id', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'المشغل';
+    const updated = repository.updateProductionOrder(req.params.id, req.body, actor);
+    res.json({ success: true, order: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete('/api/production-orders/:id', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'المشغل';
+    const success = repository.deleteProductionOrder(req.params.id, actor);
+    res.json({ success });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/production-orders/:id/approve', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'المشرف';
+    const updated = repository.approveProductionOrder(req.params.id, actor);
+    res.json({ success: true, order: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/production-orders/:id/close', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'المشرف';
+    const updated = repository.closeProductionOrder(req.params.id, actor);
+    res.json({ success: true, order: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/production-orders/:id/archive', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'المشرف';
+    const updated = repository.archiveProductionOrder(req.params.id, actor);
+    res.json({ success: true, order: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/production-orders/:id/generate-serials', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const serials = repository.generateSerialsForOrder(req.params.id, actor);
+    res.json({ success: true, count: serials.length, serials });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// SERIALS API
+app.get('/api/serials', (req, res) => {
+  try {
+    const { orderId, search } = req.query as { orderId?: string; search?: string };
+    const list = repository.getSerials({ orderId, search });
+    res.json(list);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/serials/:serialNumber', (req, res) => {
+  try {
+    const s = repository.getSerialByNumber(req.params.serialNumber);
+    if (!s) return res.status(404).json({ error: 'الرقم التسلسلي غير موجود' });
+    res.json(s);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/serials/:serialNumber/lock', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'المشرف';
+    const updated = repository.lockSerial(req.params.serialNumber, actor);
+    res.json({ success: true, serial: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/serials/:serialNumber/cancel', (req, res) => {
+  try {
+    const { reason } = req.body;
+    const actor = req.principal ? authenticatedActor(req) : 'المشرف';
+    const updated = repository.cancelSerial(req.params.serialNumber, reason || 'إلغاء يدوي', actor);
+    res.json({ success: true, serial: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// PRINT JOBS API
+app.get('/api/print-jobs', (req, res) => {
+  try {
+    const jobs = repository.getPrintJobs();
+    res.json(jobs);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/print-jobs', (req, res) => {
+  try {
+    const { printer, user, template, quantity, status, jobId } = req.body;
+    const actor = user || (req.principal ? authenticatedActor(req) : 'المشغل');
+    const newJob = repository.createPrintJob({
+      jobId: jobId || `JOB-${Date.now().toString().slice(-6)}`,
+      printer: printer || 'Default Printer',
+      user: actor,
+      template: template || 'Standard Label',
+      quantity: Number(quantity) || 1,
+      timestamp: new Date().toISOString(),
+      status: status || 'Success',
+    });
+    res.status(201).json({ success: true, job: newJob });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// SYSTEM-WIDE AUDIT LOG API
+app.get('/api/audit-logs', (req, res) => {
+  try {
+    const logs = repository.getAuditLogs();
+    res.json(logs);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/audit-logs', (req, res) => {
+  try {
+    const { action, actor, category, details, beforeValue, afterValue } = req.body;
+    const newLog = repository.addAuditLog({
+      action: action || 'عملية في النظام',
+      actor: actor || (req.principal ? authenticatedActor(req) : 'مستخدم'),
+      category: category || 'UPDATE',
+      details: details || '',
+      beforeValue,
+      afterValue,
+    });
+    res.status(201).json({ success: true, log: newLog });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// PRODUCT 360 API
+app.get('/api/products/product-360/:identifier', (req, res) => {
+  try {
+    const data360 = repository.getProduct360(req.params.identifier);
+    res.json(data360);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------
 // ATTACHMENTS & DOCUMENT CENTER API
 // ----------------------------------------------------
 app.get('/api/attachments', (req, res) => {
@@ -1030,8 +1238,23 @@ app.get('/api/executive/dashboard', (req, res) => {
       model: req.query.model as string,
       factoryLine: req.query.factoryLine as string,
     };
-    const data = repository.getExecutiveDashboardData(filters);
-    res.json(data);
+    const rawData = repository.getExecutiveDashboardData(filters);
+    const normalized = {
+      filters: rawData.filters || { availableFamilies: [], availableModels: [], availableFactories: [] },
+      summaryCards: rawData.summaryCards || {
+        totalProducts: 0, activeWarranties: 0, activationsThisMonth: 0, openClaims: 0, approvedReplacements: 0, closedClaims: 0, customerSatisfactionRate: 0, avgClaimResolutionTimeDays: 0,
+      },
+      trends: rawData.trends || { months: [], activationsByMonth: [], claimsByMonth: [], replacementsByMonth: [], registrationsByMonth: [] },
+      qualityKPIs: {
+        topComplaintTypes: rawData.qualityKPIs?.topComplaintTypes || [],
+        mostReturnedModels: rawData.qualityKPIs?.mostReturnedModels || [],
+        claimsPerModel: rawData.qualityKPIs?.claimsPerModel || [],
+        warrantyFailureRate: rawData.qualityKPIs?.warrantyFailureRate || 0,
+      },
+      manufacturingKPIs: rawData.manufacturingKPIs || { productionVolume: 0, defectRate: 0, scrapRate: 0, reworkRate: 0 },
+      customerServiceKPIs: rawData.customerServiceKPIs || { openCases: 0, escalatedCases: 0, avgResponseTimeHours: 0, avgClosureTimeDays: 0 },
+    };
+    res.json(normalized);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -2304,6 +2527,40 @@ app.get('/api/production/export-master', (req, res) => {
 });
 
 // 14. Zebra ZD220 ZPL Label Generation & Print Metadata
+let storedPrinterConfig = {
+  printer_name: 'Zebra ZD220 - Industrial Line 1',
+  printer_model: 'Zebra ZD220',
+  resolution_dpi: '203 DPI',
+  label_width_mm: 100,
+  label_height_mm: 50,
+  barcode_type: 'Code 128',
+  qr_settings: {
+    error_correction: 'M',
+    module_size: 4,
+    base_url: 'https://sleephigh.com/verify'
+  },
+  ip_address: '192.168.1.180',
+  port: 9100,
+  status: 'ONLINE',
+  last_updated: new Date().toISOString()
+};
+
+app.get('/api/printer/config', (req, res) => {
+  res.json(storedPrinterConfig);
+});
+
+app.post('/api/printer/config', (req, res) => {
+  try {
+    storedPrinterConfig = {
+      ...storedPrinterConfig,
+      ...req.body,
+      last_updated: new Date().toISOString()
+    };
+    res.json({ success: true, message: 'تم حفظ إعدادات الطابعة المصنعية بنجاح', config: storedPrinterConfig });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
 app.get('/api/production/zebra-label/:serial', (req, res) => {
   try {
     const { serial } = req.params;

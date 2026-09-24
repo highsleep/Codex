@@ -804,7 +804,7 @@ export const RBACManagement: React.FC<RBACManagementProps> = ({
 
           {/* Selected Role Detailed Overview */}
           {(() => {
-            const currentCfg = ROLES_CONFIG[matrixRole];
+            const currentCfg = ROLES_CONFIG[matrixRole] || ROLES_CONFIG['VIEWER'];
             const detailed = currentCfg.detailed;
 
             return (
@@ -957,7 +957,7 @@ export const RBACManagement: React.FC<RBACManagementProps> = ({
                     </div>
 
                     <div className="space-y-2">
-                      {detailed.screensAllowed.map((screen) => (
+                      {(detailed.screensAllowed || []).map((screen) => (
                         <div
                           key={screen.id}
                           className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/40 border border-emerald-100 text-xs"
@@ -994,7 +994,7 @@ export const RBACManagement: React.FC<RBACManagementProps> = ({
                           لا توجد أي شاشات محجوبة عن هذا الدور (Super Admin).
                         </div>
                       ) : (
-                        detailed.screensBlocked.map((screen) => (
+                        detailed.screensBlocked?.map((screen) => (
                           <div
                             key={screen.id}
                             className="flex items-center justify-between p-2.5 rounded-xl bg-rose-50/40 border border-rose-100 text-xs"
@@ -1367,7 +1367,7 @@ export const RBACManagement: React.FC<RBACManagementProps> = ({
                 الشاشات التي يمكن لهذا المستخدم الوصول إليها:
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {ROLES_CONFIG[inspectingUser.role].detailed.screensAllowed.map(
+                {ROLES_CONFIG[inspectingUser.role]?.detailed?.screensAllowed?.map(
                   (screen) => (
                     <div
                       key={screen.id}

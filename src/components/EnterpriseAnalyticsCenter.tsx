@@ -1,5 +1,5 @@
 /**
- * Enterprise Analytics & Business Intelligence Center (Phase 7C)
+ * Enterprise Analytics & Business Intelligence Center
  * Centralized BI layer consolidating Production, Quality, Warranty, Customer Service,
  * Cost Intelligence, Supplier Analytics, Drill-Downs, and Power BI Integration.
  */
@@ -105,7 +105,7 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
   const [healthScoreData, setHealthScoreData] = useState<any>(null);
   const [dataConfidenceData, setDataConfidenceData] = useState<any>(null);
 
-  // Phase 7C.2 Production Readiness Modals
+  // Production Readiness Modals
   const [isScrapModalOpen, setIsScrapModalOpen] = useState(false);
   const [scrapImportSource, setScrapImportSource] = useState<'SAP' | 'EXCEL' | 'CSV'>('SAP');
   const [scrapFormData, setScrapFormData] = useState({
@@ -260,7 +260,7 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
     setTimeout(() => setSnapshotSuccessMsg(''), 4000);
   };
 
-  // Phase 7C.2 Handlers
+  // Handlers
   const handleSubmitScrap = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormErrorMessage(null);
@@ -360,6 +360,34 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
     }
   };
 
+  const parseCssColorToRgb = (colorStr: string): string => {
+    if (!colorStr || colorStr === 'transparent' || colorStr === 'inherit' || colorStr === 'initial') return colorStr;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return 'rgb(100, 116, 139)';
+      ctx.fillStyle = colorStr;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+      if (a === 0) return 'transparent';
+      if (a === 255) return `rgb(${r}, ${g}, ${b})`;
+      return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
+    } catch {
+      return 'rgb(100, 116, 139)';
+    }
+  };
+
+  const replaceUnsupportedColors = (cssText: string): string => {
+    if (!cssText) return cssText;
+    if (!cssText.includes('oklch') && !cssText.includes('oklab') && !cssText.includes('color-mix')) return cssText;
+    return cssText
+      .replace(/oklch\([^)]+\)/gi, (match) => parseCssColorToRgb(match))
+      .replace(/oklab\([^)]+\)/gi, (match) => parseCssColorToRgb(match))
+      .replace(/color-mix\([^)]+\)/gi, (match) => parseCssColorToRgb(match));
+  };
+
   const dashboardRef = useRef<HTMLDivElement>(null);
 
   const handlePrintToPDF = async () => {
@@ -374,6 +402,14 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
         logging: false,
         backgroundColor: '#ffffff',
         onclone: (clonedDoc) => {
+          // Convert oklch/color-mix in <style> elements
+          const styleTags = clonedDoc.querySelectorAll('style');
+          styleTags.forEach((styleTag) => {
+            if (styleTag.textContent) {
+              styleTag.textContent = replaceUnsupportedColors(styleTag.textContent);
+            }
+          });
+
           const body = clonedDoc.body;
           if (body) {
             body.style.setProperty('direction', 'rtl', 'important');
@@ -387,6 +423,25 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
             htmlEl.style.setProperty('word-spacing', 'normal', 'important');
             htmlEl.style.setProperty('font-variant-ligatures', 'common-ligatures', 'important');
             htmlEl.style.setProperty('font-family', "'Cairo', 'Tajawal', sans-serif", 'important');
+
+            if (htmlEl.getAttribute('style')) {
+              htmlEl.setAttribute('style', replaceUnsupportedColors(htmlEl.getAttribute('style') || ''));
+            }
+
+            try {
+              const comp = window.getComputedStyle(htmlEl);
+              if (comp.color && comp.color.includes('oklch')) {
+                htmlEl.style.color = parseCssColorToRgb(comp.color);
+              }
+              if (comp.backgroundColor && comp.backgroundColor.includes('oklch')) {
+                htmlEl.style.backgroundColor = parseCssColorToRgb(comp.backgroundColor);
+              }
+              if (comp.borderColor && comp.borderColor.includes('oklch')) {
+                htmlEl.style.borderColor = parseCssColorToRgb(comp.borderColor);
+              }
+            } catch {
+              // Ignore computed style errors
+            }
           });
         }
       });
@@ -580,11 +635,11 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-bold">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Phase 7C – Unified Business Intelligence Layer</span>
+              <span>منظومة ذكاء الأعمال والتحليلات المتقدمة</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
               <Activity className="w-8 h-8 text-indigo-400" />
-              <span>مركز التحليلات المؤسسية وذكاء الأعمال</span>
+              <span>مركز التحليلات المؤسسية</span>
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm max-w-3xl leading-relaxed">
               طبقة تقارير استراتيجية موحدة تجمع بين مؤشرات التصنيع، كفاءة خطوط الإنتاج، معايير الجودة، سريان وثائق الضمان، الاستخبارات المالية لتكاليف الإصلاح والاستبدال، وتغذية Power BI المباشرة.
@@ -870,7 +925,7 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
                   تنبيهات الإدارة التنفيذية
                 </h4>
                 <div className="space-y-3">
-                  {executiveData.biMaturity.alerts.map((alert: any, i: number) => (
+                  {(executiveData.biMaturity.alerts || []).map((alert: any, i: number) => (
                     <div key={i} className="p-3 bg-rose-50 rounded-xl border border-rose-100">
                       <p className="text-xs font-bold text-rose-900">{alert.title}</p>
                       <p className="text-[10px] text-rose-700 mt-1">{alert.description}</p>
@@ -884,7 +939,7 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
                   <div className="space-y-4">
                     <div>
                       <div className="text-[11px] text-slate-500 font-bold">دقة بيانات الذكاء الاصطناعي</div>
-                      <div className="text-2xl font-black text-indigo-700">{executiveData.biMaturity.dataConfidence}%</div>
+                      <div className="text-2xl font-black text-indigo-700">{executiveData.biMaturity.dataConfidence?.scorePct ?? 0}%</div>
                     </div>
                     <div>
                       <div className="text-[11px] text-slate-500 font-bold">أداء العام الحالي (YTD)</div>
@@ -901,10 +956,10 @@ export const EnterpriseAnalyticsCenter: React.FC<EnterpriseAnalyticsCenterProps>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <ul className="space-y-1">
-                    {executiveData.biMaturity.top10Models.map((m: any, i: number) => <li key={i} className="text-[10px] truncate text-emerald-800">{m.model}</li>)}
+                    { (executiveData.biMaturity.top10Models || []).map((m: any, i: number) => <li key={i} className="text-[10px] truncate text-emerald-800">{m.model}</li>)}
                   </ul>
                   <ul className="space-y-1">
-                    {executiveData.biMaturity.bottom10Models.map((m: any, i: number) => <li key={i} className="text-[10px] truncate text-rose-800">{m.model}</li>)}
+                    { (executiveData.biMaturity.bottom10Models || []).map((m: any, i: number) => <li key={i} className="text-[10px] truncate text-rose-800">{m.model}</li>)}
                   </ul>
                 </div>
               </div>

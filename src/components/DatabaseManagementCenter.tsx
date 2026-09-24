@@ -18,9 +18,11 @@ import {
   ExternalLink,
   HelpCircle,
   TrendingUp,
-  Award
+  Award,
+  BarChart2
 } from 'lucide-react';
 import { AppUser } from '../types';
+import { PowerBIIntegrationHub } from './PowerBIIntegrationHub';
 
 interface DatabaseManagementCenterProps {
   currentUser: AppUser;
@@ -95,7 +97,9 @@ interface AuditTrailItem {
 
 export const DatabaseManagementCenter: React.FC<DatabaseManagementCenterProps> = ({ currentUser }) => {
   // Global states
-  const [activeSubTab, setActiveSubTab] = useState<'kpi' | 'health' | 'audit' | 'repair' | 'backup' | 'sync' | 'explorer'>('kpi');
+  const [activeSubTab, setActiveSubTab] = useState<'databases' | 'bi_intel' | 'backup_restore' | 'system_logs'>('databases');
+  const [databasesSubSection, setDatabasesSubSection] = useState<'health_kpi' | 'sql_schema' | 'audit_repair'>('health_kpi');
+  const [schemaSql, setSchemaSql] = useState<string>('');
   const [kpis, setKpis] = useState<KPIStats | null>(null);
   const [health, setHealth] = useState<HealthData | null>(null);
   const [auditIssues, setAuditIssues] = useState<AuditIssue[]>([]);
@@ -216,12 +220,16 @@ export const DatabaseManagementCenter: React.FC<DatabaseManagementCenterProps> =
     fetchKPIs();
     fetchHealth();
     fetchSyncSources();
+    fetch('/api/db/schema')
+      .then(res => res.ok ? res.text() : '')
+      .then(text => setSchemaSql(text))
+      .catch(err => console.error('Error fetching schema DDL:', err));
   }, []);
 
   useEffect(() => {
-    if (activeSubTab === 'explorer') {
+    if (activeSubTab === 'system_logs') {
       fetchAuditTrail();
-    } else if (activeSubTab === 'audit') {
+    } else if (activeSubTab === 'databases') {
       fetchAuditIssues();
     }
   }, [activeSubTab]);
@@ -383,135 +391,119 @@ export const DatabaseManagementCenter: React.FC<DatabaseManagementCenterProps> =
         {/* Navigation Sidebar */}
         <div className="lg:col-span-3 bg-white p-4 rounded-3xl border border-[#E5E7EB] shadow-xs space-y-1">
           <p className="text-[11px] text-slate-400 font-bold px-3 pb-2 pt-1 border-b border-slate-100 mb-2">
-            أقسام الإدارة والتحكم
+            أقسام إدارة البيانات المعتمدة
           </p>
 
           <button
-            onClick={() => setActiveSubTab('kpi')}
+            onClick={() => setActiveSubTab('databases')}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-black transition cursor-pointer ${
-              activeSubTab === 'kpi'
+              activeSubTab === 'databases'
                 ? 'bg-rose-50 text-rose-950 border-r-4 border-rose-600 font-black'
                 : 'text-slate-600 hover:bg-[#F5F5F5] hover:text-[#111111]'
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <Award className="w-4 h-4 text-rose-600" />
-              <span>1. مؤشرات جودة البيانات</span>
+              <Database className="w-4 h-4 text-rose-600" />
+              <span>قواعد البيانات</span>
             </div>
-            {kpis && (
-              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-800">
-                {kpis.integrity}%
-              </span>
-            )}
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold">
+              نشط
+            </span>
           </button>
 
           <button
-            onClick={() => setActiveSubTab('health')}
+            onClick={() => setActiveSubTab('bi_intel')}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-black transition cursor-pointer ${
-              activeSubTab === 'health'
+              activeSubTab === 'bi_intel'
                 ? 'bg-rose-50 text-rose-950 border-r-4 border-rose-600 font-black'
                 : 'text-slate-600 hover:bg-[#F5F5F5] hover:text-[#111111]'
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <Clock className="w-4 h-4 text-rose-600" />
-              <span>2. مركز الصحة والكميات</span>
+              <BarChart2 className="w-4 h-4 text-rose-600" />
+              <span>ذكاء الأعمال</span>
             </div>
-            {health && (
-              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-800">
-                {health.metrics.totalProducts} م
-              </span>
-            )}
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">
+              Power BI
+            </span>
           </button>
 
           <button
-            onClick={() => setActiveSubTab('audit')}
+            onClick={() => setActiveSubTab('backup_restore')}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-black transition cursor-pointer ${
-              activeSubTab === 'audit'
-                ? 'bg-rose-50 text-rose-950 border-r-4 border-rose-600 font-black'
-                : 'text-slate-600 hover:bg-[#F5F5F5] hover:text-[#111111]'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <ShieldAlert className="w-4 h-4 text-rose-600" />
-              <span>3. محرك الفحص والتدقيق</span>
-            </div>
-            {auditIssues.length > 0 ? (
-              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-rose-600 text-white font-bold animate-pulse">
-                {auditIssues.length} عيب
-              </span>
-            ) : (
-              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                سليم
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('repair')}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-black transition cursor-pointer ${
-              activeSubTab === 'repair'
-                ? 'bg-rose-50 text-rose-950 border-r-4 border-rose-600 font-black'
-                : 'text-slate-600 hover:bg-[#F5F5F5] hover:text-[#111111]'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <RefreshCw className="w-4 h-4 text-rose-600" />
-              <span>4. استصلاح وإصلاح السجلات</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-900 font-bold">إصلاح</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('backup')}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-black transition cursor-pointer ${
-              activeSubTab === 'backup'
+              activeSubTab === 'backup_restore'
                 ? 'bg-rose-50 text-rose-950 border-r-4 border-rose-600 font-black'
                 : 'text-slate-600 hover:bg-[#F5F5F5] hover:text-[#111111]'
             }`}
           >
             <div className="flex items-center gap-2.5">
               <FileJson className="w-4 h-4 text-rose-600" />
-              <span>5. مركز النسخ الاحتياطي</span>
+              <span>النسخ الاحتياطي</span>
             </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-800">
+              آمن
+            </span>
           </button>
 
           <button
-            onClick={() => setActiveSubTab('sync')}
+            onClick={() => setActiveSubTab('system_logs')}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-black transition cursor-pointer ${
-              activeSubTab === 'sync'
-                ? 'bg-rose-50 text-rose-950 border-r-4 border-rose-600 font-black'
-                : 'text-slate-600 hover:bg-[#F5F5F5] hover:text-[#111111]'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <Layers className="w-4 h-4 text-rose-600" />
-              <span>6. مراقبة مزامنة خطوط SAP</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">سحابي</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('explorer')}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-black transition cursor-pointer ${
-              activeSubTab === 'explorer'
+              activeSubTab === 'system_logs'
                 ? 'bg-rose-50 text-rose-950 border-r-4 border-rose-600 font-black'
                 : 'text-slate-600 hover:bg-[#F5F5F5] hover:text-[#111111]'
             }`}
           >
             <div className="flex items-center gap-2.5">
               <Search className="w-4 h-4 text-rose-600" />
-              <span>7. مستكشف سجلات التغيير</span>
+              <span>سجلات النظام</span>
             </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-800">بحث مدمج</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-800">
+              تدقيق
+            </span>
           </button>
         </div>
 
         {/* Action Panel Content */}
         <div className="lg:col-span-9 bg-white p-6 rounded-3xl border border-[#E5E7EB] shadow-xs">
+
+          {/* Sub-navigation bar for Databases tab */}
+          {activeSubTab === 'databases' && (
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3 mb-6">
+              <button
+                onClick={() => setDatabasesSubSection('health_kpi')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+                  databasesSubSection === 'health_kpi'
+                    ? 'bg-rose-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-[#F5F5F5] hover:text-[#111111]'
+                }`}
+              >
+                لوحة السلامة والمؤشرات
+              </button>
+              <button
+                onClick={() => setDatabasesSubSection('sql_schema')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+                  databasesSubSection === 'sql_schema'
+                    ? 'bg-rose-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-[#F5F5F5] hover:text-[#111111]'
+                }`}
+              >
+                مخطط قاعدة البيانات (Cloud SQL DDL)
+              </button>
+              <button
+                onClick={() => setDatabasesSubSection('audit_repair')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+                  databasesSubSection === 'audit_repair'
+                    ? 'bg-rose-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-[#F5F5F5] hover:text-[#111111]'
+                }`}
+              >
+                فحص وإصلاح الاتساق والمزامنة
+              </button>
+            </div>
+          )}
           
           {/* SECTION 7: EXECUTIVE DATA QUALITY KPIS */}
-          {activeSubTab === 'kpi' && kpis && (
+          {activeSubTab === 'databases' && databasesSubSection === 'health_kpi' && kpis && (
             <div className="space-y-6">
               <div className="border-b border-slate-100 pb-4">
                 <h3 className="text-lg font-black text-slate-900 font-['Cairo'] flex items-center gap-2">
@@ -593,7 +585,7 @@ export const DatabaseManagementCenter: React.FC<DatabaseManagementCenterProps> =
           )}
 
           {/* SECTION 1: DATA HEALTH CENTER */}
-          {activeSubTab === 'health' && health && (
+          {activeSubTab === 'databases' && databasesSubSection === 'health_kpi' && health && (
             <div className="space-y-6">
               <div className="border-b border-slate-100 pb-4">
                 <h3 className="text-lg font-black text-slate-900 font-['Cairo'] flex items-center gap-2">
@@ -718,7 +710,7 @@ export const DatabaseManagementCenter: React.FC<DatabaseManagementCenterProps> =
           )}
 
           {/* SECTION 2: INTEGRITY AUDIT ENGINE */}
-          {activeSubTab === 'audit' && (
+          {activeSubTab === 'databases' && databasesSubSection === 'audit_repair' && (
             <div className="space-y-6">
               <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
@@ -805,7 +797,7 @@ export const DatabaseManagementCenter: React.FC<DatabaseManagementCenterProps> =
           )}
 
           {/* SECTION 3: DATA REPAIR CENTER */}
-          {activeSubTab === 'repair' && (
+          {activeSubTab === 'databases' && databasesSubSection === 'audit_repair' && (
             <div className="space-y-6">
               <div className="border-b border-slate-100 pb-4">
                 <h3 className="text-lg font-black text-slate-900 font-['Cairo'] flex items-center gap-2">
@@ -938,7 +930,7 @@ export const DatabaseManagementCenter: React.FC<DatabaseManagementCenterProps> =
           )}
 
           {/* SECTION 4: BACKUP CENTER */}
-          {activeSubTab === 'backup' && (
+          {activeSubTab === 'backup_restore' && (
             <div className="space-y-6">
               <div className="border-b border-slate-100 pb-4">
                 <h3 className="text-lg font-black text-slate-900 font-['Cairo'] flex items-center gap-2">
@@ -1018,7 +1010,7 @@ export const DatabaseManagementCenter: React.FC<DatabaseManagementCenterProps> =
           )}
 
           {/* SECTION 5: SYNC MONITORING CENTER */}
-          {activeSubTab === 'sync' && (
+          {activeSubTab === 'databases' && databasesSubSection === 'audit_repair' && (
             <div className="space-y-6">
               <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
@@ -1074,8 +1066,24 @@ export const DatabaseManagementCenter: React.FC<DatabaseManagementCenterProps> =
             </div>
           )}
 
+          {/* SECTION 8: BUSINESS BI INTEGRATION (POWER BI) */}
+          {activeSubTab === 'bi_intel' && (
+            <div className="space-y-6">
+              <div className="border-b border-slate-100 pb-3">
+                <h3 className="text-lg font-black text-slate-900 font-['Cairo'] flex items-center gap-2">
+                  <BarChart2 className="w-5 h-5 text-rose-600" />
+                  <span>بوابة ذكاء الأعمال المدمجة وربط تقارير Power BI Desktop</span>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  اتصال وتصدير خطوط البيانات مباشرة إلى Microsoft Power BI لتصميم وعرض التقارير التفاعلية ومؤشرات الأداء.
+                </p>
+              </div>
+              <PowerBIIntegrationHub onClose={undefined} isModal={false} />
+            </div>
+          )}
+
           {/* SECTION 6: AUDIT TRAIL EXPLORER */}
-          {activeSubTab === 'explorer' && (
+          {activeSubTab === 'system_logs' && (
             <div className="space-y-6">
               <div className="border-b border-slate-100 pb-4">
                 <h3 className="text-lg font-black text-slate-900 font-['Cairo'] flex items-center gap-2">

@@ -1226,6 +1226,80 @@ export class PostgresApplicationRepository implements IApplicationRepository {
     return this.memDb.addWarrantyCost(cost);
   }
 
+  // ==================== Production Orders & Serials Engine ====================
+
+  public getProductionOrders(search?: string) {
+    return this.memDb.getProductionOrders(search);
+  }
+
+  public getProductionOrderById(id: string) {
+    return this.memDb.getProductionOrderById(id);
+  }
+
+  public createProductionOrder(payload: any, user?: string) {
+    return this.memDb.createProductionOrder(payload, user);
+  }
+
+  public updateProductionOrder(id: string, updates: any, user?: string) {
+    return this.memDb.updateProductionOrder(id, updates, user);
+  }
+
+  public deleteProductionOrder(id: string, user?: string) {
+    return this.memDb.deleteProductionOrder(id, user);
+  }
+
+  public approveProductionOrder(id: string, user?: string) {
+    return this.memDb.approveProductionOrder(id, user);
+  }
+
+  public closeProductionOrder(id: string, user?: string) {
+    return this.memDb.closeProductionOrder(id, user);
+  }
+
+  public archiveProductionOrder(id: string, user?: string) {
+    return this.memDb.archiveProductionOrder(id, user);
+  }
+
+  public getSerials(filters?: { orderId?: string; search?: string }) {
+    return this.memDb.getSerials(filters);
+  }
+
+  public getSerialByNumber(serialNumber: string) {
+    return this.memDb.getSerialByNumber(serialNumber);
+  }
+
+  public generateSerialsForOrder(orderId: string, user?: string) {
+    return this.memDb.generateSerialsForOrder(orderId, user);
+  }
+
+  public lockSerial(serialNumber: string, user?: string) {
+    return this.memDb.lockSerial(serialNumber, user);
+  }
+
+  public cancelSerial(serialNumber: string, reason: string, user?: string) {
+    return this.memDb.cancelSerial(serialNumber, reason, user);
+  }
+
+  public getPrintJobs(limit?: number) {
+    return this.memDb.getPrintJobs(limit);
+  }
+
+  public createPrintJob(data: any) {
+    return this.memDb.createPrintJob(data);
+  }
+
+  public getAuditLogs(limit?: number) {
+    return this.memDb.getAuditLogs(limit);
+  }
+
+  public addAuditLog(entry: any) {
+    return this.memDb.addAuditLog(entry);
+  }
+
+  public getProduct360(identifier: string) {
+    return this.memDb.getProduct360(identifier);
+  }
+
   public persist() {
     return this.memDb.persist();
   }

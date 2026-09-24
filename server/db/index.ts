@@ -194,20 +194,60 @@ export interface ZebraLabelData {
   zpl_code: string;
 }
 
-export interface WarrantyActivation {
-  id: number;
-  warranty_id: string;
+export interface ProductionOrder {
+  id: string;
+  orderNumber: string;
+  batchNumber: string;
+  status: 'Draft' | 'Approved' | 'Serial Generated' | 'Printed' | 'Completed' | 'Closed' | 'Archived';
+  productionDate: string;
+  mattressModel: string;
+  mattressSize?: string;
+  warrantyYears?: number;
+  productionQuantity: number;
+  productionLine?: string;
+  createdBy: string;
+  createdAt: string;
+  modifiedBy?: string;
+  modifiedAt?: string;
+  approvalUser?: string;
+  approvalDate?: string;
+  statusHistory?: Array<{ status: string; date: string; user: string; notes?: string }>;
+}
+
+export interface Serial {
+  id: string;
   serial_number: string;
-  customer_name: string;
-  phone: string;
-  governorate: string;
-  city: string;
-  invoice_number: string;
-  purchase_date: string;
-  activation_date: string;
-  expiry_date: string;
-  status?: string;
-  created_at: string;
+  productionOrder_id: string;
+  batchNumber: string;
+  model: string;
+  size?: string;
+  productionDate?: string;
+  warrantyYears?: number;
+  status: 'Generated' | 'Locked' | 'Printed' | 'Shipped' | 'Cancelled' | 'Replaced';
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface PrintJob {
+  id: string;
+  jobId: string;
+  printer: string;
+  user: string;
+  template: string;
+  quantity: number;
+  timestamp: string;
+  status: 'Success' | 'Failed' | 'Queued' | 'Cancelled';
+}
+
+export interface AuditLog {
+  id: string;
+  timestamp: string;
+  action: string;
+  actor: string;
+  category: 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'PRINT' | 'IMPORT' | 'SYNC' | 'SECURITY';
+  details: string;
+  beforeValue?: any;
+  afterValue?: any;
 }
 
 export interface ClaimTask {
@@ -220,6 +260,24 @@ export interface ClaimTask {
 }
 
 export type SLAStatus = 'WITHIN_SLA' | 'NEARING_DUE' | 'BREACHED';
+
+export interface WarrantyActivation {
+  id: number;
+  warranty_id: string;
+  serial_number: string;
+  invoice_number?: string;
+  customer_name: string;
+  phone: string;
+  city?: string;
+  governorate?: string;
+  purchase_date: string;
+  activation_date: string;
+  expiry_date: string;
+  store_name?: string;
+  status?: string;
+  created_at: string;
+  source_system?: string;
+}
 
 export interface WarrantyClaim {
   id: number;
@@ -443,6 +501,10 @@ interface DatabaseData {
   scrap_logs: ScrapLog[];
   customer_feedback: CustomerFeedback[];
   warranty_costs: WarrantyCost[];
+  production_orders: ProductionOrder[];
+  serials: Serial[];
+  print_jobs: PrintJob[];
+  audit_logs: AuditLog[];
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -1747,6 +1809,79 @@ const INITIAL_COMMUNICATIONS: CustomerCommunication[] = [
   },
 ];
 
+const INITIAL_PRODUCTION_ORDERS: ProductionOrder[] = [
+  {
+    id: 'po-1',
+    orderNumber: 'PO-2026-1001',
+    batchNumber: 'B26-0001',
+    productionDate: '2026-09-24',
+    mattressModel: 'سليبي رويال بوكيت سبرينج (Royal Pocket)',
+    mattressSize: '180x200x30 سم',
+    warrantyYears: 10,
+    productionQuantity: 50,
+    productionLine: 'خط الإنتاج الرئيسي (Line A)',
+    status: 'Approved',
+    createdBy: 'م. حسام سليمان',
+    createdAt: '2026-09-24T08:00:00Z',
+    approvalUser: 'م. محمد شرف',
+    approvalDate: '2026-09-24T09:00:00Z',
+    statusHistory: [
+      { status: 'Draft', date: '2026-09-24T08:00:00Z', user: 'م. حسام سليمان' },
+      { status: 'Approved', date: '2026-09-24T09:00:00Z', user: 'م. محمد شرف', notes: 'تمت المراجعة والاعتماد' },
+    ],
+  },
+  {
+    id: 'po-2',
+    orderNumber: 'PO-2026-1002',
+    batchNumber: 'B26-0002',
+    productionDate: '2026-09-24',
+    mattressModel: 'سليبي سوبر ميموري فوم (Super Memory Foam)',
+    mattressSize: '160x200x25 سم',
+    warrantyYears: 10,
+    productionQuantity: 30,
+    productionLine: 'خط الإنتاج الطبي (Line B)',
+    status: 'Serial Generated',
+    createdBy: 'م. حسام سليمان',
+    createdAt: '2026-09-24T10:00:00Z',
+    approvalUser: 'م. محمد شرف',
+    approvalDate: '2026-09-24T10:30:00Z',
+    statusHistory: [
+      { status: 'Draft', date: '2026-09-24T10:00:00Z', user: 'م. حسام سليمان' },
+      { status: 'Approved', date: '2026-09-24T10:30:00Z', user: 'م. محمد شرف' },
+      { status: 'Serial Generated', date: '2026-09-24T11:00:00Z', user: 'م. حسام سليمان', notes: 'تم توليد 30 رقم تسلسلي' },
+    ],
+  },
+];
+
+const INITIAL_SERIALS: Serial[] = Array.from({ length: 30 }, (_, i) => {
+  const numStr = String(i + 1).padStart(6, '0');
+  const serialNo = `SLP-2026-${numStr}`;
+  return {
+    id: `ser-${i + 1}`,
+    serial_number: serialNo,
+    productionOrder_id: 'po-2',
+    batchNumber: 'B26-0002',
+    model: 'سليبي سوبر ميموري فوم (Super Memory Foam)',
+    size: '160x200x25 سم',
+    productionDate: '2026-09-24',
+    warrantyYears: 10,
+    status: 'Generated',
+    createdAt: '2026-09-24T11:00:00Z',
+    createdBy: 'م. حسام سليمان',
+  };
+});
+
+const INITIAL_PRINT_JOBS: PrintJob[] = [
+  { jobId: 'JOB-901', id: 'JOB-901', timestamp: '2026-09-24T14:20:00Z', user: 'م. حسام سليمان', printer: 'Zebra ZD220 Industrial', template: 'Modern Enterprise v2', quantity: 12, status: 'Success' },
+  { jobId: 'JOB-902', id: 'JOB-902', timestamp: '2026-09-24T11:10:00Z', user: 'م. حسام سليمان', printer: 'Windows PDF Exporter', template: 'Standard Label', quantity: 50, status: 'Success' },
+];
+
+const INITIAL_AUDIT_LOGS: AuditLog[] = [
+  { id: 'ALT-101', timestamp: '2026-09-24T14:00:00Z', action: 'إنشاء أمر إنتاج جديد', actor: 'م. حسام سليمان', category: 'CREATE', details: 'أمر رقم PO-2026-1002 كمية 30' },
+  { id: 'ALT-102', timestamp: '2026-09-24T12:30:00Z', action: 'توليد سيريالات', actor: 'م. حسام سليمان', category: 'APPROVE', details: 'توليد 30 رقم تسلسلي للتشغيلة B26-0002' },
+  { id: 'ALT-103', timestamp: '2026-09-24T09:15:00Z', action: 'تسجيل الدخول', actor: 'م. حسام سليمان', category: 'SECURITY', details: 'تسجيل دخول ناجح إلى النظام المؤسسي' },
+];
+
 export class DatabaseService {
   public data: DatabaseData = {
     products: [],
@@ -1767,6 +1902,10 @@ export class DatabaseService {
     scrap_logs: [],
     customer_feedback: [],
     warranty_costs: [],
+    production_orders: [],
+    serials: [],
+    print_jobs: [],
+    audit_logs: [],
   };
 
   constructor() {
@@ -1801,6 +1940,10 @@ export class DatabaseService {
           scrap_logs: parsed.scrap_logs || [...INITIAL_SCRAP_LOGS],
           customer_feedback: parsed.customer_feedback || [...INITIAL_CUSTOMER_FEEDBACK],
           warranty_costs: parsed.warranty_costs || [...INITIAL_WARRANTY_COSTS],
+          production_orders: parsed.production_orders || [...INITIAL_PRODUCTION_ORDERS],
+          serials: parsed.serials || [...INITIAL_SERIALS],
+          print_jobs: parsed.print_jobs || [...INITIAL_PRINT_JOBS],
+          audit_logs: parsed.audit_logs || [...INITIAL_AUDIT_LOGS],
         };
         // Persist if new keys were seeded
         if (
@@ -1838,6 +1981,10 @@ export class DatabaseService {
           scrap_logs: [...INITIAL_SCRAP_LOGS],
           customer_feedback: [...INITIAL_CUSTOMER_FEEDBACK],
           warranty_costs: [...INITIAL_WARRANTY_COSTS],
+          production_orders: [...INITIAL_PRODUCTION_ORDERS],
+          serials: [...INITIAL_SERIALS],
+          print_jobs: [...INITIAL_PRINT_JOBS],
+          audit_logs: [...INITIAL_AUDIT_LOGS],
         };
         this.persist();
         this.migrateAttachments();
@@ -1863,6 +2010,10 @@ export class DatabaseService {
         scrap_logs: [...INITIAL_SCRAP_LOGS],
         customer_feedback: [...INITIAL_CUSTOMER_FEEDBACK],
         warranty_costs: [...INITIAL_WARRANTY_COSTS],
+        production_orders: [...INITIAL_PRODUCTION_ORDERS],
+        serials: [...INITIAL_SERIALS],
+        print_jobs: [...INITIAL_PRINT_JOBS],
+        audit_logs: [...INITIAL_AUDIT_LOGS],
       };
     }
   }
@@ -4345,6 +4496,10 @@ export class DatabaseService {
       scrap_logs: [...INITIAL_SCRAP_LOGS],
       customer_feedback: [...INITIAL_CUSTOMER_FEEDBACK],
       warranty_costs: [...INITIAL_WARRANTY_COSTS],
+      production_orders: [...INITIAL_PRODUCTION_ORDERS],
+      serials: [...INITIAL_SERIALS],
+      print_jobs: [...INITIAL_PRINT_JOBS],
+      audit_logs: [...INITIAL_AUDIT_LOGS],
     };
     this.persist();
     return true;
@@ -5050,6 +5205,374 @@ in
     this.data.warranty_costs.unshift(newCost);
     this.persist();
     return newCost;
+  }
+
+  // --- PRODUCTION ORDERS ---
+  public getProductionOrders(search?: string): ProductionOrder[] {
+    let orders = this.data.production_orders || [];
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      orders = orders.filter(
+        o =>
+          o.orderNumber.toLowerCase().includes(q) ||
+          o.batchNumber.toLowerCase().includes(q) ||
+          o.mattressModel.toLowerCase().includes(q) ||
+          o.status.toLowerCase().includes(q)
+      );
+    }
+    return orders;
+  }
+
+  public getProductionOrderById(id: string): ProductionOrder | null {
+    return (this.data.production_orders || []).find(o => o.id === id || o.orderNumber === id) || null;
+  }
+
+  public createProductionOrder(
+    payload: {
+      mattressModel: string;
+      mattressSize?: string;
+      warrantyYears?: number;
+      productionQuantity: number;
+      productionLine?: string;
+      productionDate?: string;
+      batchNumber?: string;
+    },
+    user = 'المشغل'
+  ): ProductionOrder {
+    const seq = (this.data.production_orders || []).length + 1001;
+    const orderNumber = `PO-2026-${seq}`;
+    const batchNumber = payload.batchNumber || `B26-${String(seq).slice(-4)}`;
+    const now = new Date().toISOString();
+    const newOrder: ProductionOrder = {
+      id: `po-${Date.now()}`,
+      orderNumber,
+      batchNumber,
+      status: 'Draft',
+      productionDate: payload.productionDate || now.split('T')[0],
+      mattressModel: payload.mattressModel,
+      mattressSize: payload.mattressSize || '180x200x30 سم',
+      warrantyYears: payload.warrantyYears || 10,
+      productionQuantity: Number(payload.productionQuantity) || 1,
+      productionLine: payload.productionLine || 'خط الإنتاج الرئيسي',
+      createdBy: user,
+      createdAt: now,
+      modifiedBy: user,
+      modifiedAt: now,
+      statusHistory: [{ status: 'Draft', date: now, user }],
+    };
+    if (!this.data.production_orders) this.data.production_orders = [];
+    this.data.production_orders.unshift(newOrder);
+
+    this.addAuditLog({
+      action: 'إنشاء أمر إنتاج جديد',
+      actor: user,
+      category: 'CREATE',
+      details: `أمر رقم ${orderNumber} - الموديل: ${payload.mattressModel} - الكمية: ${payload.productionQuantity}`,
+      afterValue: newOrder,
+    });
+
+    this.addLifecycleEvent({
+      lifecycle_id: `LC-PO-${Date.now()}`,
+      serial_number: orderNumber,
+      event_type: 'Produced',
+      event_date: now,
+      performed_by: user,
+      notes: `إنشاء أمر إنتاج جديد رقم ${orderNumber} للتشغيلة ${batchNumber}`,
+      reference_id: orderNumber,
+    });
+
+    this.persist();
+    return newOrder;
+  }
+
+  public updateProductionOrder(
+    id: string,
+    updates: Partial<ProductionOrder>,
+    user = 'المشغل'
+  ): ProductionOrder {
+    const orderIndex = (this.data.production_orders || []).findIndex(o => o.id === id || o.orderNumber === id);
+    if (orderIndex === -1) throw new Error(`أمر الإنتاج غير موجود (${id})`);
+
+    const existingOrder = this.data.production_orders[orderIndex];
+    const now = new Date().toISOString();
+    const updatedOrder: ProductionOrder = {
+      ...existingOrder,
+      ...updates,
+      modifiedBy: user,
+      modifiedAt: now,
+    };
+
+    if (updates.status && updates.status !== existingOrder.status) {
+      const history = updatedOrder.statusHistory || [];
+      history.push({ status: updates.status, date: now, user });
+      updatedOrder.statusHistory = history;
+    }
+
+    this.data.production_orders[orderIndex] = updatedOrder;
+
+    this.addAuditLog({
+      action: 'تحديث أمر الإنتاج',
+      actor: user,
+      category: 'UPDATE',
+      details: `تحديث أمر رقم ${existingOrder.orderNumber}`,
+      beforeValue: existingOrder,
+      afterValue: updatedOrder,
+    });
+
+    this.persist();
+    return updatedOrder;
+  }
+
+  public deleteProductionOrder(id: string, user = 'المشغل'): boolean {
+    const initialLen = (this.data.production_orders || []).length;
+    const target = this.getProductionOrderById(id);
+    this.data.production_orders = (this.data.production_orders || []).filter(o => o.id !== id && o.orderNumber !== id);
+    if (this.data.production_orders.length !== initialLen && target) {
+      this.addAuditLog({
+        action: 'حذف أمر إنتاج',
+        actor: user,
+        category: 'DELETE',
+        details: `حذف أمر رقم ${target.orderNumber}`,
+        beforeValue: target,
+      });
+      this.persist();
+      return true;
+    }
+    return false;
+  }
+
+  public approveProductionOrder(id: string, user = 'المشرف'): ProductionOrder {
+    const order = this.getProductionOrderById(id);
+    if (!order) throw new Error('أمر الإنتاج غير موجود');
+    const now = new Date().toISOString();
+    const updated = this.updateProductionOrder(
+      id,
+      {
+        status: 'Approved',
+        approvalUser: user,
+        approvalDate: now,
+      },
+      user
+    );
+
+    this.addAuditLog({
+      action: 'اعتماد أمر إنتاج',
+      actor: user,
+      category: 'APPROVE',
+      details: `تمت الموافقة والاعتماد لأمر الإنتاج ${order.orderNumber}`,
+    });
+
+    return updated;
+  }
+
+  public closeProductionOrder(id: string, user = 'المشرف'): ProductionOrder {
+    return this.updateProductionOrder(id, { status: 'Closed' }, user);
+  }
+
+  public archiveProductionOrder(id: string, user = 'المشرف'): ProductionOrder {
+    return this.updateProductionOrder(id, { status: 'Archived' }, user);
+  }
+
+  // --- SERIAL NUMBERS ENGINE ---
+  public getSerials(filters?: { orderId?: string; search?: string }): Serial[] {
+    let list = this.data.serials || [];
+    if (filters?.orderId) {
+      list = list.filter(s => s.productionOrder_id === filters.orderId);
+    }
+    if (filters?.search) {
+      const q = filters.search.trim().toLowerCase();
+      list = list.filter(
+        s =>
+          s.serial_number.toLowerCase().includes(q) ||
+          s.batchNumber.toLowerCase().includes(q) ||
+          s.model.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }
+
+  public getSerialByNumber(serialNumber: string): Serial | null {
+    return (this.data.serials || []).find(s => s.serial_number.toLowerCase() === serialNumber.trim().toLowerCase()) || null;
+  }
+
+  public generateSerialsForOrder(orderId: string, user = 'مدير النظام'): Serial[] {
+    const order = this.getProductionOrderById(orderId);
+    if (!order) throw new Error('أمر الإنتاج غير موجود');
+
+    const qty = order.productionQuantity;
+    const now = new Date().toISOString();
+    const currentSerials = this.data.serials || [];
+    const createdSerials: Serial[] = [];
+
+    let startIdx = currentSerials.length + 1;
+
+    for (let i = 0; i < qty; i++) {
+      const seqStr = String(startIdx + i).padStart(6, '0');
+      const serialNo = `SLP-2026-${seqStr}`;
+
+      const newSerial: Serial = {
+        id: `ser-${Date.now()}-${i}`,
+        serial_number: serialNo,
+        productionOrder_id: order.id,
+        batchNumber: order.batchNumber,
+        model: order.mattressModel,
+        size: order.mattressSize,
+        productionDate: order.productionDate,
+        warrantyYears: order.warrantyYears,
+        status: 'Generated',
+        createdAt: now,
+        createdBy: user,
+      };
+
+      createdSerials.push(newSerial);
+
+      if (!this.data.products.some(p => p.serial_number === serialNo)) {
+        this.data.products.push({
+          id: this.data.products.length + 1,
+          serial_number: serialNo,
+          model: order.mattressModel,
+          size: order.mattressSize || '180x200x30 سم',
+          warranty_years: order.warrantyYears || 10,
+          production_date: order.productionDate,
+          status: 'جاهز للضمان',
+          production_order: order.orderNumber,
+          batch_no: order.batchNumber,
+          created_at: now,
+          production_status: 'Produced',
+        });
+      }
+
+      this.addLifecycleEvent({
+        lifecycle_id: `LC-GEN-${serialNo}`,
+        serial_number: serialNo,
+        event_type: 'Produced',
+        event_date: now,
+        performed_by: user,
+        notes: `توليد رقم تسلسلي للمرتبة وتربيطه بأمر الإنتاج ${order.orderNumber}`,
+        reference_id: order.orderNumber,
+      });
+    }
+
+    if (!this.data.serials) this.data.serials = [];
+    this.data.serials.push(...createdSerials);
+
+    this.updateProductionOrder(order.id, { status: 'Serial Generated' }, user);
+
+    this.addAuditLog({
+      action: 'توليد أرقام تسلسلية',
+      actor: user,
+      category: 'APPROVE',
+      details: `تم توليد ${createdSerials.length} رقم تسلسلي لأمر الإنتاج ${order.orderNumber}`,
+    });
+
+    this.persist();
+    return createdSerials;
+  }
+
+  public lockSerial(serialNumber: string, user = 'المشرف'): Serial {
+    const s = this.getSerialByNumber(serialNumber);
+    if (!s) throw new Error('الرقم التسلسلي غير موجود');
+    s.status = 'Locked';
+    this.persist();
+    return s;
+  }
+
+  public cancelSerial(serialNumber: string, reason: string, user = 'المشرف'): Serial {
+    const s = this.getSerialByNumber(serialNumber);
+    if (!s) throw new Error('الرقم التسلسلي غير موجود');
+    s.status = 'Cancelled';
+    this.addAuditLog({
+      action: 'إلغاء رقم تسلسلي',
+      actor: user,
+      category: 'DELETE',
+      details: `إلغاء السيريال ${serialNumber} - السبب: ${reason}`,
+    });
+    this.persist();
+    return s;
+  }
+
+  // --- PRINT JOBS ---
+  public getPrintJobs(limit = 100): PrintJob[] {
+    return (this.data.print_jobs || []).slice(0, limit);
+  }
+
+  public createPrintJob(data: Omit<PrintJob, 'id'>): PrintJob {
+    const id = `JOB-${Date.now().toString().slice(-6)}`;
+    const newJob: PrintJob = { ...data, id };
+    if (!this.data.print_jobs) this.data.print_jobs = [];
+    this.data.print_jobs.unshift(newJob);
+
+    this.addAuditLog({
+      action: 'طباعة ملصقات',
+      actor: data.user,
+      category: 'PRINT',
+      details: `طباعة كمية ${data.quantity} عبر طابعة ${data.printer} باستخدام قالب ${data.template}`,
+    });
+
+    this.persist();
+    return newJob;
+  }
+
+  // --- SYSTEM-WIDE AUDIT LOG ---
+  public getAuditLogs(limit = 100): AuditLog[] {
+    return (this.data.audit_logs || []).slice(0, limit);
+  }
+
+  public addAuditLog(entry: Omit<AuditLog, 'id' | 'timestamp'>): AuditLog {
+    const id = `ALT-${Date.now().toString().slice(-6)}`;
+    const timestamp = new Date().toISOString();
+    const newLog: AuditLog = { ...entry, id, timestamp };
+    if (!this.data.audit_logs) this.data.audit_logs = [];
+    this.data.audit_logs.unshift(newLog);
+    this.persist();
+    return newLog;
+  }
+
+  // --- PRODUCT 360 REAL DB AGGREGATOR ---
+  public getProduct360(identifier: string) {
+    const q = identifier.trim().toLowerCase();
+
+    let serialObj = (this.data.serials || []).find(s => s.serial_number.toLowerCase() === q);
+    let productObj = (this.data.products || []).find(p => p.serial_number.toLowerCase() === q);
+
+    if (!serialObj && !productObj) {
+      serialObj = (this.data.serials || []).find(
+        s => s.productionOrder_id.toLowerCase() === q || s.batchNumber.toLowerCase() === q
+      );
+      if (serialObj) {
+        productObj = (this.data.products || []).find(p => p.serial_number.toLowerCase() === serialObj?.serial_number.toLowerCase());
+      }
+    }
+
+    const targetSerial = serialObj?.serial_number || productObj?.serial_number || identifier;
+
+    const orderObj = (this.data.production_orders || []).find(
+      o => o.id === serialObj?.productionOrder_id || o.orderNumber === productObj?.production_order
+    );
+
+    const printJobs = (this.data.print_jobs || []).filter(j => j.status === 'Success');
+    const activation = (this.data.warranty_activations || []).find(a => a.serial_number.toLowerCase() === targetSerial.toLowerCase());
+    const claims = (this.data.warranty_claims || []).filter(c => c.serial_number.toLowerCase() === targetSerial.toLowerCase());
+    const timeline = this.getLifecycleBySerial(targetSerial);
+
+    return {
+      serialNumber: targetSerial,
+      model: serialObj?.model || productObj?.model || 'سليبي سوبر كراون (Sleepee Super Crown)',
+      size: serialObj?.size || productObj?.size || '180x200x30 سم',
+      warrantyYears: serialObj?.warrantyYears || productObj?.warranty_years || 10,
+      productionDate: serialObj?.productionDate || productObj?.production_date || '2026-09-24',
+      orderNumber: orderObj?.orderNumber || productObj?.production_order || 'PO-2026-1001',
+      batchNumber: serialObj?.batchNumber || orderObj?.batchNumber || productObj?.batch_no || 'B26-0001',
+      productionLine: orderObj?.productionLine || 'خط الإنتاج الرئيسي',
+      status: serialObj?.status || 'Active',
+      printingDate: printJobs.length ? printJobs[0].timestamp : '2026-09-24 10:00',
+      activationStatus: activation ? 'مفعل بنجاح' : 'جاهز للتفعيل',
+      activationDetails: activation || null,
+      warrantyStatus: activation ? `ساري حتى ${activation.expiry_date}` : 'جاهز للضمان',
+      claimStatus: claims.length ? `${claims.length} مطالبات مسجلة` : 'لا توجد مطالبات سابقة',
+      claimsList: claims,
+      timelineEvents: timeline,
+    };
   }
 }
 

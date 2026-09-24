@@ -476,6 +476,80 @@ export class JsonApplicationRepository implements IApplicationRepository {
     return this.db.addWarrantyCost(cost);
   }
 
+  // ==================== Production Orders & Serials Engine ====================
+
+  public getProductionOrders(search?: string) {
+    return this.db.getProductionOrders(search);
+  }
+
+  public getProductionOrderById(id: string) {
+    return this.db.getProductionOrderById(id);
+  }
+
+  public createProductionOrder(payload: any, user?: string) {
+    return this.db.createProductionOrder(payload, user);
+  }
+
+  public updateProductionOrder(id: string, updates: any, user?: string) {
+    return this.db.updateProductionOrder(id, updates, user);
+  }
+
+  public deleteProductionOrder(id: string, user?: string) {
+    return this.db.deleteProductionOrder(id, user);
+  }
+
+  public approveProductionOrder(id: string, user?: string) {
+    return this.db.approveProductionOrder(id, user);
+  }
+
+  public closeProductionOrder(id: string, user?: string) {
+    return this.db.closeProductionOrder(id, user);
+  }
+
+  public archiveProductionOrder(id: string, user?: string) {
+    return this.db.archiveProductionOrder(id, user);
+  }
+
+  public getSerials(filters?: { orderId?: string; search?: string }) {
+    return this.db.getSerials(filters);
+  }
+
+  public getSerialByNumber(serialNumber: string) {
+    return this.db.getSerialByNumber(serialNumber);
+  }
+
+  public generateSerialsForOrder(orderId: string, user?: string) {
+    return this.db.generateSerialsForOrder(orderId, user);
+  }
+
+  public lockSerial(serialNumber: string, user?: string) {
+    return this.db.lockSerial(serialNumber, user);
+  }
+
+  public cancelSerial(serialNumber: string, reason: string, user?: string) {
+    return this.db.cancelSerial(serialNumber, reason, user);
+  }
+
+  public getPrintJobs(limit?: number) {
+    return this.db.getPrintJobs(limit);
+  }
+
+  public createPrintJob(data: any) {
+    return this.db.createPrintJob(data);
+  }
+
+  public getAuditLogs(limit?: number) {
+    return this.db.getAuditLogs(limit);
+  }
+
+  public addAuditLog(entry: any) {
+    return this.db.addAuditLog(entry);
+  }
+
+  public getProduct360(identifier: string) {
+    return this.db.getProduct360(identifier);
+  }
+
   public persist() {
     return this.db.persist();
   }

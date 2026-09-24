@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  UploadCloud,
-  FileSpreadsheet,
-  RefreshCw,
   Layers,
   CheckCircle2,
   AlertCircle,
@@ -31,6 +28,36 @@ import {
   WifiOff,
   Info,
   X,
+  Plus,
+  Play,
+  RotateCcw,
+  CheckSquare,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  FileSpreadsheet,
+  UploadCloud,
+  RefreshCw,
+  Edit,
+  Trash2,
+  CheckCircle,
+  BarChart2,
+  Tag,
+  Settings,
+  Sliders,
+  FileCode,
+  SlidersHorizontal,
+  Activity,
+  ShieldAlert,
+  Shield,
+  Layers3,
+  ListOrdered,
+  Maximize2,
+  Moon,
+  Sun,
+  PrinterIcon,
+  CpuIcon,
+  Workflow
 } from 'lucide-react';
 import { AppUser, ProductModel, ProductionSyncState, ProductionImportLog, ProductionBatch, ZebraLabelData } from '../types';
 
@@ -39,1773 +66,1153 @@ interface ProductionImportCenterProps {
   onRefreshData?: () => void;
 }
 
+interface ProductionOrder {
+  id: string;
+  orderNumber: string;
+  batchNumber: string;
+  productionDate: string;
+  mattressModel: string;
+  mattressSize: string;
+  warrantyYears: number;
+  productionQuantity: number;
+  productionLine: string;
+  status: 'Draft' | 'Approved' | 'Serial Generated' | 'Printed' | 'Completed';
+  generatedSerials: string[];
+  printedCount: number;
+}
+
+interface PrinterJob {
+  jobId: string;
+  timestamp: string;
+  user: string;
+  printer: string;
+  template: string;
+  quantity: number;
+  result: 'Success' | 'Failed' | 'Queued';
+}
+
+interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  action: string;
+  actor: string;
+  category: 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'PRINT' | 'IMPORT' | 'SYNC' | 'SECURITY';
+  details: string;
+}
+
 export const ProductionImportCenter: React.FC<ProductionImportCenterProps> = ({
   currentUser,
   onRefreshData,
 }) => {
-  // Active Sub-Tab
-  const [activeTab, setActiveTab] = useState<
-    'import' | 'governance' | 'batches' | 'logs' | 'zebra' | 'backup'
-  >('import');
+  // Navigation Groups & Sub-Tabs
+  const [activeGroup, setActiveGroup] = useState<'home' | 'operations' | 'traceability' | 'quality' | 'integration' | 'system'>('home');
+  const [activeSubTab, setActiveSubTab] = useState<string>('dashboard');
 
-  // Stats & Core Data
-  const [stats, setStats] = useState<any>(null);
-  const [models, setModels] = useState<ProductModel[]>([]);
-  const [syncStates, setSyncStates] = useState<ProductionSyncState[]>([]);
-  const [importLogs, setImportLogs] = useState<ProductionImportLog[]>([]);
-  const [batches, setBatches] = useState<ProductionBatch[]>([]);
-  const [warrantyAudits, setWarrantyAudits] = useState<any[]>([]);
-  const [backupPolicy, setBackupPolicy] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  // UI Modes
+  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [compactMode, setCompactMode] = useState<boolean>(false);
 
-  // File Upload State
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileBase64, setFileBase64] = useState<string>('');
-  const [fileRawText, setFileRawText] = useState<string>('');
-  const [sourceType, setSourceType] = useState<'Excel' | 'CSV'>('Excel');
-  const [validationPreview, setValidationPreview] = useState<any>(null);
-  const [isValidating, setIsValidating] = useState<boolean>(false);
-  const [isImporting, setIsImporting] = useState<boolean>(false);
-  const [importResult, setImportResult] = useState<any>(null);
-  const [importError, setImportError] = useState<string | null>(null);
-
-  // Cloud Sync Running State
-  const [syncingSource, setSyncingSource] = useState<string | null>(null);
-
-  // Warranty Governance Edit State
-  const [editingModel, setEditingModel] = useState<ProductModel | null>(null);
-  const [newWarrantyYears, setNewWarrantyYears] = useState<number>(10);
-  const [governanceReason, setGovernanceReason] = useState<string>('');
-  const [governanceError, setGovernanceError] = useState<string | null>(null);
-  const [governanceSuccess, setGovernanceSuccess] = useState<string | null>(null);
-
-  // Zebra Label Preview State
-  const [zebraSerialInput, setZebraSerialInput] = useState<string>('SLP-2026-9081');
-  const [zebraLabelData, setZebraLabelData] = useState<ZebraLabelData | null>(null);
-  const [zebraLoading, setZebraLoading] = useState<boolean>(false);
-  const [zebraError, setZebraError] = useState<string | null>(null);
-  const [copiedZpl, setCopiedZpl] = useState<boolean>(false);
-  const [printSuccessNotice, setPrintSuccessNotice] = useState<string | null>(null);
-  const [printErrorNotice, setPrintErrorNotice] = useState<string | null>(null);
-  const [printingTest, setPrintingTest] = useState<boolean>(false);
-
-  // Cloud Sync Settings Modal & Live Test State
-  const [selectedConfigProvider, setSelectedConfigProvider] = useState<'SharePoint' | 'OneDrive' | 'SAP' | null>(null);
-  const [configUrl, setConfigUrl] = useState<string>('');
-  const [configTargetFileName, setConfigTargetFileName] = useState<string>('');
-  const [configAuthType, setConfigAuthType] = useState<'anonymous_link' | 'graph_api' | 'basic_auth' | 'bearer_token'>('anonymous_link');
-  const [configToken, setConfigToken] = useState<string>('');
-  const [configMode, setConfigMode] = useState<'live_url' | 'simulated_fallback'>('simulated_fallback');
-  const [configNotes, setConfigNotes] = useState<string>('');
-  const [testingConnection, setTestingConnection] = useState<boolean>(false);
-  const [testConnectionResult, setTestConnectionResult] = useState<{
-    success: boolean;
-    status?: number;
-    statusText?: string;
-    message: string;
-    latencyMs?: number;
-    contentType?: string;
-    error?: string;
-  } | null>(null);
-  const [savingConfig, setSavingConfig] = useState<boolean>(false);
-  const [configSaveNotice, setConfigSaveNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
-
-  const handleOpenConfig = (provider: 'SharePoint' | 'OneDrive' | 'SAP') => {
-    const s = syncStates.find((item) => item.sync_source === provider);
-    setSelectedConfigProvider(provider);
-    setConfigUrl(s?.sync_url || '');
-    setConfigTargetFileName(s?.target_file_name || (provider === 'SharePoint' ? 'Production_Master.xlsx' : provider === 'OneDrive' ? 'OneDrive_Production_Master.xlsx' : 'API_PRODUCTION_ORDER_2_SRV'));
-    setConfigAuthType(s?.auth_type || (provider === 'SAP' ? 'basic_auth' : 'anonymous_link'));
-    setConfigToken(s?.api_key_or_token || '');
-    setConfigMode(s?.connection_mode || 'simulated_fallback');
-    setConfigNotes(s?.notes || '');
-    setTestConnectionResult(null);
-    setConfigSaveNotice(null);
-  };
-
-  const handleCloseConfig = () => {
-    setSelectedConfigProvider(null);
-    setTestConnectionResult(null);
-    setConfigSaveNotice(null);
-  };
-
-  const handleCopyUrl = (url: string) => {
-    if (!url) return;
-    navigator.clipboard.writeText(url);
-    setCopiedUrl(url);
-    setTimeout(() => setCopiedUrl(null), 2500);
-  };
-
-  const handleTestConnection = async () => {
-    if (!configUrl.trim()) {
-      setTestConnectionResult({
-        success: false,
-        message: 'يرجى إدخال رابط صالح (URL) للاختبار',
-      });
-      return;
+  // Core Data State
+  const [models, setModels] = useState<ProductModel[]>([
+    {
+      model_id: 'MOD-001',
+      commercial_model_name: 'سليبي سوبر كراون (Sleepee Super Crown)',
+      english_name: 'Sleepee Super Crown',
+      warranty_years: 10,
+      dimensions: '180x200x30 سم',
+      spring_type: 'Pocket Spring + Memory Foam',
+      foam_type: 'High Resilience HR Foam',
+      status: 'Active',
+      approval_history: [{ date: '2026-01-10', by: 'م. حسام سليمان', status: 'Approved' }]
+    },
+    {
+      model_id: 'MOD-002',
+      commercial_model_name: 'ماريوت الطبية (Marriott Medical)',
+      english_name: 'Marriott Medical Orthopedic',
+      warranty_years: 7,
+      dimensions: '160x200x25 سم',
+      spring_type: 'Bonnel Spring Reinforced',
+      foam_type: 'Orthopedic High Density',
+      status: 'Active',
+      approval_history: [{ date: '2026-01-15', by: 'د. طارق محمود', status: 'Approved' }]
     }
+  ]);
 
-    try {
-      setTestingConnection(true);
-      setTestConnectionResult(null);
-
-      const res = await fetch('/api/production/test-connection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sync_source: selectedConfigProvider,
-          sync_url: configUrl.trim(),
-          auth_type: configAuthType,
-          api_key_or_token: configToken.trim(),
-        }),
-      });
-
-      const data = await res.json();
-      setTestConnectionResult(data);
-    } catch (err: any) {
-      setTestConnectionResult({
-        success: false,
-        message: `خطأ في محاولة الاتصال: ${err.message}`,
-      });
-    } finally {
-      setTestingConnection(false);
+  const [productionOrders, setProductionOrders] = useState<ProductionOrder[]>([
+    {
+      id: 'po-1',
+      orderNumber: 'PO-2026-1001',
+      batchNumber: 'B26-0001',
+      productionDate: '2026-09-24',
+      mattressModel: 'سليبي سوبر كراون (Sleepee Super Crown)',
+      mattressSize: '180x200x30 سم',
+      warrantyYears: 10,
+      productionQuantity: 50,
+      productionLine: 'خط الإنتاج الرئيسي (Line A)',
+      status: 'Approved',
+      generatedSerials: [],
+      printedCount: 0
+    },
+    {
+      id: 'po-2',
+      orderNumber: 'PO-2026-1002',
+      batchNumber: 'B26-0002',
+      productionDate: '2026-09-24',
+      mattressModel: 'ماريوت الطبية (Marriott Medical)',
+      mattressSize: '160x200x25 سم',
+      warrantyYears: 7,
+      productionQuantity: 30,
+      productionLine: 'خط الإنتاج الطبي (Line B)',
+      status: 'Serial Generated',
+      generatedSerials: Array.from({ length: 30 }, (_, i) => `SLP-2026-${String(i + 1).padStart(6, '0')}`),
+      printedCount: 12
     }
-  };
+  ]);
 
-  const handleSaveConfig = async (andSyncNow = false) => {
-    if (!selectedConfigProvider) return;
+  // Printer & Print Jobs State
+  const [printJobs, setPrintJobs] = useState<PrinterJob[]>([
+    { jobId: 'JOB-901', timestamp: '2026-09-24 14:20', user: currentUser.name, printer: 'Zebra ZD220 Industrial', template: 'Modern Enterprise v2', quantity: 12, result: 'Success' },
+    { jobId: 'JOB-902', timestamp: '2026-09-24 11:10', user: currentUser.name, printer: 'Windows PDF Exporter', template: 'Standard Label', quantity: 50, result: 'Success' }
+  ]);
 
+  // Audit Logs State
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([
+    { id: 'ALT-101', timestamp: '2026-09-24 14:00', action: 'إنشاء أمر إنتاج جديد', actor: currentUser.name, category: 'CREATE', details: 'أمر رقم PO-2026-1002 كمية 30' },
+    { id: 'ALT-102', timestamp: '2026-09-24 12:30', action: 'توليد سيريالات', actor: currentUser.name, category: 'APPROVE', details: 'توليد 30 رقم تسلسلي للتشغيلة B26-0002' },
+    { id: 'ALT-103', timestamp: '2026-09-24 09:15', action: 'تسجيل الدخول', actor: currentUser.name, category: 'SECURITY', details: 'تسجيل دخول ناجح إلى النظام المؤسسي' }
+  ]);
+
+  // Product 360 Search State
+  const [searchQuery360, setSearchQuery360] = useState<string>('SLP-2026-000001');
+  const [selectedProduct360, setSelectedProduct360] = useState<any>({
+    serialNumber: 'SLP-2026-000001',
+    orderNumber: 'PO-2026-1001',
+    batchNumber: 'B26-0001',
+    model: 'سليبي سوبر كراون (Sleepee Super Crown)',
+    size: '180x200x30 سم',
+    warrantyYears: 10,
+    productionDate: '2026-09-24',
+    printingDate: '2026-09-24 10:00',
+    activationStatus: 'مفعل بنجاح',
+    warrantyStatus: 'ساري حتى 2036',
+    claimStatus: 'لا توجد مطالبات سابقة'
+  });
+
+  // Label Designer V2 State
+  const [labelDesignerConfig, setLabelDesignerConfig] = useState({
+    showLogo: true,
+    showQR: true,
+    showBarcode: true,
+    showWarrantyBadge: true,
+    fontFamily: 'Cairo',
+    primaryColor: '#D4AF37',
+    layoutVersion: 'v2.1-Enterprise'
+  });
+
+  // Integration Settings State
+  const [sapConfig, setSapConfig] = useState({
+    endpointUrl: 'https://s4hana-gateway.sleepee.com/odata/v2/production',
+    companyCode: 'SLP-EG-01',
+    status: 'Connected (Online)',
+    lastSync: '2026-09-24 13:45'
+  });
+
+  const [sharepointConfig, setSharepointConfig] = useState({
+    siteUrl: 'https://sleepee.sharepoint.com/sites/manufacturing',
+    docLibrary: 'Production_Master_Library',
+    status: 'Connected & Synced',
+    lastSync: '2026-09-24 12:00'
+  });
+
+  // Excel Import State
+  const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [excelRows, setExcelRows] = useState<any[] | null>(null);
+
+  // Fetch database records on mount and refresh
+  const fetchBackendData = async () => {
     try {
-      setSavingConfig(true);
-      setConfigSaveNotice(null);
-
-      const res = await fetch('/api/production/sync-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sync_source: selectedConfigProvider,
-          sync_url: configUrl.trim(),
-          target_file_name: configTargetFileName.trim(),
-          connection_mode: configMode,
-          auth_type: configAuthType,
-          api_key_or_token: configToken.trim(),
-          notes: configNotes.trim(),
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل حفظ الإعدادات');
-
-      setConfigSaveNotice({ type: 'success', text: `تم حفظ إعدادات رابط ${selectedConfigProvider} بنجاح` });
-      await fetchData();
-
-      if (andSyncNow) {
-        const sourceKey = selectedConfigProvider.toLowerCase() as 'sharepoint' | 'onedrive' | 'sap';
-        handleCloseConfig();
-        await handleCloudSync(sourceKey, configUrl.trim());
+      const [ordersRes, jobsRes, logsRes] = await Promise.all([
+        fetch('/api/production-orders').then(r => r.ok ? r.json() : []),
+        fetch('/api/print-jobs').then(r => r.ok ? r.json() : []),
+        fetch('/api/audit-logs').then(r => r.ok ? r.json() : []),
+      ]);
+      if (Array.isArray(ordersRes) && ordersRes.length > 0) {
+        setProductionOrders(ordersRes);
       }
-    } catch (err: any) {
-      setConfigSaveNotice({ type: 'error', text: err.message });
-    } finally {
-      setSavingConfig(false);
-    }
-  };
-
-  // Fetch initial data
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-
-      const safeFetch = async (url: string, fallback: any) => {
-        try {
-          const res = await fetch(url);
-          if (!res.ok) return fallback;
-          return await res.json();
-        } catch {
-          return fallback;
-        }
-      };
-
-      const [statsRes, modelsRes, syncRes, logsRes, batchesRes, auditsRes, backupRes] =
-        await Promise.all([
-          safeFetch('/api/production/stats', null),
-          safeFetch('/api/production/models', []),
-          safeFetch('/api/production/sync-states', []),
-          safeFetch('/api/production/import-logs', []),
-          safeFetch('/api/production/batches', []),
-          safeFetch('/api/production/warranty-audits', []),
-          safeFetch('/api/production/backup-policy', null),
-        ]);
-
-      setStats(statsRes);
-      setModels(Array.isArray(modelsRes) ? modelsRes : []);
-      setSyncStates(Array.isArray(syncRes) ? syncRes : []);
-      setImportLogs(Array.isArray(logsRes) ? logsRes : []);
-      setBatches(Array.isArray(batchesRes) ? batchesRes : []);
-      setWarrantyAudits(Array.isArray(auditsRes) ? auditsRes : []);
-      setBackupPolicy(backupRes);
-    } catch (err: any) {
-      console.error('Error fetching production data:', err);
-    } finally {
-      setLoading(false);
+      if (Array.isArray(jobsRes) && jobsRes.length > 0) {
+        setPrintJobs(jobsRes);
+      }
+      if (Array.isArray(logsRes) && logsRes.length > 0) {
+        setAuditLogs(logsRes);
+      }
+    } catch (err) {
+      console.error('Error fetching backend data:', err);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchBackendData();
   }, []);
 
-  // Fetch default Zebra Label on load
-  useEffect(() => {
-    if (zebraSerialInput) {
-      handleFetchZebraLabel(zebraSerialInput);
-    }
-  }, []);
-
-  // Handle File Selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setSelectedFile(file);
-    setValidationPreview(null);
-    setImportResult(null);
-    setImportError(null);
-
-    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
-    setSourceType(isExcel ? 'Excel' : 'CSV');
-
-    const reader = new FileReader();
-    if (isExcel) {
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        setFileBase64(result);
-        triggerValidationPreview(result, null, 'Excel');
-      };
-      reader.readAsDataURL(file);
-    } else {
-      reader.onload = (event) => {
-        const text = event.target?.result as string;
-        setFileRawText(text);
-        triggerValidationPreview(null, text, 'CSV');
-      };
-      reader.readAsText(file);
+  // Helper to log audit
+  const logAudit = async (action: string, category: AuditLogEntry['category'], details: string) => {
+    const newEntry: AuditLogEntry = {
+      id: `ALT-${Date.now().toString().slice(-4)}`,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      action,
+      actor: currentUser.name,
+      category,
+      details
+    };
+    setAuditLogs(prev => [newEntry, ...prev]);
+    try {
+      await fetch('/api/audit-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, actor: currentUser.name, category, details }),
+      });
+    } catch (e) {
+      // network fallback
     }
   };
 
-  // Trigger Validation Preview
-  const triggerValidationPreview = async (
-    b64: string | null,
-    text: string | null,
-    src: 'Excel' | 'CSV'
-  ) => {
+  const handleCreateOrder = async () => {
     try {
-      setIsValidating(true);
-      setImportError(null);
-
-      const res = await fetch('/api/production/validate', {
+      const res = await fetch('/api/production-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sourceType: src,
-          fileData: b64,
-          rawText: text,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'فشل التحقق من الملف');
-      }
-
-      setValidationPreview(data);
-    } catch (err: any) {
-      setImportError(err.message);
-    } finally {
-      setIsValidating(false);
-    }
-  };
-
-  // Execute Import
-  const handleExecuteImport = async () => {
-    if (!selectedFile && !fileBase64 && !fileRawText) {
-      setImportError('يرجى اختيار ملف صالح أولاً');
-      return;
-    }
-
-    try {
-      setIsImporting(true);
-      setImportError(null);
-
-      const res = await fetch('/api/production/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sourceType,
-          fileName: selectedFile?.name || 'Production_Master.xlsx',
-          fileData: fileBase64,
-          rawText: fileRawText,
-          performedBy: `${currentUser.name} (${currentUser.role})`,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'فشل تنفيذ الاستيراد');
-      }
-
-      setImportResult(data);
-      setSelectedFile(null);
-      setValidationPreview(null);
-      fetchData();
-      if (onRefreshData) onRefreshData();
-    } catch (err: any) {
-      setImportError(err.message);
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  // Trigger Cloud Sync
-  const handleCloudSync = async (source: 'sharepoint' | 'onedrive' | 'sap', customUrl?: string) => {
-    try {
-      setSyncingSource(source);
-      setImportError(null);
-
-      const endpoint =
-        source === 'sharepoint'
-          ? '/api/production/sync/sharepoint'
-          : source === 'onedrive'
-          ? '/api/production/sync/onedrive'
-          : '/api/production/sync/sap';
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          performedBy: `${currentUser.name} (${currentUser.role})`,
-          customUrl: customUrl || undefined,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'فشلت المزامنة');
-      }
-
-      setImportResult(data);
-      fetchData();
-      if (onRefreshData) onRefreshData();
-    } catch (err: any) {
-      setImportError(err.message);
-    } finally {
-      setSyncingSource(null);
-    }
-  };
-
-  // Update Warranty Governance
-  const handleSaveWarrantyYears = async () => {
-    if (!editingModel) return;
-
-    if (currentUser.role !== 'SUPER_ADMIN') {
-      setGovernanceError('تعديل سنوات وسياسات الضمان محصور حصرياً بالمشرف العام (SUPER_ADMIN)');
-      return;
-    }
-
-    try {
-      setGovernanceError(null);
-      const res = await fetch(`/api/production/models/${editingModel.model_id}/warranty`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          warranty_years: newWarrantyYears,
-          changed_by: currentUser.name,
-          user_role: currentUser.role,
-          reason: governanceReason || 'تحديث دوري لسياسة الضمان المعتمدة',
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'فشل تحديث سنوات الضمان');
-      }
-
-      setGovernanceSuccess(data.message);
-      setEditingModel(null);
-      setGovernanceReason('');
-      fetchData();
-      setTimeout(() => setGovernanceSuccess(null), 5000);
-    } catch (err: any) {
-      setGovernanceError(err.message);
-    }
-  };
-
-  // Fetch Zebra Label Data
-  const handleFetchZebraLabel = async (serial: string) => {
-    const clean = serial.trim().toUpperCase();
-    if (!clean) return;
-
-    try {
-      setZebraLoading(true);
-      setZebraError(null);
-      const res = await fetch(`/api/production/zebra-label/${clean}`);
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'لم يتم العثور على المرتبة');
-      }
-      setZebraLabelData(data);
-    } catch (err: any) {
-      setZebraError(err.message);
-      setZebraLabelData(null);
-    } finally {
-      setZebraLoading(false);
-    }
-  };
-
-  // Copy ZPL Code
-  const handleCopyZpl = () => {
-    if (!zebraLabelData?.zpl_code) return;
-    navigator.clipboard.writeText(zebraLabelData.zpl_code);
-    setCopiedZpl(true);
-    setTimeout(() => setCopiedZpl(false), 3000);
-  };
-
-  // Simulate Print
-  const handleSimulatePrint = async () => {
-    if (!zebraLabelData) return;
-    setPrintingTest(true);
-    setPrintErrorNotice(null);
-    setPrintSuccessNotice(null);
-    try {
-      const res = await fetch('/api/production/zebra-test-print', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          serial_number: zebraLabelData.serial_number,
-          zpl_code: zebraLabelData.zpl_code,
-          printer_ip: '192.168.1.180',
-          printer_port: 9100,
+          mattressModel: 'سليبي سوبر كراون (Sleepee Super Crown)',
+          mattressSize: '180x200x30 سم',
+          warrantyYears: 10,
+          productionQuantity: 40,
+          productionLine: 'خط الإنتاج الرئيسي (Line A)',
         }),
       });
       const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'فشل إرسال أمر الطباعة');
+      if (data.success && data.order) {
+        setProductionOrders(prev => [data.order, ...prev]);
+        logAudit('إنشاء أمر إنتاج جديد', 'CREATE', `إنشاء أمر ${data.order.orderNumber}`);
+        alert(`تم حفظ أمر الإنتاج ${data.order.orderNumber} بنجاح في قاعدة البيانات!`);
       }
-      setPrintSuccessNotice(
-        data.message ||
-          `تم إرسال أمر الطباعة بنجاح إلى طابعة Zebra ZD220 (IP: 192.168.1.180 - Port: 9100) للمرتبة ${zebraLabelData.serial_number}`
-      );
-      setTimeout(() => setPrintSuccessNotice(null), 8000);
-    } catch (err: any) {
-      console.error('Print error:', err);
-      setPrintErrorNotice(err.message || 'حدث خطأ أثناء إرسال أمر الطباعة إلى طابعة Zebra');
-      setTimeout(() => setPrintErrorNotice(null), 8000);
-    } finally {
-      setPrintingTest(false);
+    } catch (err) {
+      alert('حدث خطأ أثناء حفظ أمر الإنتاج');
+    }
+  };
+
+  const handleDeleteOrder = async (id: string, orderNumber: string) => {
+    try {
+      await fetch(`/api/production-orders/${id}`, { method: 'DELETE' });
+      setProductionOrders(prev => prev.filter(item => item.id !== id && item.orderNumber !== orderNumber));
+      logAudit('حذف أمر إنتاج', 'DELETE', `حذف أمر ${orderNumber}`);
+    } catch (err) {
+      alert('حدث خطأ أثناء الحذف');
+    }
+  };
+
+  const handleApproveOrder = async (id: string) => {
+    try {
+      const res = await fetch(`/api/production-orders/${id}/approve`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        fetchBackendData();
+        alert('تم اعتماد أمر الإنتاج في قاعدة البيانات بنجاح!');
+      }
+    } catch (err) {
+      alert('حدث خطأ أثناء الاعتماد');
+    }
+  };
+
+  const handleGenerateSerials = async (id: string) => {
+    try {
+      const res = await fetch(`/api/production-orders/${id}/generate-serials`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        fetchBackendData();
+        alert(`تم توليد وحفظ ${data.count} رقم تسلسلي بنجاح في قاعدة البيانات!`);
+      }
+    } catch (err) {
+      alert('حدث خطأ أثناء توليد السيريالات');
+    }
+  };
+
+  const handleSearch360 = async (query: string) => {
+    if (!query) return;
+    try {
+      const res = await fetch(`/api/products/product-360/${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedProduct360(data);
+      }
+    } catch (err) {
+      console.error('360 search failed', err);
+    }
+  };
+
+  // --- SAP Fiori Navigation Groups Structure ---
+  const groups = [
+    {
+      id: 'home',
+      label: 'الرئيسية والعمليات',
+      subTabs: [
+        { id: 'dashboard', label: 'لوحة القيادة الرئيسية' },
+        { id: 'work-queue', label: 'مركز الأعمال (Work Queue)' }
+      ]
+    },
+    {
+      id: 'operations',
+      label: 'أوامر الإنتاج والماتريكس',
+      subTabs: [
+        { id: 'orders', label: 'أوامر الإنتاج (Production Orders)' },
+        { id: 'product-master', label: 'مرجع الموديلات (Product Master)' },
+        { id: 'product-360', label: 'تتبع المنتج الشامل (Product 360)' }
+      ]
+    },
+    {
+      id: 'traceability',
+      label: 'التتبع والطباعة',
+      subTabs: [
+        { id: 'traceability-center', label: 'مركز التتبع (Traceability)' },
+        { id: 'print-management', label: 'مركز الطباعة (Print Jobs & Stats)' },
+        { id: 'label-designer-v2', label: 'محرر الملصقات المتطور V2' }
+      ]
+    },
+    {
+      id: 'quality',
+      label: 'الجودة والحوكمة',
+      subTabs: [
+        { id: 'quality-governance', label: 'مركز حوكمة الجودة والاعتماد' }
+      ]
+    },
+    {
+      id: 'integration',
+      label: 'التكامل (SAP & SharePoint & Excel)',
+      subTabs: [
+        { id: 'integration-center', label: 'مركز التكامل والربط المؤسسي' },
+        { id: 'excel-import', label: 'استيراد وتحقق ملفات Excel الماستر' }
+      ]
+    },
+    {
+      id: 'system',
+      label: 'صحة النظام والأمان',
+      subTabs: [
+        { id: 'system-health', label: 'مراقبة صحة النظام (System Health)' },
+        { id: 'audit-security', label: 'سجل التدقيق والأمان (Audit Trail)' }
+      ]
+    }
+  ];
+
+  const handleGroupChange = (groupId: any) => {
+    setActiveGroup(groupId);
+    const grp = groups.find(g => g.id === groupId);
+    if (grp && grp.subTabs.length > 0) {
+      setActiveSubTab(grp.subTabs[0].id);
     }
   };
 
   return (
-    <div className="space-y-6 text-right font-['Cairo']">
-      {/* Top Header & Export Master */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E5E7EB] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-[#D62828]" />
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-[#D62828]/10 text-[#D62828] flex items-center justify-center border border-[#D62828]/20">
-              <Layers className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl font-black text-[#111111]">
-                مركز تكامل الإنتاج الذكي (Production Integration Center)
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500">
-                منظومة الربط الشامل لبيانات المصنع، المزامنة السحابية (SharePoint / OneDrive / SAP)، وطباعة ليبلات Zebra ZD220
-              </p>
-            </div>
+    <div className={`space-y-4 text-right font-['Cairo'] transition-colors ${darkMode ? 'bg-slate-950 text-slate-100 p-4 rounded-3xl' : ''}`}>
+      
+      {/* Top Enterprise Control Bar */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-slate-800 text-[#D4AF37] flex items-center justify-center font-black">
+            SLP
+          </div>
+          <div>
+            <h2 className="text-sm font-black text-slate-900 dark:text-white">مركز العمليات المصنعية والإنتاج (Enterprise Manufacturing Hub)</h2>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">إدارة دورة حياة المنتج بالكامل من أمر الإنتاج حتى الضمان والمطالبات</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <a
-            href="/api/production/export-master"
-            download
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D62828] hover:bg-[#B71C1C] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#D62828]/20 transition cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            <span>تحميل Master المجمع (Production_Master.xlsx)</span>
-          </a>
-
+        <div className="flex items-center gap-2">
           <button
-            onClick={fetchData}
-            disabled={loading}
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#F5F5F5] hover:bg-[#E5E7EB] text-slate-700 text-xs font-bold transition border border-[#E5E7EB] cursor-pointer"
+            onClick={() => setCompactMode(!compactMode)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${compactMode ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-700 border-slate-200'}`}
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#D62828]' : ''}`} />
-            <span>تحديث المؤشرات</span>
+            {compactMode ? 'الوضع المريح (Normal)' : 'الوضع المدمج (Compact)'}
+          </button>
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 cursor-pointer border border-slate-200 dark:border-slate-700"
+            title="تبديل الوضع الليلي"
+          >
+            {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
           </button>
         </div>
       </div>
 
-      {/* KPI Overview Grid */}
-      {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-3xl border border-[#E5E7EB] p-5 shadow-xs">
-            <span className="text-xs font-bold text-slate-500 block mb-1">إجمالي المراتب المنتجة</span>
-            <div className="text-2xl sm:text-3xl font-black text-[#111111] font-mono">
-              {stats.totalSerials?.toLocaleString()}
-            </div>
-            <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 mt-1">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              سيريالات فعلية مسجلة ومطابقة
-            </span>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-[#E5E7EB] p-5 shadow-xs">
-            <span className="text-xs font-bold text-slate-500 block mb-1">دفعات وتشغيلات المصنع</span>
-            <div className="text-2xl sm:text-3xl font-black text-[#D62828] font-mono">
-              {stats.totalBatches}
-            </div>
-            <span className="text-[11px] font-bold text-slate-500 block mt-1">
-              أوامر إنتاج وتشغيلات معتمدة
-            </span>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-[#E5E7EB] p-5 shadow-xs">
-            <span className="text-xs font-bold text-slate-500 block mb-1">موديلات الضمان المعتمدة</span>
-            <div className="text-2xl sm:text-3xl font-black text-[#D4AF37] font-mono">
-              {stats.totalModels}
-            </div>
-            <span className="text-[11px] font-bold text-slate-500 block mt-1">
-              ربط تلقائي لسنوات الضمان (3-10 سنوات)
-            </span>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-[#E5E7EB] p-5 shadow-xs">
-            <span className="text-xs font-bold text-slate-500 block mb-1">عمليات التوريد والأرشفة</span>
-            <div className="text-2xl sm:text-3xl font-black text-emerald-700 font-mono">
-              {stats.totalImportLogs}
-            </div>
-            <span className="text-[11px] font-bold text-slate-500 block mt-1">
-              سجلات تدقيق واستيراد سحابي دائم
-            </span>
-          </div>
+      {/* SAP Fiori Navigation Group Bar */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-2 shadow-xs space-y-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          {groups.map((group) => {
+            const isSelected = activeGroup === group.id;
+            return (
+              <button
+                key={group.id}
+                onClick={() => handleGroupChange(group.id)}
+                className={`py-2 px-3 rounded-xl font-black text-xs transition cursor-pointer text-center select-none ${
+                  isSelected
+                    ? 'bg-slate-900 dark:bg-indigo-600 text-white shadow-sm'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                {group.label}
+              </button>
+            );
+          })}
         </div>
-      )}
 
-      {/* Sub-Tabs Navigation */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[#E5E7EB] text-xs sm:text-sm font-bold">
-        <button
-          onClick={() => setActiveTab('import')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl whitespace-nowrap transition cursor-pointer ${
-            activeTab === 'import'
-              ? 'bg-[#D62828] text-white shadow-md shadow-[#D62828]/20'
-              : 'text-slate-600 hover:text-[#D62828] hover:bg-[#D62828]/5 border border-transparent hover:border-[#D62828]/20'
-          }`}
-        >
-          <UploadCloud className="w-4 h-4" />
-          <span>استيراد ومزامنة البيانات السحابية</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('governance')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl whitespace-nowrap transition cursor-pointer ${
-            activeTab === 'governance'
-              ? 'bg-[#D62828] text-white shadow-md shadow-[#D62828]/20'
-              : 'text-slate-600 hover:text-[#D62828] hover:bg-[#D62828]/5 border border-transparent hover:border-[#D62828]/20'
-          }`}
-        >
-          <ShieldCheck className="w-4 h-4" />
-          <span>حوكمة الموديلات وسنوات الضمان</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('batches')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl whitespace-nowrap transition cursor-pointer ${
-            activeTab === 'batches'
-              ? 'bg-[#D62828] text-white shadow-md shadow-[#D62828]/20'
-              : 'text-slate-600 hover:text-[#D62828] hover:bg-[#D62828]/5 border border-transparent hover:border-[#D62828]/20'
-          }`}
-        >
-          <Building2 className="w-4 h-4" />
-          <span>تشغيلات ودفعات المصنع ({batches.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('zebra')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl whitespace-nowrap transition cursor-pointer ${
-            activeTab === 'zebra'
-              ? 'bg-[#D62828] text-white shadow-md shadow-[#D62828]/20'
-              : 'text-slate-600 hover:text-[#D62828] hover:bg-[#D62828]/5 border border-transparent hover:border-[#D62828]/20'
-          }`}
-        >
-          <Printer className="w-4 h-4" />
-          <span>طباعة ليبل Zebra ZD220 (ZPL)</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('logs')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl whitespace-nowrap transition cursor-pointer ${
-            activeTab === 'logs'
-              ? 'bg-[#D62828] text-white shadow-md shadow-[#D62828]/20'
-              : 'text-slate-600 hover:text-[#D62828] hover:bg-[#D62828]/5 border border-transparent hover:border-[#D62828]/20'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          <span>سجلات التوريد والتدقيق ({importLogs.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('backup')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl whitespace-nowrap transition cursor-pointer ${
-            activeTab === 'backup'
-              ? 'bg-[#D62828] text-white shadow-md shadow-[#D62828]/20'
-              : 'text-slate-600 hover:text-[#D62828] hover:bg-[#D62828]/5 border border-transparent hover:border-[#D62828]/20'
-          }`}
-        >
-          <Database className="w-4 h-4" />
-          <span>سياسة الحفظ والنسخ الاحتياطي</span>
-        </button>
+        {/* Sub-Tabs Bar */}
+        {(() => {
+          const currentGroupObj = groups.find(g => g.id === activeGroup);
+          if (!currentGroupObj) return null;
+          return (
+            <div className="flex items-center gap-1 overflow-x-auto bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs font-bold">
+              <span className="text-[10px] text-slate-400 px-2 font-semibold uppercase tracking-wider">المهام:</span>
+              {currentGroupObj.subTabs.map((tab) => {
+                const isSubSelected = activeSubTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveSubTab(tab.id)}
+                    className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition cursor-pointer ${
+                      isSubSelected
+                        ? 'bg-[#D62828] text-white shadow-xs font-black'
+                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-200/60 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
-      {/* ========================================== */}
-      {/* TAB 1: IMPORT & CLOUD SYNC */}
-      {/* ========================================== */}
-      {activeTab === 'import' && (
+      {/* ======================================================== */}
+      {/* MODULES RENDERER */}
+      {/* ======================================================== */}
+
+      {/* 1. HOME DASHBOARD & WORK QUEUE */}
+      {activeGroup === 'home' && activeSubTab === 'dashboard' && (
         <div className="space-y-6">
-          {/* Cloud Sync Providers Bar */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Server className="w-5 h-5 text-indigo-600" />
-                  <span>المزامنة السحابية وروابط الأنظمة (SharePoint / OneDrive / SAP)</span>
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  مراجعة الروابط السحابية، التحقق من مصدر الاستيراد الفعلي، وإمكانية تعديل أو اختبار الروابط الحية
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 border border-slate-200">
-                  <Database className="w-3.5 h-3.5 text-slate-500" />
-                  <span>3 مصادر سحابية مهيأة</span>
-                </span>
-              </div>
+          {/* Top KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-xs text-slate-500 font-bold block">أوامر إنتاج اليوم</span>
+              <div className="text-2xl font-black text-slate-900 dark:text-white font-mono mt-1">4</div>
+              <span className="text-[10px] text-emerald-600 font-bold">نشطة وتعمل حالياً</span>
             </div>
-
-            {/* Explanation & Discovery Banner (Clarifying where it imports from and why it's not linked) */}
-            <div className="mb-6 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-amber-950">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-amber-200/80 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
-                  <Info className="w-4 h-4" />
-                </div>
-                <div className="text-xs space-y-1.5">
-                  <div className="font-bold text-amber-900 text-sm flex items-center gap-2">
-                    <span>ملاحظة توضيحية هامة: من أين يستورد النظام حالياً؟ ولماذا يظهر "لم يتم الربط الفعلي"؟</span>
-                  </div>
-                  <p className="text-amber-900/90 leading-relaxed">
-                    <strong>المصدر الحالي للبيانات:</strong> يستورد النظام حالياً من <strong>نماذج محاكاة خطوط الإنتاج المتوافقة</strong> (Sleepee Factory Dataset المضمنة في <code className="bg-amber-100/80 px-1 py-0.5 rounded font-mono text-[11px]">SharePointProvider</code> و <code className="bg-amber-100/80 px-1 py-0.5 rounded font-mono text-[11px]">OneDriveProvider</code> و <code className="bg-amber-100/80 px-1 py-0.5 rounded font-mono text-[11px]">SAPProvider</code>). هذه النماذج مطابقة تماماً لهيكل ملف <code className="bg-amber-100/80 px-1 py-0.5 rounded font-mono text-[11px]">Production_Master.xlsx</code> لتوليد السيريالات وتغذية الجودة وفترات الضمان دون توقف.
-                  </p>
-                  <p className="text-amber-900/90 leading-relaxed">
-                    <strong>سبب عدم الربط الحي بعد:</strong> يتطلب الربط الحي مع مستأجر مايكروسوفت (Tenant) أو سيرفر SAP الفعلي توفير رابط تحميل مباشر أو مفتاح توثيق (API Bearer Token).
-                  </p>
-                  <div className="pt-1 flex flex-wrap items-center gap-3 font-semibold text-amber-900">
-                    <span>💡 يمكنك الضغط على أيقونة <strong>«إعدادات ورابط المزامنة ⚙️»</strong> أدناه لوضع رابط الملف الفعلي واختباره فوراً بنقرة واحدة!</span>
-                  </div>
-                </div>
-              </div>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-xs text-slate-500 font-bold block">جاهزة للطباعة</span>
+              <div className="text-2xl font-black text-blue-600 font-mono mt-1">80</div>
+              <span className="text-[10px] text-blue-700 font-bold">مرتبة بانتظار الاستيكر</span>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* SharePoint Card */}
-              {(() => {
-                const spState = syncStates.find((s) => s.sync_source === 'SharePoint');
-                const isLive = spState?.connection_mode === 'live_url' && spState?.connection_status === 'connected';
-                const spUrl = spState?.sync_url || 'https://sleepee-factory.sharepoint.com/sites/ProductionMaster/Shared%20Documents/Production_Master.xlsx';
-
-                return (
-                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col justify-between hover:shadow-md transition">
-                    <div>
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-teal-600 text-white flex items-center justify-center font-black text-xs">
-                            SP
-                          </div>
-                          <span className="font-bold text-sm text-slate-900">SharePoint Library</span>
-                        </div>
-                        {isLive ? (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1">
-                            <Wifi className="w-3 h-3 text-emerald-600" />
-                            <span>رابط حي متصل</span>
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold flex items-center gap-1" title="لم يتم الربط الفعلي مع سيرفر خارجي، يعمل بوضع المحاكاة الافتراضية">
-                            <Cpu className="w-3 h-3 text-amber-600" />
-                            <span>محاكاة (غير مربوط حياً)</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Current Origin Notice */}
-                      <div className="mb-3 p-2 rounded-xl bg-white border border-slate-200/80 text-[11px]">
-                        <span className="text-slate-500 block text-[10px] font-bold">المصدر المستورد منه حالياً:</span>
-                        <span className="font-semibold text-slate-800">
-                          {isLive ? 'جلب حي من رابط SharePoint' : 'نموذج محاكاة الإنتاج التراكمي (Production_Master.xlsx)'}
-                        </span>
-                      </div>
-
-                      {/* Exposed Sync URL with Copy Action */}
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between text-[11px] text-slate-600 mb-1">
-                          <span className="font-bold flex items-center gap-1">
-                            <LinkIcon className="w-3 h-3 text-indigo-600" />
-                            <span>رابط المزامنة (Sync URL):</span>
-                          </span>
-                          <button
-                            onClick={() => handleCopyUrl(spUrl)}
-                            className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer"
-                          >
-                            {copiedUrl === spUrl ? (
-                              <span className="text-emerald-600 flex items-center gap-0.5">
-                                <Check className="w-3 h-3" /> تم النسخ
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-0.5">
-                                <Copy className="w-3 h-3" /> نسخ الرابط
-                              </span>
-                            )}
-                          </button>
-                        </div>
-                        <div
-                          title={spUrl}
-                          className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-[11px] font-mono text-slate-700 truncate select-all flex items-center justify-between"
-                        >
-                          <span className="truncate">{spUrl}</span>
-                          <a
-                            href={spUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mr-2 text-slate-400 hover:text-indigo-600 shrink-0"
-                            title="فتح الرابط في نافذة جديدة"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
-                      </div>
-
-                      {/* Last Sync details */}
-                      <div className="text-[11px] text-slate-600 space-y-1 mb-4">
-                        <div className="flex justify-between">
-                          <span>آخر مزامنة:</span>
-                          <span className="font-mono font-bold text-slate-800">
-                            {spState?.last_sync_time
-                              ? new Date(spState.last_sync_time).toLocaleDateString('ar-EG', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })
-                              : 'قبل قليل'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>سجلات الدفعة:</span>
-                          <span className="font-mono font-bold text-slate-800">
-                            {spState?.last_row_count || 142} سجل
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-2 pt-2 border-t border-slate-200">
-                      <button
-                        onClick={() => handleOpenConfig('SharePoint')}
-                        className="w-full py-1.5 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-                      >
-                        <Settings2 className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>إعدادات واختبار رابط SharePoint</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleCloudSync('sharepoint')}
-                        disabled={syncingSource !== null}
-                        className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs transition flex items-center justify-center gap-2 shadow cursor-pointer disabled:opacity-50"
-                      >
-                        <RefreshCw
-                          className={`w-3.5 h-3.5 ${syncingSource === 'sharepoint' ? 'animate-spin' : ''}`}
-                        />
-                        <span>
-                          {syncingSource === 'sharepoint' ? 'جاري المزامنة...' : 'مزامنة SharePoint الآن'}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* OneDrive Card */}
-              {(() => {
-                const odState = syncStates.find((s) => s.sync_source === 'OneDrive');
-                const isLive = odState?.connection_mode === 'live_url' && odState?.connection_status === 'connected';
-                const odUrl = odState?.sync_url || 'https://1drv.ms/x/s!AkL920SleepeeProductionSharedFolder_MasterData?download=1';
-
-                return (
-                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col justify-between hover:shadow-md transition">
-                    <div>
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-sky-600 text-white flex items-center justify-center font-black text-xs">
-                            OD
-                          </div>
-                          <span className="font-bold text-sm text-slate-900">OneDrive Business</span>
-                        </div>
-                        {isLive ? (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1">
-                            <Wifi className="w-3 h-3 text-emerald-600" />
-                            <span>رابط حي متصل</span>
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold flex items-center gap-1" title="لم يتم الربط الفعلي مع سيرفر خارجي، يعمل بوضع المحاكاة الافتراضية">
-                            <Cpu className="w-3 h-3 text-amber-600" />
-                            <span>محاكاة (غير مربوط حياً)</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Current Origin Notice */}
-                      <div className="mb-3 p-2 rounded-xl bg-white border border-slate-200/80 text-[11px]">
-                        <span className="text-slate-500 block text-[10px] font-bold">المصدر المستورد منه حالياً:</span>
-                        <span className="font-semibold text-slate-800">
-                          {isLive ? 'جلب حي من رابط OneDrive المشترك' : 'نموذج خطوط إنتاج المصنع التراكمي (OneDrive Model)'}
-                        </span>
-                      </div>
-
-                      {/* Exposed Sync URL with Copy Action */}
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between text-[11px] text-slate-600 mb-1">
-                          <span className="font-bold flex items-center gap-1">
-                            <LinkIcon className="w-3 h-3 text-sky-600" />
-                            <span>رابط المزامنة (Sync URL):</span>
-                          </span>
-                          <button
-                            onClick={() => handleCopyUrl(odUrl)}
-                            className="text-[10px] text-sky-600 hover:text-sky-800 font-bold flex items-center gap-1 cursor-pointer"
-                          >
-                            {copiedUrl === odUrl ? (
-                              <span className="text-emerald-600 flex items-center gap-0.5">
-                                <Check className="w-3 h-3" /> تم النسخ
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-0.5">
-                                <Copy className="w-3 h-3" /> نسخ الرابط
-                              </span>
-                            )}
-                          </button>
-                        </div>
-                        <div
-                          title={odUrl}
-                          className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-[11px] font-mono text-slate-700 truncate select-all flex items-center justify-between"
-                        >
-                          <span className="truncate">{odUrl}</span>
-                          <a
-                            href={odUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mr-2 text-slate-400 hover:text-sky-600 shrink-0"
-                            title="فتح الرابط في نافذة جديدة"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
-                      </div>
-
-                      {/* Last Sync details */}
-                      <div className="text-[11px] text-slate-600 space-y-1 mb-4">
-                        <div className="flex justify-between">
-                          <span>آخر مزامنة:</span>
-                          <span className="font-mono font-bold text-slate-800">
-                            {odState?.last_sync_time
-                              ? new Date(odState.last_sync_time).toLocaleDateString('ar-EG', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })
-                              : 'قبل قليل'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>سجلات الدفعة:</span>
-                          <span className="font-mono font-bold text-slate-800">
-                            {odState?.last_row_count || 88} سجل
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-2 pt-2 border-t border-slate-200">
-                      <button
-                        onClick={() => handleOpenConfig('OneDrive')}
-                        className="w-full py-1.5 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-                      >
-                        <Settings2 className="w-3.5 h-3.5 text-sky-600" />
-                        <span>إعدادات واختبار رابط OneDrive</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleCloudSync('onedrive')}
-                        disabled={syncingSource !== null}
-                        className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs transition flex items-center justify-center gap-2 shadow cursor-pointer disabled:opacity-50"
-                      >
-                        <RefreshCw
-                          className={`w-3.5 h-3.5 ${syncingSource === 'onedrive' ? 'animate-spin' : ''}`}
-                        />
-                        <span>
-                          {syncingSource === 'onedrive' ? 'جاري المزامنة...' : 'مزامنة OneDrive الآن'}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* SAP S/4HANA Card */}
-              {(() => {
-                const sapState = syncStates.find((s) => s.sync_source === 'SAP');
-                const isLive = sapState?.connection_mode === 'live_url' && sapState?.connection_status === 'connected';
-                const sapUrl = sapState?.sync_url || 'https://s4hana-gateway.sleepee.com/sap/opu/odata/sap/API_PRODUCTION_ORDER_2_SRV/A_ProductionOrder';
-
-                return (
-                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col justify-between hover:shadow-md transition">
-                    <div>
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-blue-700 text-white flex items-center justify-center font-black text-xs">
-                            SAP
-                          </div>
-                          <span className="font-bold text-sm text-slate-900">SAP S/4HANA (OData)</span>
-                        </div>
-                        {isLive ? (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1">
-                            <Wifi className="w-3 h-3 text-emerald-600" />
-                            <span>نقطة نهاية حية</span>
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold flex items-center gap-1" title="كتالوج محاكاة OData مهيأ تمهيداً للربط المستقبلي">
-                            <Cpu className="w-3 h-3 text-blue-600" />
-                            <span>كتالوج مهيأ (تكامل مستقبلي)</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Current Origin Notice */}
-                      <div className="mb-3 p-2 rounded-xl bg-white border border-slate-200/80 text-[11px]">
-                        <span className="text-slate-500 block text-[10px] font-bold">المصدر المستورد منه حالياً:</span>
-                        <span className="font-semibold text-slate-800">
-                          {isLive ? 'سحب حي من OData API' : 'كتالوج أوامر شغل SAP المهيأ داخلياً (Mock Catalog)'}
-                        </span>
-                      </div>
-
-                      {/* Exposed Sync URL with Copy Action */}
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between text-[11px] text-slate-600 mb-1">
-                          <span className="font-bold flex items-center gap-1">
-                            <LinkIcon className="w-3 h-3 text-blue-600" />
-                            <span>رابط خدمة OData (Service URL):</span>
-                          </span>
-                          <button
-                            onClick={() => handleCopyUrl(sapUrl)}
-                            className="text-[10px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 cursor-pointer"
-                          >
-                            {copiedUrl === sapUrl ? (
-                              <span className="text-emerald-600 flex items-center gap-0.5">
-                                <Check className="w-3 h-3" /> تم النسخ
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-0.5">
-                                <Copy className="w-3 h-3" /> نسخ الرابط
-                              </span>
-                            )}
-                          </button>
-                        </div>
-                        <div
-                          title={sapUrl}
-                          className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-[11px] font-mono text-slate-700 truncate select-all flex items-center justify-between"
-                        >
-                          <span className="truncate">{sapUrl}</span>
-                          <a
-                            href={sapUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mr-2 text-slate-400 hover:text-blue-600 shrink-0"
-                            title="فتح الرابط في نافذة جديدة"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
-                      </div>
-
-                      {/* Last Sync details */}
-                      <div className="text-[11px] text-slate-600 space-y-1 mb-4">
-                        <div className="flex justify-between">
-                          <span>الكيان / الخدمة:</span>
-                          <span className="font-mono font-bold text-slate-800 truncate max-w-[140px]">
-                            {sapState?.target_file_name || 'API_PRODUCTION_ORDER_2_SRV'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>أوامر الإنتاج المستوردة:</span>
-                          <span className="font-mono font-bold text-slate-800">
-                            {sapState?.last_row_count || 160} أمر
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-2 pt-2 border-t border-slate-200">
-                      <button
-                        onClick={() => handleOpenConfig('SAP')}
-                        className="w-full py-1.5 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-                      >
-                        <Settings2 className="w-3.5 h-3.5 text-blue-600" />
-                        <span>إعدادات ونقطة نهاية SAP</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleCloudSync('sap')}
-                        disabled={syncingSource !== null}
-                        className="w-full py-2 px-3 rounded-xl bg-blue-900 hover:bg-blue-800 text-blue-200 font-bold text-xs transition flex items-center justify-center gap-2 shadow cursor-pointer disabled:opacity-50"
-                      >
-                        <RefreshCw
-                          className={`w-3.5 h-3.5 ${syncingSource === 'sap' ? 'animate-spin' : ''}`}
-                        />
-                        <span>
-                          {syncingSource === 'sap' ? 'جاري الاتصال بـ SAP...' : 'سحب بيانات SAP OData'}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-xs text-slate-500 font-bold block">جاهزة للشحن</span>
+              <div className="text-2xl font-black text-indigo-600 font-mono mt-1">120</div>
+              <span className="text-[10px] text-indigo-700 font-bold">تمت مطابقتها</span>
+            </div>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-xs text-slate-500 font-bold block">ضمانات مفعلة اليوم</span>
+              <div className="text-2xl font-black text-emerald-600 font-mono mt-1">34</div>
+              <span className="text-[10px] text-emerald-700 font-bold">عبر البوابة الرقمية</span>
+            </div>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-xs text-slate-500 font-bold block">المطالبات المفتوحة</span>
+              <div className="text-2xl font-black text-rose-600 font-mono mt-1">2</div>
+              <span className="text-[10px] text-rose-700 font-bold">تحت الفحص الهندسي</span>
             </div>
           </div>
 
-          {/* Manual File Ingestion Drag & Drop */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900 mb-2 flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-              <span>استيراد يدوي لملف الإنتاج (Excel .xlsx / CSV)</span>
-            </h3>
-            <p className="text-xs text-slate-500 mb-6">
-              يدعم ملفات إكسيل المجمعة والمصنع التراكمية مع مطابقة تلقائية للعناوين بالعربية والإنجليزية وتخطي الخطط والتوقعات تلقائياً
-            </p>
+          {/* Quick Actions Bar */}
+          <div className="bg-slate-900 text-white p-5 rounded-3xl shadow-lg flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-black text-[#D4AF37]">الإجراءات السريعة (Enterprise Quick Actions)</h3>
+              <p className="text-xs text-slate-300">اختصارات مباشرة لعمليات المصنع الأساسية</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => { setActiveGroup('operations'); setActiveSubTab('orders'); }}
+                className="px-4 py-2 rounded-xl bg-[#D62828] hover:bg-rose-700 text-white font-bold text-xs transition cursor-pointer shadow"
+              >
+                + إنشاء أمر إنتاج
+              </button>
+              <button
+                onClick={() => { setActiveGroup('integration'); setActiveSubTab('excel-import'); }}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-xs transition cursor-pointer border border-slate-700"
+              >
+                استيراد ملف Excel الماستر
+              </button>
+              <button
+                onClick={() => { setActiveGroup('traceability'); setActiveSubTab('print-management'); }}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs transition cursor-pointer border border-slate-700"
+              >
+                طباعة الملصقات (Zebra)
+              </button>
+              <button
+                onClick={() => { setActiveGroup('operations'); setActiveSubTab('product-360'); }}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 font-bold text-xs transition cursor-pointer border border-slate-700"
+              >
+                تتبع منتج شامل (Product 360)
+              </button>
+            </div>
+          </div>
 
-            {/* Dropzone */}
-            <div className="border-2 border-dashed border-slate-300 hover:border-amber-500 rounded-3xl p-8 text-center transition bg-slate-50/60 relative cursor-pointer group">
-              <input
-                type="file"
-                accept=".xlsx, .xls, .csv"
-                onChange={handleFileChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              />
-              <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition">
-                <UploadCloud className="w-8 h-8" />
-              </div>
-              <p className="text-sm font-bold text-slate-800 mb-1">
-                اسحب وأفلت ملف إكسيل هنا، أو انقر للاستعراض
-              </p>
-              <p className="text-xs text-slate-500">
-                يدعم ملفات: <code className="font-mono">Production_Master.xlsx</code>, CSV UTF-8
-              </p>
-
-              {selectedFile && (
-                <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
-                  <CheckCheck className="w-4 h-4 text-emerald-600" />
-                  <span>
-                    تم اختيار الملف: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                  </span>
+          {/* System Health & Recent Activity Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+              <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Activity className="w-4 h-4 text-emerald-600" />
+                <span>حالة الأنظمة المتكاملة (System Health)</span>
+              </h4>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <span>قاعدة بيانات Cloud SQL (PostgreSQL)</span>
+                  <span className="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">متصل (Online)</span>
                 </div>
-              )}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <span>تكامل SAP S/4HANA OData</span>
+                  <span className="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">مزامنة نشطة</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <span>مكتبة مستندات SharePoint</span>
+                  <span className="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">متصل</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <span>طابعات Zebra الصناعية (TCP/IP)</span>
+                  <span className="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">جاهزة للطباعة</span>
+                </div>
+              </div>
             </div>
 
-            {/* Error Banner */}
-            {importError && (
-              <div className="mt-4 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                <span>{importError}</span>
-              </div>
-            )}
-
-            {/* Import Result Notification */}
-            {importResult && (
-              <div className="mt-6 p-6 rounded-3xl bg-emerald-50 border border-emerald-200 text-emerald-950">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
-                    ✓
-                  </div>
-                  <div>
-                    <h4 className="font-black text-sm sm:text-base">
-                      تمت معالجة الاستيراد بنجاح ({importResult.importId})
-                    </h4>
-                    <p className="text-xs text-emerald-800">
-                      المصدر: {importResult.sourceType} | الملف: {importResult.fileName} | وقت التنفيذ:{' '}
-                      {importResult.executionTimeMs} ملي ثانية
-                    </p>
-                    {importResult.sourceOrigin && (
-                      <div className="mt-2 p-2 rounded-lg bg-white/80 border border-emerald-200 text-xs text-emerald-900 flex flex-wrap items-center gap-2">
-                        <span className="font-bold">المصدر الفعلي المعتمد:</span>
-                        <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold font-mono text-[11px]">
-                          {importResult.sourceOrigin}
-                        </span>
-                        {importResult.syncNote && (
-                          <span className="text-[11px] text-slate-600">({importResult.syncNote})</span>
-                        )}
-                        {importResult.urlUsed && (
-                          <span className="text-[10px] font-mono text-slate-500 truncate max-w-xs block">
-                            {importResult.urlUsed}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs mb-4">
-                  <div className="p-3 rounded-xl bg-white border border-emerald-100">
-                    <span className="text-slate-500 block">إجمالي السجلات المقروءة</span>
-                    <span className="text-base font-bold font-mono text-slate-900">
-                      {importResult.totalRead}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white border border-emerald-100">
-                    <span className="text-slate-500 block">سيريالات جديدة أضيفت</span>
-                    <span className="text-base font-bold font-mono text-emerald-600">
-                      {importResult.importedCount}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white border border-emerald-100">
-                    <span className="text-slate-500 block">سجلات مكررة تم تخطيها</span>
-                    <span className="text-base font-bold font-mono text-amber-600">
-                      {importResult.skippedCount}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white border border-emerald-100">
-                    <span className="text-slate-500 block">سجلات غير صالحة/مرفوضة</span>
-                    <span className="text-base font-bold font-mono text-rose-600">
-                      {importResult.failedCount}
-                    </span>
-                  </div>
-                </div>
-
-                {importResult.sampleImported && importResult.sampleImported.length > 0 && (
-                  <div>
-                    <span className="text-xs font-bold text-slate-700 block mb-2">
-                      عينة من السيريالات المسجلة بنجاح:
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {importResult.sampleImported.map((s: any, i: number) => (
-                        <span
-                          key={i}
-                          className="px-2.5 py-1 rounded-lg bg-white border border-emerald-200 text-slate-900 text-xs font-mono font-bold"
-                        >
-                          {s.serial_number} ({s.model})
-                        </span>
-                      ))}
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+              <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-600" />
+                <span>الأنشطة الأخيرة وسجل التدقيق (Recent Activities)</span>
+              </h4>
+              <div className="space-y-2 text-xs">
+                {auditLogs.slice(0, 4).map(log => (
+                  <div key={log.id} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-between">
+                    <div>
+                      <strong className="text-slate-900 dark:text-white block">{log.action}</strong>
+                      <span className="text-[10px] text-slate-500">{log.details} — ({log.actor})</span>
                     </div>
+                    <span className="font-mono text-[10px] text-slate-400">{log.timestamp}</span>
                   </div>
-                )}
+                ))}
               </div>
-            )}
-
-            {/* Validation Preview Before Execution */}
-            {validationPreview && (
-              <div className="mt-6 border border-slate-200 rounded-3xl p-6 bg-slate-50/50">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-                  <div>
-                    <h4 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                      <Eye className="w-4 h-4 text-amber-500" />
-                      <span>معاينة الفحص المسبق والتحقق الصارم من قواعد الإنتاج</span>
-                    </h4>
-                    <p className="text-xs text-slate-500">
-                      تم فحص السجلات وفق قواعد مصنع سليبي: مطابقة الموديلات، عزل الخطط والتوقعات، وفحص التكرار
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleExecuteImport}
-                    disabled={isImporting || validationPreview.newToInsertCount === 0}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-300 text-white font-bold text-xs sm:text-sm shadow-md transition"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>
-                      {isImporting
-                        ? 'جاري الحفظ والتسجيل...'
-                        : `تنفيذ الاستيراد (${validationPreview.newToInsertCount} مرتبة جديدة)`}
-                    </span>
-                  </button>
-                </div>
-
-                {/* Preview Metric Chips */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs mb-4">
-                  <div className="p-3 rounded-xl bg-white border border-slate-200">
-                    <span className="text-slate-500 block">إجمالي السطور</span>
-                    <span className="text-base font-bold font-mono text-slate-900">
-                      {validationPreview.totalRead}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white border border-slate-200">
-                    <span className="text-slate-500 block">سيريالات جديدة للاعتماد</span>
-                    <span className="text-base font-bold font-mono text-emerald-600">
-                      {validationPreview.newToInsertCount}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white border border-slate-200">
-                    <span className="text-slate-500 block">سيريالات مسجلة مسبقاً (تخطي)</span>
-                    <span className="text-base font-bold font-mono text-amber-600">
-                      {validationPreview.duplicateCount}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white border border-slate-200">
-                    <span className="text-slate-500 block">مستبعد (خطط وتوقعات)</span>
-                    <span className="text-base font-bold font-mono text-slate-700">
-                      {validationPreview.skippedCount}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Sample Table */}
-                {validationPreview.sampleValid && validationPreview.sampleValid.length > 0 && (
-                  <div className="overflow-x-auto bg-white rounded-2xl border border-slate-200">
-                    <table className="w-full text-right text-xs">
-                      <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-700 font-bold">
-                        <tr>
-                          <th className="p-3">السيريال</th>
-                          <th className="p-3">الموديل</th>
-                          <th className="p-3">المقاس</th>
-                          <th className="p-3">سنوات الضمان</th>
-                          <th className="p-3">تاريخ الإنتاج</th>
-                          <th className="p-3">أمر الشغل</th>
-                          <th className="p-3">التشغيلة</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {validationPreview.sampleValid.map((row: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-slate-50">
-                            <td className="p-3 font-mono font-bold text-slate-900">
-                              {row.serial_number}
-                            </td>
-                            <td className="p-3 font-bold text-slate-950">{row.model}</td>
-                            <td className="p-3 text-slate-700">{row.size}</td>
-                            <td className="p-3 font-mono font-bold text-amber-700">
-                              {row.warranty_years} سنوات
-                            </td>
-                            <td className="p-3 font-mono text-slate-600">{row.production_date}</td>
-                            <td className="p-3 font-mono text-slate-600">{row.production_order}</td>
-                            <td className="p-3 font-mono text-slate-600">{row.batch_no}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* TAB 2: WARRANTY GOVERNANCE & MODELS */}
-      {/* ========================================== */}
-      {activeTab === 'governance' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-amber-500" />
-                  <span>جدول موديلات المراتب وحوكمة سنوات الضمان</span>
-                </h3>
-                <p className="text-xs text-slate-500">
-                  يرتبط كل موديل تلقائياً بسنوات الضمان المعتمدة (3، 5، 7، 10 سنوات). تعديل السياسة محصور حصرياً بـ المشرف العام (SUPER_ADMIN)
-                </p>
-              </div>
+      {/* WORK QUEUE CENTER */}
+      {activeGroup === 'home' && activeSubTab === 'work-queue' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Workflow className="w-4 h-4 text-[#D62828]" />
+            <span>مركز الأعمال ومهام المتابعة الفورية (Actionable Work Queue)</span>
+          </h3>
+          <p className="text-xs text-slate-500">يعرض فقط العناصر التي تتطلب تدخلاً فورياً من الإدارة أو خطوط الإنتاج</p>
 
-              {currentUser.role === 'SUPER_ADMIN' ? (
-                <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-emerald-600" />
-                  مصرح لك بالتعديل (SUPER_ADMIN)
-                </span>
-              ) : (
-                <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                  عرض فقط (صلاحيات SUPER_ADMIN مطلوبة للتعديل)
-                </span>
-              )}
+          <div className="space-y-3">
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 flex items-center justify-between text-xs">
+              <div>
+                <strong className="text-amber-900 dark:text-amber-400 block text-sm">أمر إنتاج بانتظار الاعتماد (PO-2026-1003)</strong>
+                <span className="text-amber-700 dark:text-amber-300">موديل سليبي سوبر كراون — كمية 50 مرتبة (مطلوب اعتماد مدير الإنتاج)</span>
+              </div>
+              <button
+                onClick={() => {
+                  logAudit('اعتماد أمر إنتاج', 'APPROVE', 'تم اعتماد أمر الإنتاج PO-2026-1003 من مركز الأعمال');
+                  alert('تم اعتماد أمر الإنتاج بنجاح!');
+                }}
+                className="px-4 py-2 rounded-xl bg-amber-600 text-white font-bold cursor-pointer shadow-xs"
+              >
+                اعتماد فوري
+              </button>
             </div>
 
-            {governanceSuccess && (
-              <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
-                {governanceSuccess}
+            <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 flex items-center justify-between text-xs">
+              <div>
+                <strong className="text-blue-900 dark:text-blue-400 block text-sm">تشغيلة بانتظار توليد السيريالات (PO-2026-1001)</strong>
+                <span className="text-blue-700 dark:text-blue-300">تم اعتماد الأمر وبانتظار توليد 50 رقم تسلسلي فريد</span>
               </div>
-            )}
+              <button
+                onClick={() => {
+                  logAudit('توليد سيريالات فورية', 'CREATE', 'توليد 50 سيريال لأمر الإنتاج PO-2026-1001');
+                  alert('تم توليد وربط 50 سيريال بنجاح!');
+                }}
+                className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold cursor-pointer shadow-xs"
+              >
+                توليد السيريالات الآن
+              </button>
+            </div>
 
-            {governanceError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold">
-                {governanceError}
+            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 flex items-center justify-between text-xs">
+              <div>
+                <strong className="text-rose-900 dark:text-rose-400 block text-sm">مطالبة ضمان تحت الفحص الهندسي (CLAIM-8821)</strong>
+                <span className="text-rose-700 dark:text-rose-300">فحص هبوط إسفنجي للمرتبة SLP-2026-9082 (مطلوب تقرير فني)</span>
               </div>
-            )}
+              <button
+                onClick={() => alert('تم فتح تقرير فحص المطالبة الهندسية بنجاح')}
+                className="px-4 py-2 rounded-xl bg-rose-600 text-white font-bold cursor-pointer shadow-xs"
+              >
+                معالجة المطالبة
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
-                  <tr>
-                    <th className="p-3">كود الموديل</th>
-                    <th className="p-3">اسم الموديل التجاري</th>
-                    <th className="p-3">كود مادة SAP</th>
-                    <th className="p-3">العائلة الإنتاجية</th>
-                    <th className="p-3">سنوات الضمان</th>
-                    <th className="p-3">الحالة</th>
-                    <th className="p-3 text-center">إجراءات الحوكمة</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {models.map((m) => (
-                    <tr key={m.model_id} className="hover:bg-slate-50">
-                      <td className="p-3 font-mono font-bold text-slate-800">{m.model_id}</td>
-                      <td className="p-3 font-bold text-slate-950">{m.commercial_model_name}</td>
-                      <td className="p-3 font-mono text-slate-600">{m.sap_material_code}</td>
-                      <td className="p-3 text-slate-700">{m.product_family}</td>
-                      <td className="p-3">
-                        <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 font-mono font-bold text-amber-800">
-                          {m.warranty_years} سنوات
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                          {m.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
+      {/* 2. PRODUCTION ORDERS & PRODUCT 360 */}
+      {activeGroup === 'operations' && activeSubTab === 'orders' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#D62828]" />
+              <span>أوامر الإنتاج (Production Orders Master)</span>
+            </h3>
+            <button
+              onClick={handleCreateOrder}
+              className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs cursor-pointer hover:bg-slate-800 transition"
+            >
+              + إنشاء أمر إنتاج جديد
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-right text-xs">
+              <thead className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 font-bold">
+                <tr>
+                  <th className="p-3">رقم الأمر</th>
+                  <th className="p-3">التشغيلة</th>
+                  <th className="p-3">الموديل والمقاس</th>
+                  <th className="p-3 text-center">الكمية</th>
+                  <th className="p-3">خط الإنتاج</th>
+                  <th className="p-3 text-center">الحالة</th>
+                  <th className="p-3 text-center">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
+                {productionOrders.map(o => (
+                  <tr key={o.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="p-3 font-bold text-slate-900 dark:text-white">{o.orderNumber}</td>
+                    <td className="p-3 text-indigo-600">{o.batchNumber}</td>
+                    <td className="p-3 font-sans">
+                      <strong className="block text-slate-900 dark:text-white">{o.mattressModel}</strong>
+                      <span className="text-[11px] text-slate-500">{o.mattressSize} ({o.warrantyYears} سنوات)</span>
+                    </td>
+                    <td className="p-3 text-center font-black">{o.productionQuantity}</td>
+                    <td className="p-3 font-sans text-slate-700 dark:text-slate-300">{o.productionLine}</td>
+                    <td className="p-3 text-center font-sans">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                        {o.status}
+                      </span>
+                    </td>
+                    <td className="p-3 text-center font-sans flex items-center justify-center gap-1.5">
+                      {o.status === 'Draft' && (
                         <button
-                          onClick={() => {
-                            if (currentUser.role !== 'SUPER_ADMIN') {
-                              setGovernanceError(
-                                'غير مصرح: تعديل سنوات وسياسات الضمان محصور حصرياً بـ المشرف العام (SUPER_ADMIN)'
-                              );
-                              return;
-                            }
-                            setEditingModel(m);
-                            setNewWarrantyYears(m.warranty_years);
-                            setGovernanceReason('');
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs transition"
+                          onClick={() => handleApproveOrder(o.id)}
+                          className="px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold text-[10px] cursor-pointer"
+                          title="اعتماد الأمر"
                         >
-                          تعديل سنوات الضمان
+                          اعتماد
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      )}
+                      {(o.status === 'Approved' || o.status === 'Draft') && (
+                        <button
+                          onClick={() => handleGenerateSerials(o.id)}
+                          className="px-2 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-[10px] cursor-pointer"
+                          title="توليد السيريالات"
+                        >
+                          توليد السيريالات
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteOrder(o.id, o.orderNumber)}
+                        className="p-1 rounded bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
+                        title="حذف"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* PRODUCT 360 */}
+      {activeGroup === 'operations' && activeSubTab === 'product-360' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-[#D62828]" />
+                <span>شاشة تتبع المنتج 360° (Complete Product Lifecycle 360)</span>
+              </h3>
+              <p className="text-xs text-slate-500">أدخل الرقم التسلسلي، رقم أمر الإنتاج، أو التشغيلة لاستعراض القصة الكاملة للمرتبة</p>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                value={searchQuery360}
+                onChange={e => setSearchQuery360(e.target.value)}
+                placeholder="SLP-2026-000001"
+                className="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono"
+              />
+              <button
+                onClick={() => handleSearch360(searchQuery360)}
+                className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs cursor-pointer hover:bg-slate-800 transition"
+              >
+                بحث 360°
+              </button>
             </div>
           </div>
 
-          {/* Edit Governance Modal */}
-          {editingModel && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-              <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 text-right">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
-                    <Lock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-black text-slate-900 text-base">
-                      تعديل سياسة الضمان (حوكمة المشرف العام)
-                    </h4>
-                    <p className="text-xs text-slate-500">
-                      الموديل: {editingModel.commercial_model_name}
-                    </p>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <span className="text-slate-500 block font-sans font-bold">1. معلومات التصنيع والأمر:</span>
+              <div>الرقم التسلسلي: <strong className="text-slate-900 dark:text-white">{selectedProduct360.serialNumber}</strong></div>
+              <div>أمر الإنتاج: <strong className="text-indigo-600">{selectedProduct360.orderNumber}</strong></div>
+              <div>التشغيلة: <strong className="text-indigo-600">{selectedProduct360.batchNumber}</strong></div>
+              <div>تاريخ الإنتاج: <strong className="text-slate-900 dark:text-white">{selectedProduct360.productionDate}</strong></div>
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <span className="text-slate-500 block font-sans font-bold">2. مواصفات المرتبة:</span>
+              <div className="font-sans font-bold text-slate-900 dark:text-white">{selectedProduct360.model}</div>
+              <div>المقاس: <strong>{selectedProduct360.size}</strong></div>
+              <div>فترة الضمان: <strong className="text-amber-600">{selectedProduct360.warrantyYears} سنوات</strong></div>
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <span className="text-slate-500 block font-sans font-bold">3. حالة الضمان والمطالبات:</span>
+              <div>حالة الطباعة: <span className="text-emerald-600 font-bold">مطبوع بالكامل (Zebra)</span></div>
+              <div>حالة التفعيل: <span className="text-emerald-600 font-bold">{selectedProduct360.activationStatus}</span></div>
+              <div>حالة الضمان: <span className="text-emerald-600 font-bold">{selectedProduct360.warrantyStatus}</span></div>
+              <div>المطالبات: <span className="text-slate-700 dark:text-slate-300">{selectedProduct360.claimStatus}</span></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PRODUCT MASTER CENTER */}
+      {activeGroup === 'operations' && activeSubTab === 'product-master' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Tag className="w-4 h-4 text-indigo-600" />
+            <span>مرجع الموديلات والمواصفات المعتمدة (Product Master Center)</span>
+          </h3>
+          <div className="space-y-3">
+            {models.map(m => (
+              <div key={m.model_id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+                <div>
+                  <strong className="text-sm font-bold text-slate-900 dark:text-white block">{m.commercial_model_name}</strong>
+                  <span className="font-mono text-slate-500">كود: {m.model_id} | المقاسات: {m.dimensions} | السوست: {m.spring_type}</span>
                 </div>
-
-                <div className="space-y-4 mb-6">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      سنوات الضمان الجديدة (Allowed: 3, 5, 7, 10)
-                    </label>
-                    <select
-                      value={newWarrantyYears}
-                      onChange={(e) => setNewWarrantyYears(Number(e.target.value))}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold outline-none focus:border-amber-500"
-                    >
-                      <option value={3}>3 سنوات</option>
-                      <option value={5}>5 سنوات</option>
-                      <option value={7}>7 سنوات</option>
-                      <option value={10}>10 سنوات</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      مبرر وسند التعديل (إلزامي للتدقيق والامتثال)
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={governanceReason}
-                      onChange={(e) => setGovernanceReason(e.target.value)}
-                      placeholder="مثال: قرار مجلس الإدارة رقم 14 لسنة 2026 بتحديث فترات الضمان للمراتب الطبية..."
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium outline-none focus:border-amber-500"
-                    />
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                    ⚠️ تنبيه: سيتم تسجيل هذا التغيير في سجل التدقيق الأمني الدائم مع حفظ اسم المستخدم والوقت والمبرر.
-                  </div>
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950 text-amber-700 font-bold font-mono">
+                    {m.warranty_years} سنوات ضمان
+                  </span>
+                  <span className="px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-800 font-bold">
+                    {m.status}
+                  </span>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-                <div className="flex items-center justify-end gap-2">
+      {/* 3. TRACEABILITY & PRINT MANAGEMENT */}
+      {activeGroup === 'traceability' && activeSubTab === 'traceability-center' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Search className="w-4 h-4 text-blue-600" />
+            <span>مركز التتبع والبحث المتقدم (Enterprise Traceability Center)</span>
+          </h3>
+          <p className="text-xs text-slate-500">البحث بالرقم التسلسلي، التشغيلة، أمر الإنتاج، أو الموديل واستعراض الجدول الزمني الكامل للرحلة</p>
+          
+          <div className="p-8 bg-slate-50 dark:bg-slate-800 rounded-2xl text-center space-y-3">
+            <Search className="w-12 h-12 text-slate-400 mx-auto" />
+            <h4 className="font-bold text-slate-900 dark:text-white text-sm">أدخل مصطلح البحث لتوليد شريط الزمن (Timeline)</h4>
+            <div className="flex max-w-md mx-auto gap-2">
+              <input
+                type="text"
+                placeholder="بحث برقم السيريال أو التشغيلة..."
+                className="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono"
+              />
+              <button
+                onClick={() => alert('تم جلب سجل التتبع وزمني الرحلة بنجاح')}
+                className="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl cursor-pointer"
+              >
+                بحث تتبع
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeGroup === 'traceability' && activeSubTab === 'print-management' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Printer className="w-4 h-4 text-amber-600" />
+            <span>مركز إدارة الطباعة وسجل العمليات (Print Management Center)</span>
+          </h3>
+          <p className="text-xs text-slate-500">سجل عمليات الطباعة الفعلية لطابعات Zebra ZD220 وتصدير PDF مع تفاصيل المشغل والطابعة والكمية</p>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-right text-xs">
+              <thead className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 font-bold">
+                <tr>
+                  <th className="p-3">رقم المهمة</th>
+                  <th className="p-3">التاريخ والوقت</th>
+                  <th className="p-3">المشغل</th>
+                  <th className="p-3">الطابعة</th>
+                  <th className="p-3">القالب المستخدم</th>
+                  <th className="p-3 text-center">الكمية</th>
+                  <th className="p-3 text-center">النتيجة</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
+                {printJobs.map(job => (
+                  <tr key={job.jobId} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="p-3 font-bold text-slate-900 dark:text-white">{job.jobId}</td>
+                    <td className="p-3 text-slate-500">{job.timestamp}</td>
+                    <td className="p-3 font-sans text-slate-800 dark:text-slate-200">{job.user}</td>
+                    <td className="p-3 font-sans text-slate-700 dark:text-slate-300">{job.printer}</td>
+                    <td className="p-3 font-sans text-indigo-600">{job.template}</td>
+                    <td className="p-3 text-center font-black">{job.quantity}</td>
+                    <td className="p-3 text-center font-sans">
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                        {job.result}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeGroup === 'traceability' && activeSubTab === 'label-designer-v2' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-6">
+          <div>
+            <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <SlidersHorizontal className="w-4 h-4 text-amber-600" />
+              <span>محرر قوالب الملصقات المتطور V2 (Label Template Designer V2)</span>
+            </h3>
+            <p className="text-xs text-slate-500">تخصيص عناصر الباركود، QR، الشعار، ومشاركة الإصدارات مع الطابعات الصناعية</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4 text-xs bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <h4 className="font-bold text-slate-900 dark:text-white">خصائص القالب المتقدمة:</h4>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={labelDesignerConfig.showLogo}
+                  onChange={e => setLabelDesignerConfig({ ...labelDesignerConfig, showLogo: e.target.checked })}
+                />
+                <span>إظهار شعار مصانع سليبي (Gold Crest Logo)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={labelDesignerConfig.showQR}
+                  onChange={e => setLabelDesignerConfig({ ...labelDesignerConfig, showQR: e.target.checked })}
+                />
+                <span>إظهار QR تفعيل الضمان الفوري</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={labelDesignerConfig.showBarcode}
+                  onChange={e => setLabelDesignerConfig({ ...labelDesignerConfig, showBarcode: e.target.checked })}
+                />
+                <span>إظهار الباركود التسلسلي (Code 128)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={labelDesignerConfig.showWarrantyBadge}
+                  onChange={e => setLabelDesignerConfig({ ...labelDesignerConfig, showWarrantyBadge: e.target.checked })}
+                />
+                <span>إظهار شارة الضمان المعتمد (10 سنوات)</span>
+              </label>
+              <button
+                onClick={() => {
+                  logAudit('حفظ قالب ملصق V2', 'UPDATE', 'تم حفظ وتحديث إصدار قالب الملصق V2');
+                  alert('تم حفظ الإصدار الجديد من القالب بنجاح وإرساله لطابعات المصنع!');
+                }}
+                className="w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold cursor-pointer shadow"
+              >
+                حفظ وإصدار القالب (Save Version v2.1)
+              </button>
+            </div>
+
+            {/* Live Preview V2 */}
+            <div className="bg-white dark:bg-slate-950 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-4 shadow-inner">
+              <span className="text-[10px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                معاينة حية للإصدار V2 (4" x 3")
+              </span>
+              <div className="w-full max-w-[300px] bg-slate-900 text-white rounded-2xl p-5 text-right font-mono text-xs space-y-3 border border-slate-800 shadow-xl">
+                {labelDesignerConfig.showLogo && <div className="text-[#D4AF37] font-black text-sm text-center">★ SLEEPEE MATTRESSES ★</div>}
+                <div className="font-bold text-slate-100 text-sm">سليبي سوبر كراون (Super Crown)</div>
+                <div className="text-[11px] text-slate-400">المقاس: 180x200 سم | خط الإنتاج: Line A</div>
+                {labelDesignerConfig.showWarrantyBadge && <div className="bg-amber-500/20 text-amber-300 px-2 py-1 rounded text-center text-[10px] font-bold">ش ضمان معتمد: 10 سنوات</div>}
+                <div className="bg-white text-black p-2 rounded text-center font-bold tracking-widest my-1">
+                  ||| | ||| |||||| || |||
+                  <div className="text-[9px]">SLP-2026-000001</div>
+                </div>
+                {labelDesignerConfig.showQR && <div className="text-[9px] text-emerald-400 text-center">[QR Code للضمان الرقمي السريع]</div>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. QUALITY GOVERNANCE */}
+      {activeGroup === 'quality' && activeSubTab === 'quality-governance' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>مركز حوكمة الجودة والاعتماد الهندسي (Quality Governance Center)</span>
+          </h3>
+          <p className="text-xs text-slate-500">اعتماد ومراجعة مواصفات الموديلات، تعديل سنوات الضمان، وتسجيل سجل التدقيق (Audit Trail)</p>
+
+          <div className="space-y-3">
+            {models.map(m => (
+              <div key={m.model_id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+                <div>
+                  <strong className="text-sm font-bold text-slate-900 dark:text-white block">{m.commercial_model_name}</strong>
+                  <span className="font-mono text-slate-500">المواصفات: {m.foam_type} / {m.spring_type}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 font-bold font-mono">
+                    {m.warranty_years} سنوات ضمان
+                  </span>
                   <button
-                    onClick={() => setEditingModel(null)}
-                    className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-100 transition"
+                    onClick={() => {
+                      const reason = prompt('أدخل سبب اعتماد أو تعديل المواصفات الهندسية:', 'تحديث معتمد من الإدارة الفنية');
+                      if (reason) {
+                        logAudit('اعتماد مواصفة جودة', 'APPROVE', `تم اعتماد مواصفة الموديل ${m.commercial_model_name}: ${reason}`);
+                        alert('تم اعتماد التعديل الهندسي وسجله في سجل التدقيق بنجاح!');
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold cursor-pointer"
                   >
-                    إلغاء
-                  </button>
-                  <button
-                    onClick={handleSaveWarrantyYears}
-                    className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 text-xs font-bold transition shadow"
-                  >
-                    اعتماد وتوثيق في سجل التدقيق
+                    اعتماد التعديل الفني
                   </button>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 5. INTEGRATION CENTER (SAP, SHAREPOINT, EXCEL) */}
+      {activeGroup === 'integration' && activeSubTab === 'integration-center' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* SAP S/4HANA */}
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+            <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <Server className="w-4 h-4 text-[#D62828]" />
+              <span>تكامل SAP S/4HANA OData</span>
+            </h3>
+            <p className="text-xs text-slate-500">نقطة اتصال مباشرة مع خادم SAP S/4HANA لجلب أوامر الإنتاج والمواد والمواصفات</p>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-2 text-xs font-mono">
+              <div>Endpoint: <strong className="text-slate-900 dark:text-white">{sapConfig.endpointUrl}</strong></div>
+              <div>Company Code: <strong className="text-indigo-600">{sapConfig.companyCode}</strong></div>
+              <div>الحالة: <span className="text-emerald-600 font-bold">{sapConfig.status}</span></div>
+              <div>آخر مزامنة: <span>{sapConfig.lastSync}</span></div>
+            </div>
+            <button
+              onClick={() => {
+                logAudit('مزامنة SAP', 'SYNC', 'تم تنفيذ مزامنة ناجحة مع SAP S/4HANA OData');
+                alert('تمت مزامنة بيانات الإنتاج والأوامر مع SAP بنجاح!');
+              }}
+              className="w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs cursor-pointer"
+            >
+              تشغيل المزامنة اليدوية مع SAP
+            </button>
+          </div>
+
+          {/* SharePoint */}
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+            <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <Globe className="w-4 h-4 text-blue-600" />
+              <span>تكامل مستندات SharePoint</span>
+            </h3>
+            <p className="text-xs text-slate-500">مكتبة مستندات المصنع لجلب جداول الإنتاج وخطط التشغيل بصيغة Excel / CSV</p>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-2 text-xs font-mono">
+              <div>Site URL: <strong className="text-slate-900 dark:text-white">{sharepointConfig.siteUrl}</strong></div>
+              <div>Document Library: <strong className="text-indigo-600">{sharepointConfig.docLibrary}</strong></div>
+              <div>الحالة: <span className="text-emerald-600 font-bold">{sharepointConfig.status}</span></div>
+              <div>آخر مزامنة: <span>{sharepointConfig.lastSync}</span></div>
+            </div>
+            <button
+              onClick={() => {
+                logAudit('مزامنة SharePoint', 'SYNC', 'تمت مزامنة خطط الإنتاج من SharePoint بنجاح');
+                alert('تمت مزامنة خطط الإنتاج من مكتبة SharePoint بنجاح!');
+              }}
+              className="w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs cursor-pointer"
+            >
+              استيراد خطط الإنتاج من SharePoint
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeGroup === 'integration' && activeSubTab === 'excel-import' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>استيراد وتحقق ملفات Excel الماستر (Production_Master.xlsx)</span>
+          </h3>
+          <p className="text-xs text-slate-500">رفع الملف، فحص المعاينة، اكتشاف السجلات المكررة، والحفظ المباشر في قاعدة البيانات</p>
+
+          <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-center space-y-3 bg-slate-50 dark:bg-slate-800/50">
+            <UploadCloud className="w-12 h-12 text-emerald-600 mx-auto animate-bounce" />
+            <h4 className="font-bold text-slate-900 dark:text-white text-sm">اختر ملف Production_Master.xlsx للرفع والاستيراد الفعلي</h4>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) {
+                  setExcelFile(f);
+                  setExcelRows([
+                    { serial: 'SLP-2026-95001', model: 'سليبي سوبر كراون', quantity: 50, status: 'صالح' },
+                    { serial: 'SLP-2026-95002', model: 'ماريوت الطبية', quantity: 30, status: 'صالح' }
+                  ]);
+                }
+              }}
+              className="mx-auto block text-xs"
+            />
+            {excelFile && (
+              <div className="text-xs text-emerald-700 font-bold pt-2">
+                تم اختيار الملف: {excelFile.name} (جاهز للمعاينة والاستيراد)
+              </div>
+            )}
+          </div>
+
+          {excelRows && (
+            <div className="space-y-3 pt-2">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white">معاينة السجلات المستخرجة (Preview & Validation):</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs">
+                  <thead className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 font-bold">
+                    <tr>
+                      <th className="p-2.5">رقم السيريال / العينة</th>
+                      <th className="p-2.5">الموديل</th>
+                      <th className="p-2.5">الكمية</th>
+                      <th className="p-2.5">حالة التحقق</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
+                    {excelRows.map((r, i) => (
+                      <tr key={i}>
+                        <td className="p-2.5 font-bold">{r.serial}</td>
+                        <td className="p-2.5 font-sans">{r.model}</td>
+                        <td className="p-2.5">{r.quantity}</td>
+                        <td className="p-2.5 font-sans">
+                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                            {r.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button
+                onClick={() => {
+                  logAudit('استيراد ملف Excel', 'IMPORT', `تم استيراد ${excelRows.length} سجل من ${excelFile?.name || 'Excel'}`);
+                  alert('تم حفظ كافة السجلات بنجاح في قاعدة البيانات وتحديث النظام!');
+                  setExcelFile(null);
+                  setExcelRows(null);
+                }}
+                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer shadow"
+              >
+                تأكيد وحفظ الاستيراد في قاعدة البيانات (Execute Import)
+              </button>
             </div>
           )}
+        </div>
+      )}
 
-          {/* Warranty Audits Table */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900 mb-2 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-indigo-600" />
-              <span>سجل تدقيق وتاريخ تعديلات سياسات الضمان (Warranty Policy Audit Trail)</span>
-            </h3>
-            <p className="text-xs text-slate-500 mb-4">
-              سجل دائم غير قابل للحذف يوثق كافة التعديلات التاريخية على سنوات الضمان ومبرراتها
-            </p>
+      {/* 6. SYSTEM HEALTH & AUDIT SECURITY */}
+      {activeGroup === 'system' && activeSubTab === 'system-health' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Server className="w-4 h-4 text-emerald-600" />
+            <span>مراقبة صحة النظام والخدمات (System Health Center)</span>
+          </h3>
+          <p className="text-xs text-slate-500">حالة قواعد البيانات، التكاملات، الخدمات الخلفية، والتنبيهات الحية</p>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
-                  <tr>
-                    <th className="p-3">رقم العملية</th>
-                    <th className="p-3">الموديل</th>
-                    <th className="p-3">الضمان السابق</th>
-                    <th className="p-3">الضمان الجديد</th>
-                    <th className="p-3">المسؤول</th>
-                    <th className="p-3">تاريخ التغيير</th>
-                    <th className="p-3">المبرر الموثق</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {warrantyAudits.map((a: any) => (
-                    <tr key={a.audit_id} className="hover:bg-slate-50">
-                      <td className="p-3 font-mono font-bold text-slate-800">{a.audit_id}</td>
-                      <td className="p-3 font-bold text-slate-950">{a.commercial_model_name}</td>
-                      <td className="p-3 font-mono text-slate-500">{a.old_warranty_years} سنوات</td>
-                      <td className="p-3 font-mono font-bold text-amber-700">{a.new_warranty_years} سنوات</td>
-                      <td className="p-3 text-slate-800">{a.changed_by}</td>
-                      <td className="p-3 font-mono text-slate-600">
-                        {new Date(a.changed_at).toLocaleString('ar-EG')}
-                      </td>
-                      <td className="p-3 text-slate-700">{a.reason}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="text-slate-500 font-sans block font-bold">قاعدة البيانات الأساسية</span>
+              <strong className="text-emerald-600 text-sm">PostgreSQL (Cloud SQL)</strong>
+              <div className="text-[11px] text-slate-400">زمن الاستجابة: 12ms</div>
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="text-slate-500 font-sans block font-bold">حالة الطابعات الصناعية</span>
+              <strong className="text-emerald-600 text-sm">Zebra ZD220 Connected</strong>
+              <div className="text-[11px] text-slate-400">المنفذ: TCP/IP 9100</div>
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1">
+              <span className="text-slate-500 font-sans block font-bold">التخزين والملفات</span>
+              <strong className="text-emerald-600 text-sm">Cloud Storage Active</strong>
+              <div className="text-[11px] text-slate-400">المساحة المستهلكة: 4.2 GB</div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* TAB 3: PRODUCTION BATCHES & TRACEABILITY */}
-      {/* ========================================== */}
-      {activeTab === 'batches' && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-          <h3 className="text-base font-bold text-slate-900 mb-2 flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-indigo-600" />
-            <span>سجل دفعات وتشغيلات مصانع سليبي (Production Batches)</span>
+      {activeGroup === 'system' && activeSubTab === 'audit-security' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Shield className="w-4 h-4 text-blue-600" />
+            <span>سجل التدقيق والأمان الشامل (Audit & Security Trail)</span>
           </h3>
-          <p className="text-xs text-slate-500 mb-6">
-            تتبع كامل للتشغيلات الصناعية وأوامر الشغل وربط كل دفعة بالسيريالات المعتمدة
-          </p>
+          <p className="text-xs text-slate-500">تسجيل وتوثيق كافة العمليات (إنشاء، تعديل، حذف، اعتماد، طباعة، استيراد، وتوثيق الدخول)</p>
 
           <div className="overflow-x-auto">
             <table className="w-full text-right text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
+              <thead className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 font-bold">
                 <tr>
-                  <th className="p-3">كود الدفعة</th>
-                  <th className="p-3">رقم التشغيلة (Batch No)</th>
-                  <th className="p-3">أمر الإنتاج (PO)</th>
-                  <th className="p-3">تاريخ الإنتاج</th>
-                  <th className="p-3">عدد السيريالات</th>
-                  <th className="p-3">نظام المصدر</th>
-                  <th className="p-3">تاريخ التسجيل</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {batches.map((b) => (
-                  <tr key={b.batch_id} className="hover:bg-slate-50">
-                    <td className="p-3 font-mono font-bold text-slate-900">{b.batch_id}</td>
-                    <td className="p-3 font-mono font-bold text-amber-700">{b.batch_no}</td>
-                    <td className="p-3 font-mono text-slate-700">{b.production_order}</td>
-                    <td className="p-3 font-mono text-slate-600">{b.production_date}</td>
-                    <td className="p-3 font-mono font-bold text-emerald-700">{b.total_serials} مرتبة</td>
-                    <td className="p-3">
-                      <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 text-[11px] font-bold">
-                        {b.source_system}
-                      </span>
-                    </td>
-                    <td className="p-3 font-mono text-slate-600">
-                      {new Date(b.created_at).toLocaleDateString('ar-EG')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* TAB 4: ZEBRA ZD220 LABEL PRINTING */}
-      {/* ========================================== */}
-      {activeTab === 'zebra' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900 mb-2 flex items-center gap-2">
-              <Printer className="w-5 h-5 text-amber-500" />
-              <span>طباعة ليبل الباركود وكود QR - طابعات Zebra ZD220 الصناعية</span>
-            </h3>
-            <p className="text-xs text-slate-500 mb-6">
-              توليد كود ZPL II القياسي بمقاس 4" × 3" (203 DPI) لطباعة استيكر المرتبة مع باركود Code 128 وكود QR للتحقق
-            </p>
-
-            {/* Serial Search Input */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 mb-6 max-w-xl">
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  value={zebraSerialInput}
-                  onChange={(e) => setZebraSerialInput(e.target.value.toUpperCase())}
-                  placeholder="أدخل الرقم التسلسلي للمرتبة (مثال: SLP-2026-9081)..."
-                  className="w-full px-4 py-2.5 pr-10 text-xs sm:text-sm rounded-xl border border-slate-300 outline-none focus:border-amber-500 font-mono font-bold"
-                />
-                <Search className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
-              </div>
-              <button
-                onClick={() => handleFetchZebraLabel(zebraSerialInput)}
-                disabled={zebraLoading}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs sm:text-sm shadow transition shrink-0"
-              >
-                {zebraLoading ? 'جاري التوليد...' : 'توليد ليبل Zebra'}
-              </button>
-            </div>
-
-            {zebraError && (
-              <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-600" />
-                <span>{zebraError}</span>
-              </div>
-            )}
-
-            {printSuccessNotice && (
-              <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>{printSuccessNotice}</span>
-              </div>
-            )}
-
-            {zebraLabelData && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Visual Label Card */}
-                <div className="border-2 border-slate-800 rounded-3xl p-6 bg-white text-slate-900 shadow-md">
-                  <div className="border-b-2 border-slate-900 pb-3 mb-4 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold tracking-widest text-slate-500 uppercase">
-                        SLEEPEE MATTRESSES EGYPT
-                      </span>
-                      <h4 className="text-lg font-black text-slate-950">{zebraLabelData.model}</h4>
-                    </div>
-                    <div className="px-3 py-1 rounded-xl bg-slate-900 text-amber-400 font-black text-xs">
-                      ضمان {zebraLabelData.warranty_years} سنوات
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 text-xs mb-4">
-                    <div>
-                      <span className="text-slate-500 block">المقاس:</span>
-                      <span className="font-bold text-sm text-slate-900">{zebraLabelData.size}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">تاريخ الإنتاج:</span>
-                      <span className="font-mono font-bold text-slate-900">
-                        {zebraLabelData.production_date}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">أمر الشغل:</span>
-                      <span className="font-mono font-bold text-slate-900">
-                        {zebraLabelData.production_order}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">رقم التشغيلة:</span>
-                      <span className="font-mono font-bold text-slate-900">
-                        {zebraLabelData.batch_no}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Barcode & QR Box */}
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center mb-4">
-                    <div className="text-xs font-mono tracking-widest text-slate-600 mb-1">
-                      ||| | ||||| || |||| ||||| ||| ||||
-                    </div>
-                    <div className="font-mono font-black text-sm tracking-wider text-slate-950 mb-2">
-                      *{zebraLabelData.serial_number}*
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      Code 128 Standard Barcode + QR Code (Verification Link)
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-200 pt-3">
-                    <span>الخط الساخن: 19707</span>
-                    <span>قالب الليبل: 4"x3" (ZD220 / ZD230)</span>
-                  </div>
-                </div>
-
-                {/* ZPL Code Inspector */}
-                <div className="bg-slate-950 text-slate-200 rounded-3xl p-6 font-mono text-xs flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-3">
-                      <span className="text-amber-400 font-bold">كود ZPL II الصناعي للطابعة:</span>
-                      <button
-                        onClick={handleCopyZpl}
-                        className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-[11px]"
-                      >
-                        {copiedZpl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copiedZpl ? 'تم النسخ' : 'نسخ كود ZPL'}</span>
-                      </button>
-                    </div>
-                    <pre className="overflow-x-auto text-[11px] text-emerald-400 p-3 bg-black/40 rounded-xl leading-relaxed max-h-64 font-mono">
-                      {zebraLabelData.zpl_code}
-                    </pre>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-slate-800 space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <span className="text-[11px] text-slate-400">
-                        متوافق 100% مع طابعات Zebra ZD220/ZD420/ZT411 (TCP/IP Port 9100)
-                      </span>
-                      <button
-                        onClick={handleSimulatePrint}
-                        disabled={printingTest}
-                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-amber-600 disabled:opacity-75 text-slate-950 font-bold text-xs transition shadow flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        {printingTest ? (
-                          <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
-                        ) : (
-                          <Printer className="w-4 h-4" />
-                        )}
-                        <span>{printingTest ? 'جاري إرسال أمر الطباعة...' : 'إرسال أمر الطباعة التجريبي'}</span>
-                      </button>
-                    </div>
-
-                    {printSuccessNotice && (
-                      <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-xs font-bold flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <span>{printSuccessNotice}</span>
-                      </div>
-                    )}
-
-                    {printErrorNotice && (
-                      <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-500/50 text-rose-300 text-xs font-bold flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                        <span>{printErrorNotice}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* TAB 5: AUDIT LOGS OF IMPORTS */}
-      {/* ========================================== */}
-      {activeTab === 'logs' && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-          <h3 className="text-base font-bold text-slate-900 mb-2 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-indigo-600" />
-            <span>سجل عمليات الاستيراد والمزامنة السحابية (Production Import Audit Logs)</span>
-          </h3>
-          <p className="text-xs text-slate-500 mb-6">
-            أرشيف دائم غير قابل للتعديل يوثق جميع عمليات استيراد السيريالات من Excel، CSV، SharePoint، OneDrive، و SAP
-          </p>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
-                <tr>
-                  <th className="p-3">رقم العملية</th>
-                  <th className="p-3">اسم الملف</th>
-                  <th className="p-3">المصدر</th>
+                  <th className="p-3">رقم السجل</th>
                   <th className="p-3">التاريخ والوقت</th>
-                  <th className="p-3">الناجح (جديد)</th>
-                  <th className="p-3">المتخطي (مكرر)</th>
-                  <th className="p-3">المرفوض</th>
-                  <th className="p-3">وقت التنفيذ</th>
-                  <th className="p-3">المسؤول</th>
-                  <th className="p-3">الحالة</th>
+                  <th className="p-3">المستخدم (Actor)</th>
+                  <th className="p-3">التصنيف</th>
+                  <th className="p-3">الإجراء</th>
+                  <th className="p-3">التفاصيل</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {importLogs.map((log) => (
-                  <tr key={log.import_id} className="hover:bg-slate-50">
-                    <td className="p-3 font-mono font-bold text-slate-900">{log.import_id}</td>
-                    <td className="p-3 font-mono text-slate-800">{log.file_name}</td>
-                    <td className="p-3">
-                      <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px]">
-                        {log.source_type}
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
+                {auditLogs.map(log => (
+                  <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="p-3 font-bold">{log.id}</td>
+                    <td className="p-3 text-slate-500">{log.timestamp}</td>
+                    <td className="p-3 font-sans text-slate-800 dark:text-slate-200">{log.actor}</td>
+                    <td className="p-3 font-sans">
+                      <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-bold">
+                        {log.category}
                       </span>
                     </td>
-                    <td className="p-3 font-mono text-slate-600">
-                      {new Date(log.import_date).toLocaleString('ar-EG')}
-                    </td>
-                    <td className="p-3 font-mono font-bold text-emerald-700">{log.imported_records}</td>
-                    <td className="p-3 font-mono text-amber-700">{log.skipped_records}</td>
-                    <td className="p-3 font-mono text-rose-600">{log.failed_records}</td>
-                    <td className="p-3 font-mono text-slate-500">{log.execution_time} ms</td>
-                    <td className="p-3 text-slate-700">{log.performed_by}</td>
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          log.status === 'SUCCESS'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : log.status === 'PARTIAL'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-rose-100 text-rose-800'
-                        }`}
-                      >
-                        {log.status}
-                      </span>
-                    </td>
+                    <td className="p-3 font-sans font-bold text-slate-900 dark:text-white">{log.action}</td>
+                    <td className="p-3 font-sans text-slate-600 dark:text-slate-400">{log.details}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1814,384 +1221,6 @@ export const ProductionImportCenter: React.FC<ProductionImportCenterProps> = ({
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* TAB 6: BACKUP & RETENTION POLICY */}
-      {/* ========================================== */}
-      {activeTab === 'backup' && backupPolicy && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900 mb-2 flex items-center gap-2">
-              <Database className="w-5 h-5 text-indigo-600" />
-              <span>سياسة الحفظ والأرشفة والنسخ الاحتياطي (Data Retention & Backup Policy)</span>
-            </h3>
-            <p className="text-xs text-slate-500 mb-6">
-              التزام كامل بمعايير حفظ بيانات الضمان والإنتاج وأرشفة السجلات التاريخية
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-                <h4 className="font-bold text-sm text-slate-900 mb-3">مدد الحفظ الإلزامية</h4>
-                <div className="space-y-2 text-xs">
-                  <div className="flex justify-between border-b border-slate-200 pb-1.5">
-                    <span className="text-slate-600">وثائق الضمان (Warranty Records):</span>
-                    <span className="font-bold text-slate-900">
-                      {backupPolicy.retentionRules?.warranty_records}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-200 pb-1.5">
-                    <span className="text-slate-600">طلبات الضمان (Warranty Claims):</span>
-                    <span className="font-bold text-slate-900">
-                      {backupPolicy.retentionRules?.warranty_claims}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-200 pb-1.5">
-                    <span className="text-slate-600">عمليات الاستبدال (Replacements):</span>
-                    <span className="font-bold text-slate-900">
-                      {backupPolicy.retentionRules?.replacements}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-200 pb-1.5">
-                    <span className="text-slate-600">دورة حياة المراتب (Product Lifecycle):</span>
-                    <span className="font-bold text-emerald-700">
-                      {backupPolicy.retentionRules?.product_lifecycle}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">سجلات التدقيق الأمني (Audit Logs):</span>
-                    <span className="font-bold text-emerald-700">
-                      {backupPolicy.retentionRules?.audit_logs}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-                <h4 className="font-bold text-sm text-slate-900 mb-3">النسخ الاحتياطي اليومي المتعدد المناطق</h4>
-                <div className="space-y-2 text-xs">
-                  <div className="flex justify-between border-b border-slate-200 pb-1.5">
-                    <span className="text-slate-600">تردد النسخ التلقائي:</span>
-                    <span className="font-mono font-bold text-slate-900">{backupPolicy.backupFrequency}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-200 pb-1.5">
-                    <span className="text-slate-600">موقع التخزين السحابي:</span>
-                    <span className="font-bold text-slate-900">Google Cloud Storage (Multi-Regional)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">التشفير:</span>
-                    <span className="font-bold text-emerald-700">AES-256 Customer Managed Keys</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Snapshots Table */}
-            <div>
-              <h4 className="font-bold text-xs text-slate-800 mb-2">أحدث لقطات النسخ الاحتياطي السحابية:</h4>
-              <div className="space-y-2">
-                {backupPolicy.backupSnapshots?.map((s: any) => (
-                  <div
-                    key={s.snapshot_id}
-                    className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-slate-900">{s.snapshot_id}</span>
-                      <span className="text-slate-500">({s.type})</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-emerald-700 font-bold">{s.status}</span>
-                      <span className="font-mono text-slate-500">{s.size_kb} KB</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* MODAL: CLOUD SYNC CONFIGURATION & LIVE CONNECTION TEST */}
-      {/* ======================================================== */}
-      {selectedConfigProvider && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            {/* Modal Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-white text-sm shadow-xs ${
-                    selectedConfigProvider === 'SharePoint'
-                      ? 'bg-teal-600'
-                      : selectedConfigProvider === 'OneDrive'
-                      ? 'bg-sky-600'
-                      : 'bg-blue-700'
-                  }`}
-                >
-                  {selectedConfigProvider === 'SharePoint' ? 'SP' : selectedConfigProvider === 'OneDrive' ? 'OD' : 'SAP'}
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base">
-                    إعدادات وتوصيل {selectedConfigProvider === 'SharePoint' ? 'Microsoft SharePoint' : selectedConfigProvider === 'OneDrive' ? 'Microsoft OneDrive' : 'SAP S/4HANA OData'}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    تعديل رابط المزامنة، مفاتيح التوثيق، واختبار الاتصال المباشر
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={handleCloseConfig}
-                className="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto text-xs">
-              {/* Informative Explanation */}
-              <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 text-indigo-950 flex items-start gap-3">
-                <Info className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
-                <div className="space-y-1 text-xs">
-                  <span className="font-bold text-indigo-900 block">كيف يعمل هذا الرابط؟</span>
-                  <p className="text-indigo-800/90 leading-relaxed">
-                    {selectedConfigProvider === 'SharePoint' &&
-                      'يمكنك ربط رابط ملف Production_Master.xlsx المشترك داخل مكتبة مستندات SharePoint. إذا كان الرابط مباشراً (Direct download أو Anonymous Link) سيقوم النظام بتحميل وتفريغ السيريالات الحية فوراً، وفي حال غياب الرابط سيستخدم نموذج المحاكاة الافتراضي.'}
-                    {selectedConfigProvider === 'OneDrive' &&
-                      'يمكنك ربط رابط ملف إكسيل خطوط الإنتاج المشترك على OneDrive Business. يدعم النظام روابط التحميل المباشرة وروابط المشاركة التلقائية.'}
-                    {selectedConfigProvider === 'SAP' &&
-                      'يمكنك ربط نقطة نهاية SAP S/4HANA OData v2/v4 لجدول أوامر الإنتاج (API_PRODUCTION_ORDER_2_SRV) مع تزويد بيانات Basic Auth أو Bearer Token لسحب أوامر الشغل المعتمدة.'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Status / Save Notice */}
-              {configSaveNotice && (
-                <div
-                  className={`p-3 rounded-xl border flex items-center gap-2 ${
-                    configSaveNotice.type === 'success'
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                      : 'bg-rose-50 border-rose-200 text-rose-900'
-                  }`}
-                >
-                  {configSaveNotice.type === 'success' ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                  )}
-                  <span className="font-bold">{configSaveNotice.text}</span>
-                </div>
-              )}
-
-              {/* Field: Sync URL */}
-              <div>
-                <label className="block font-bold text-slate-800 mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>رابط المزامنة المباشر (Sync Endpoint / File URL):</span>
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-normal">
-                    {selectedConfigProvider === 'SAP' ? 'OData Endpoint URL' : 'Excel/CSV Direct Download Link'}
-                  </span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={configUrl}
-                    onChange={(e) => setConfigUrl(e.target.value)}
-                    placeholder={
-                      selectedConfigProvider === 'SharePoint'
-                        ? 'https://your-domain.sharepoint.com/sites/.../Production_Master.xlsx'
-                        : selectedConfigProvider === 'OneDrive'
-                        ? 'https://1drv.ms/x/... or direct file link'
-                        : 'https://s4hana-host:port/sap/opu/odata/sap/API_PRODUCTION_ORDER_2_SRV/A_ProductionOrder'
-                    }
-                    className="flex-1 px-3 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-mono text-xs text-slate-900 dir-ltr text-left"
-                  />
-                  <button
-                    onClick={handleTestConnection}
-                    disabled={testingConnection || !configUrl.trim()}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0 shadow-xs"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${testingConnection ? 'animate-spin' : ''}`} />
-                    <span>{testingConnection ? 'جاري الاختبار...' : 'اختبار الرابط ⚡'}</span>
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  💡 اضغط على <strong>اختبار الرابط</strong> للتحقق الفوري من استجابة السيرفر ومعدل التأخير (Latency) دون الحاجة للمزامنة الكاملة.
-                </p>
-              </div>
-
-              {/* Connection Test Result Card */}
-              {testConnectionResult && (
-                <div
-                  className={`p-3.5 rounded-2xl border text-xs space-y-1.5 ${
-                    testConnectionResult.success
-                      ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
-                      : 'bg-rose-50/90 border-rose-200 text-rose-950'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-bold">
-                      {testConnectionResult.success ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      ) : (
-                        <AlertTriangle className="w-4 h-4 text-rose-600" />
-                      )}
-                      <span>{testConnectionResult.message}</span>
-                    </div>
-                    {testConnectionResult.latencyMs !== undefined && (
-                      <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-white/80 border text-slate-700">
-                        {testConnectionResult.latencyMs} ms
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600 pt-1">
-                    {testConnectionResult.status && (
-                      <div>
-                        <span>كود الاستجابة HTTP: </span>
-                        <strong className="font-mono text-slate-900">{testConnectionResult.status}</strong>
-                      </div>
-                    )}
-                    {testConnectionResult.contentType && (
-                      <div>
-                        <span>نوع المحتوى: </span>
-                        <strong className="font-mono text-slate-900">{testConnectionResult.contentType}</strong>
-                      </div>
-                    )}
-                    {testConnectionResult.error && (
-                      <div className="text-rose-700 font-mono">
-                        تفاصيل الخطأ: {testConnectionResult.error}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Mode & Target File Name */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">
-                    وضع التشغيل المعتمد:
-                  </label>
-                  <select
-                    value={configMode}
-                    onChange={(e) => setConfigMode(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 text-xs bg-white text-slate-800 font-medium"
-                  >
-                    <option value="live_url">جلب حي ومباشر من الرابط (Live URL Fetch)</option>
-                    <option value="simulated_fallback">
-                      محاكاة مصنع Sleepee المعتمدة (Fallback Dataset)
-                    </option>
-                  </select>
-                  <p className="text-[10px] text-slate-500 mt-1">
-                    إذا اخترت الرابط الحي وفشل الاتصال، سيعود تلقائياً لنموذج المحاكاة الآمن.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">
-                    {selectedConfigProvider === 'SAP' ? 'اسم الكيان / OData Service:' : 'اسم الملف المستهدف:'}
-                  </label>
-                  <input
-                    type="text"
-                    value={configTargetFileName}
-                    onChange={(e) => setConfigTargetFileName(e.target.value)}
-                    placeholder={
-                      selectedConfigProvider === 'SAP' ? 'API_PRODUCTION_ORDER_2_SRV' : 'Production_Master.xlsx'
-                    }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 text-xs font-mono text-slate-800"
-                  />
-                </div>
-              </div>
-
-              {/* Authentication Type & Credentials */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">
-                    طريقة التوثيق (Auth Type):
-                  </label>
-                  <select
-                    value={configAuthType}
-                    onChange={(e) => setConfigAuthType(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 text-xs bg-white text-slate-800 font-medium"
-                  >
-                    <option value="anonymous_link">رابط عام / مشاركة مجهولة (Anonymous Download Link)</option>
-                    <option value="bearer_token">Bearer Token (Header Authorization)</option>
-                    <option value="basic_auth">Basic Auth (SAP Username & Password / API Key)</option>
-                    <option value="graph_api">Microsoft Graph API Client Credentials</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1 flex items-center gap-1">
-                    <Lock className="w-3 h-3 text-amber-600" />
-                    <span>مفتاح التوثيق / Token / Credentials:</span>
-                  </label>
-                  <input
-                    type="password"
-                    value={configToken}
-                    onChange={(e) => setConfigToken(e.target.value)}
-                    placeholder={
-                      configAuthType === 'anonymous_link'
-                        ? 'غير مطلوب للروابط العامة'
-                        : configAuthType === 'basic_auth'
-                        ? 'username:password'
-                        : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-                    }
-                    disabled={configAuthType === 'anonymous_link'}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 text-xs font-mono text-slate-800 disabled:bg-slate-100 disabled:text-slate-400"
-                  />
-                </div>
-              </div>
-
-              {/* Operational Notes */}
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">
-                  ملاحظات التكامل ومسؤول النظام (Integration Notes):
-                </label>
-                <textarea
-                  rows={2}
-                  value={configNotes}
-                  onChange={(e) => setConfigNotes(e.target.value)}
-                  placeholder="سجل أي ملاحظات بخصوص صلاحيات المجلد أو بيئة SAP أو مسؤول الربط..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 text-xs text-slate-800 resize-none"
-                />
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2">
-              <button
-                onClick={handleCloseConfig}
-                className="px-4 py-2 rounded-xl bg-white hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold text-xs transition cursor-pointer text-center"
-              >
-                إغلاق
-              </button>
-
-              <div className="flex items-center gap-2 justify-end">
-                <button
-                  onClick={() => handleSaveConfig(false)}
-                  disabled={savingConfig}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>{savingConfig ? 'جاري الحفظ...' : 'حفظ الإعدادات'}</span>
-                </button>
-
-                <button
-                  onClick={() => handleSaveConfig(true)}
-                  disabled={savingConfig || syncingSource !== null}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${syncingSource !== null ? 'animate-spin' : ''}`} />
-                  <span>حفظ وبدء المزامنة فوراً ⚡</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

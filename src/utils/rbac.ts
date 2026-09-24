@@ -29,17 +29,18 @@ export interface RoleConfig {
 }
 
 export const ALL_SYSTEM_SCREENS: RoleScreenInfo[] = [
-  { id: 'executive', name: 'لوحة القيادة التنفيذية (Executive Dashboard)', category: 'الإدارة العليا' },
-  { id: 'dashboard', name: 'لوحة المؤشرات العامة (KPI Dashboard)', category: 'تقارير ورؤى' },
-  { id: 'analytics_center', name: 'مركز التحليلات المؤسسية وذكاء الأعمال (Enterprise Analytics & BI)', category: 'الإدارة العليا' },
+  { id: 'executive', name: 'لوحة القيادة التنفيذية', category: 'الإدارة العليا' },
+  { id: 'dashboard', name: 'مركز مؤشرات الأداء', category: 'تقارير ورؤى' },
+  { id: 'analytics_center', name: 'مركز التحليلات المؤسسية', category: 'الإدارة العليا' },
   { id: 'products', name: 'إدارة المنتجات والمواصفات والموديلات', category: 'العمليات' },
-  { id: 'production', name: 'خطوط الإنتاج ومزامنة أوامر التشغيل والباركود', category: 'الإنتاج' },
+  { id: 'production', name: 'مركز تكامل الإنتاج', category: 'الإنتاج' },
+  { id: 'traceability', name: 'مركز الطباعة والتتبع', category: 'الإنتاج والتشغيل' },
   { id: 'quality', name: 'رقابة الجودة وسجل المعاينات الفنية والهبوط', category: 'الجودة' },
   { id: 'customer360', name: 'خدمة العملاء 360 والضمان والمطالبات', category: 'خدمة العملاء' },
-  { id: 'rbac', name: 'إدارة الصلاحيات والأدوار المصنعية (RBAC Engine)', category: 'الإدارة العليا' },
+  { id: 'rbac', name: 'إدارة الصلاحيات والأدوار المصنعية', category: 'الإدارة العليا' },
   { id: 'schema', name: 'مخطط قواعد بيانات Cloud SQL PostgreSQL المعتمد', category: 'الإدارة العليا' },
   { id: 'powerbi', name: 'لوحة تحليلات Power BI للأداء التشغيلي', category: 'تقارير ورؤى' },
-  { id: 'db_center', name: 'مركز إدارة وقوة بيانات النظام (Database Management Center)', category: 'الإدارة العليا' },
+  { id: 'db_center', name: 'مركز إدارة وقوة بيانات النظام', category: 'الإدارة العليا' },
 ];
 
 export const AUTHORIZED_SYSTEM_USERS: AppUser[] = [
@@ -137,7 +138,7 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
       'Reports (التقارير المتقدمة وتصدير البيانات)',
       'System settings (إعدادات النظام والتهيئة)',
     ],
-    allowedTabs: ['executive', 'dashboard', 'analytics_center', 'products', 'production', 'quality', 'customer360', 'rbac', 'schema', 'powerbi', 'db_center'],
+    allowedTabs: ['executive', 'dashboard', 'analytics_center', 'products', 'production', 'traceability', 'quality', 'customer360', 'rbac', 'schema', 'powerbi', 'db_center'],
     defaultTab: 'executive',
     detailed: {
       screensAllowed: ALL_SYSTEM_SCREENS,
@@ -163,7 +164,7 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
       'Customer Service KPIs (رضا العملاء وأوقات الاستجابة والإغلاق)',
       'Executive export (تصدير التقارير التنفيذية PDF / Excel / CSV)',
     ],
-    allowedTabs: ['executive', 'dashboard', 'analytics_center', 'products', 'quality', 'customer360', 'powerbi', 'db_center'],
+    allowedTabs: ['executive', 'dashboard', 'analytics_center', 'products', 'traceability', 'quality', 'customer360', 'powerbi', 'db_center'],
     defaultTab: 'executive',
     detailed: {
       screensAllowed: ALL_SYSTEM_SCREENS,
@@ -215,7 +216,7 @@ export const ROLES_CONFIG: Record<UserRole, RoleConfig> = {
       'Production reports (تقارير الإنتاج ومعدلات الإنجاز)',
       'Read-only warranty access (اطلاع فقط على وثائق الضمان)',
     ],
-    allowedTabs: ['executive', 'dashboard', 'analytics_center', 'production', 'products', 'customer360', 'db_center'],
+    allowedTabs: ['executive', 'dashboard', 'analytics_center', 'production', 'traceability', 'products', 'customer360', 'db_center'],
     defaultTab: 'executive',
     detailed: {
       screensAllowed: ALL_SYSTEM_SCREENS.filter((s) => ['executive', 'production', 'products', 'dashboard', 'customer360', 'db_center'].includes(s.id)),
