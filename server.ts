@@ -102,15 +102,23 @@ app.get('/api/health/database', async (req, res) => {
 });
 
 // Download/View PostgreSQL DDL Schema
-app.get('/api/db/schema', (req, res) => {
+app.get(['/api/db/schema', '/api/schema-sql', '/api/schema'], (req, res) => {
   try {
     const schemaPath = path.join(process.cwd(), 'server', 'db', 'schema.sql');
     if (fs.existsSync(schemaPath)) {
       const sql = fs.readFileSync(schemaPath, 'utf-8');
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.send(sql);
+      if (req.path === '/api/schema-sql' || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+        res.json({ success: true, sql });
+      } else {
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.send(sql);
+      }
     } else {
-      res.status(404).send('Schema file not found');
+      if (req.path === '/api/schema-sql' || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+        res.status(404).json({ success: false, error: 'Schema file not found' });
+      } else {
+        res.status(404).send('Schema file not found');
+      }
     }
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -760,13 +768,51 @@ app.get('/api/production-orders/:id', (req, res) => {
 
 app.post('/api/production-orders', (req, res) => {
   try {
-    const { mattressModel, mattressSize, warrantyYears, productionQuantity, productionLine, productionDate, batchNumber } = req.body;
-    if (!mattressModel || !productionQuantity) {
-      return res.status(400).json({ error: 'اسم الموديل والكمية مطلوبان' });
+    const {
+      categoryId,
+      brandId,
+      modelId,
+      manufacturingSystemId,
+      productId,
+      productionQuantity,
+      productionDate,
+      notes,
+      batchNumber,
+      mattressModel,
+      mattressSize,
+      warrantyYears,
+      productionLine,
+      sourceType,
+      sourceReference,
+    } = req.body;
+
+    if (!productionQuantity) {
+      return res.status(400).json({ error: 'الكمية المطلوبة حقل إلزامي' });
     }
+
+    if (!mattressModel && (!categoryId || !brandId || !modelId || !manufacturingSystemId)) {
+      return res.status(400).json({ error: 'الفئة، العلامة التجارية، الموديل، ونظام التصنيع حقول إلزامية من واقع سجلات الماستر' });
+    }
+
     const actor = req.principal ? authenticatedActor(req) : 'المشغل';
     const newOrder = repository.createProductionOrder(
-      { mattressModel, mattressSize, warrantyYears, productionQuantity, productionLine, productionDate, batchNumber },
+      {
+        categoryId,
+        brandId,
+        modelId,
+        manufacturingSystemId,
+        productId,
+        productionQuantity,
+        productionDate,
+        notes,
+        batchNumber,
+        mattressModel,
+        mattressSize,
+        warrantyYears,
+        productionLine,
+        sourceType,
+        sourceReference,
+      },
       actor
     );
     res.status(201).json({ success: true, order: newOrder });
@@ -938,6 +984,263 @@ app.get('/api/products/product-360/:identifier', (req, res) => {
   try {
     const data360 = repository.getProduct360(req.params.identifier);
     res.json(data360);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// PHASE 9: PRODUCT MASTER & OPERATIONS FOUNDATION API
+// ----------------------------------------------------
+
+// 1. Product Categories
+app.get('/api/product-categories', (req, res) => {
+  try {
+    const categories = repository.getProductCategories();
+    res.json(categories);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/product-categories', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const created = repository.addProductCategory(req.body, actor);
+    res.status(201).json({ success: true, category: created });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/product-categories/:id', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const updated = repository.updateProductCategory(req.params.id, req.body, actor);
+    res.json({ success: true, category: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.patch('/api/product-categories/:id/status', (req, res) => {
+  try {
+    const { status } = req.body;
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const updated = repository.setProductCategoryStatus(req.params.id, status, actor);
+    res.json({ success: true, category: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 2. Brands
+app.get('/api/brands', (req, res) => {
+  try {
+    const brands = repository.getBrands();
+    res.json(brands);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/brands', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const created = repository.addBrand(req.body, actor);
+    res.status(201).json({ success: true, brand: created });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/brands/:id', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const updated = repository.updateBrand(req.params.id, req.body, actor);
+    res.json({ success: true, brand: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.patch('/api/brands/:id/status', (req, res) => {
+  try {
+    const { status } = req.body;
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const updated = repository.setBrandStatus(req.params.id, status, actor);
+    res.json({ success: true, brand: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 3. Models (Linked to Brand only)
+app.get('/api/models', (req, res) => {
+  try {
+    const brandId = req.query.brandId as string;
+    const models = repository.getModels(brandId);
+    res.json(models);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/models', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const created = repository.addModel(req.body, actor);
+    res.status(201).json({ success: true, model: created });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/models/:id', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const updated = repository.updateModel(req.params.id, req.body, actor);
+    res.json({ success: true, model: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.patch('/api/models/:id/status', (req, res) => {
+  try {
+    const { status } = req.body;
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const updated = repository.setModelStatus(req.params.id, status, actor);
+    res.json({ success: true, model: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 4. Manufacturing Systems
+app.get('/api/manufacturing-systems', (req, res) => {
+  try {
+    const systems = repository.getManufacturingSystems();
+    res.json(systems);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/manufacturing-systems', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const created = repository.addManufacturingSystem(req.body, actor);
+    res.status(201).json({ success: true, system: created });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/manufacturing-systems/:id', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const updated = repository.updateManufacturingSystem(req.params.id, req.body, actor);
+    res.json({ success: true, system: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.patch('/api/manufacturing-systems/:id/status', (req, res) => {
+  try {
+    const { status } = req.body;
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const updated = repository.setManufacturingSystemStatus(req.params.id, status, actor);
+    res.json({ success: true, system: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 5. Product Master Database
+app.get('/api/product-master', (req, res) => {
+  try {
+    const filters = {
+      categoryId: req.query.categoryId as string,
+      brandId: req.query.brandId as string,
+      modelId: req.query.modelId as string,
+      systemId: req.query.systemId as string,
+      search: req.query.search as string,
+    };
+    const list = repository.getProductMasterRecords(filters);
+    res.json(list);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/product-master/:id', (req, res) => {
+  try {
+    const record = repository.getProductMasterById(req.params.id);
+    if (!record) return res.status(404).json({ error: 'سجل المنتج الماستر غير موجود' });
+    res.json(record);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/product-master', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const created = repository.addProductMasterRecord(req.body, actor);
+    res.status(201).json({ success: true, productMaster: created });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/product-master/:id', (req, res) => {
+  try {
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const updated = repository.updateProductMasterRecord(req.params.id, req.body, actor);
+    res.json({ success: true, productMaster: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.patch('/api/product-master/:id/status', (req, res) => {
+  try {
+    const { status } = req.body;
+    const actor = req.principal ? authenticatedActor(req) : 'مدير النظام';
+    const updated = repository.setProductMasterStatus(req.params.id, status, actor);
+    res.json({ success: true, productMaster: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 6. Future BOM Architecture & Materials (API Ready)
+app.get('/api/bom-headers', (req, res) => {
+  try {
+    const productId = req.query.productId as string;
+    const headers = repository.getBOMHeaders(productId);
+    res.json(headers);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/bom-components', (req, res) => {
+  try {
+    const bomHeaderId = req.query.bomHeaderId as string;
+    const components = repository.getBOMComponents(bomHeaderId);
+    res.json(components);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/material-master', (req, res) => {
+  try {
+    const materials = repository.getMaterialMaster();
+    res.json(materials);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

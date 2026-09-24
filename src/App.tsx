@@ -8,14 +8,45 @@ import { AUTHORIZED_SYSTEM_USERS } from './utils/rbac';
 import { seedInitialFirestoreData } from './firebase';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'warranty' | 'products' | 'admin' | string>('warranty');
-  const [adminInitialTab, setAdminInitialTab] = useState<
-    'executive' | 'dashboard' | 'production' | 'quality' | 'customer360' | 'claims' | 'replacements' | 'rbac' | 'warranties' | 'products' | 'logs' | 'schema' | 'powerbi' | undefined
-  >(undefined);
+  const [activeTab, setActiveTab] = useState<'warranty' | 'products' | 'admin' | string>('admin');
   const [currentActivation, setCurrentActivation] = useState<WarrantyActivation | null>(null);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [verifyInitialCode, setVerifyInitialCode] = useState<string>('');
   const [isOmniSearchOpen, setIsOmniSearchOpen] = useState(false);
+
+  // Global Dark Mode state
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('sleepee_theme') === 'dark';
+    } catch (e) {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('sleepee_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('sleepee_theme', 'light');
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('sleepee_theme', next ? 'dark' : 'light');
+        if (currentUser?.id) {
+          localStorage.setItem(`sleepee_theme_${currentUser.id}`, next ? 'dark' : 'light');
+        }
+      } catch (e) {
+        // ignore
+      }
+      return next;
+    });
+  };
 
   // Synchronized active user across the entire application (Default: USR-03 م. حسام سليمان)
   const [currentUser, setCurrentUser] = useState<AppUser>(() => {
@@ -28,7 +59,6 @@ export default function App() {
     } catch (e) {
       // ignore
     }
-    // Default to USR-03 (م. حسام سليمان)
     return AUTHORIZED_SYSTEM_USERS.find((u) => u.id === 'USR-03') || AUTHORIZED_SYSTEM_USERS[0];
   });
 
@@ -60,6 +90,12 @@ export default function App() {
     setCurrentUser(user);
     try {
       localStorage.setItem('sleephigh_current_user_id', user.id);
+      const userTheme = localStorage.getItem(`sleepee_theme_${user.id}`) || localStorage.getItem('sleepee_theme');
+      if (userTheme === 'dark') {
+        setDarkMode(true);
+      } else if (userTheme === 'light') {
+        setDarkMode(false);
+      }
     } catch (e) {
       // ignore
     }
@@ -99,14 +135,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleViewCertificate = (activation: WarrantyActivation, product: Product) => {
-    setCurrentActivation(activation);
-    setCurrentProduct(product);
-    setVerifyInitialCode(activation.warranty_id || product.serial_number);
-    setActiveTab('warranty');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const handleOmniSearchResult = async (type: 'product' | 'warranty' | 'claim' | 'replacement', item: any) => {
     if (type === 'warranty') {
       setVerifyInitialCode(item.warranty_id);
@@ -115,49 +143,38 @@ export default function App() {
       setVerifyInitialCode(item.serial_number);
       setActiveTab('warranty');
     } else if (type === 'claim' || type === 'replacement') {
-      setAdminInitialTab('customer360');
       setActiveTab('admin');
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F5F5] text-[#111111] font-sans selection:bg-[#D62828] selection:text-white">
+    <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-[#F5F5F5] text-[#111111]'} font-sans selection:bg-[#E53935] selection:text-white transition-colors duration-200`}>
       {/* Top Header */}
       <Header
         activeTab={activeTab}
-        setActiveTab={(tab) => {
-          if (tab === 'products') {
-            setAdminInitialTab('products');
-            setActiveTab('admin');
-          } else {
-            setActiveTab(tab);
-          }
-        }}
+        setActiveTab={setActiveTab}
         hasActiveCertificate={!!currentActivation}
         onOpenOmniSearch={() => setIsOmniSearchOpen(true)}
         currentUser={currentUser}
         onSelectUser={handleSelectUser}
         systemUsers={systemUsers}
+        darkMode={darkMode}
+        onToggleDarkMode={toggleDarkMode}
       />
 
-      {/* Main Body Content */}
-      <main className="flex-1">
+      {/* Main Body Content - Standardized width max-w-[1400px] */}
+      <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-2">
         {(activeTab === 'warranty' || activeTab === 'customer' || activeTab === 'certificate' || activeTab === 'verify') && (
           <UnifiedWarrantyPortal
             key={verifyInitialCode}
             initialSerial={verifyInitialCode}
             currentUser={currentUser}
-            onNavigateToAdmin={() => {
-              setAdminInitialTab('dashboard');
-              setActiveTab('admin');
-            }}
+            onNavigateToAdmin={() => setActiveTab('admin')}
           />
         )}
 
         {(activeTab === 'admin' || activeTab === 'products') && (
           <AdminPortal
-            onViewCertificate={handleViewCertificate}
-            initialAdminTab={activeTab === 'products' ? 'products' : adminInitialTab}
             currentUser={currentUser}
             onSelectUser={handleSelectUser}
             systemUsers={systemUsers}
@@ -173,19 +190,19 @@ export default function App() {
         onSelectResult={handleOmniSearchResult}
       />
 
-      {/* Footer (Hidden on print) */}
-      <footer className="no-print bg-[#111111] text-white border-t-2 border-[#D62828] py-6 mt-16 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-500">
-            <div>
-              جميع الحقوق محفوظة © 2026 سليبي (Sleepee Mattresses).
+      {/* Unified Corporate Footer */}
+      <footer className="no-print bg-[#08152F] dark:bg-slate-950 text-slate-300 border-t-2 border-[#E53935] py-4 mt-8 shadow-md">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-center sm:text-right">
+              <span className="font-bold text-white text-sm">جميع الحقوق محفوظة © 2026 هاي سليب</span>
+              <span className="hidden sm:inline text-slate-500">•</span>
+              <span className="text-slate-400 font-medium">Sleepee Warranty & Manufacturing Platform</span>
             </div>
-            <div className="flex items-center gap-4 text-neutral-400">
-              <span className="hover:text-[#D62828] transition cursor-pointer">سياسة الضمان والاستبدال</span>
-              <span>•</span>
-              <span className="hover:text-[#D62828] transition cursor-pointer">تعليمات الحفاظ على المرتبة</span>
-              <span>•</span>
-              <span className="text-[#D62828] font-bold">الخط الساخن: 19707</span>
+            <div className="flex items-center gap-3 text-slate-400 text-[11px]">
+              <span className="hidden md:inline text-slate-300">الشركة العربية لصناعة مراتب السوست والإسفنج</span>
+              <span className="hidden md:inline text-slate-600">•</span>
+              <a href="tel:19707" className="text-[#E53935] font-bold font-mono hover:underline">الخط الساخن: 19707</a>
             </div>
           </div>
         </div>

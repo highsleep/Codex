@@ -1300,6 +1300,123 @@ export class PostgresApplicationRepository implements IApplicationRepository {
     return this.memDb.getProduct360(identifier);
   }
 
+  // ==================== Product Master Repository ====================
+  public getProductCategories() {
+    return this.memDb.getProductCategories();
+  }
+
+  public getProductCategoryById(id: string) {
+    return this.memDb.getProductCategoryById(id);
+  }
+
+  public addProductCategory(data: any, user?: string) {
+    return this.memDb.addProductCategory(data, user);
+  }
+
+  public updateProductCategory(id: string, updates: any, user?: string) {
+    return this.memDb.updateProductCategory(id, updates, user);
+  }
+
+  public setProductCategoryStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user?: string) {
+    return this.memDb.setProductCategoryStatus(id, status, user);
+  }
+
+  public getBrands() {
+    return this.memDb.getBrands();
+  }
+
+  public getBrandById(id: string) {
+    return this.memDb.getBrandById(id);
+  }
+
+  public addBrand(data: any, user?: string) {
+    return this.memDb.addBrand(data, user);
+  }
+
+  public updateBrand(id: string, updates: any, user?: string) {
+    return this.memDb.updateBrand(id, updates, user);
+  }
+
+  public setBrandStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user?: string) {
+    return this.memDb.setBrandStatus(id, status, user);
+  }
+
+  public getModels(brandId?: string) {
+    return this.memDb.getModels(brandId);
+  }
+
+  public getModelById(id: string) {
+    return this.memDb.getModelById(id);
+  }
+
+  public addModel(data: any, user?: string) {
+    return this.memDb.addModel(data, user);
+  }
+
+  public updateModel(id: string, updates: any, user?: string) {
+    return this.memDb.updateModel(id, updates, user);
+  }
+
+  public setModelStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user?: string) {
+    return this.memDb.setModelStatus(id, status, user);
+  }
+
+  public getManufacturingSystems() {
+    return this.memDb.getManufacturingSystems();
+  }
+
+  public getManufacturingSystemById(id: string) {
+    return this.memDb.getManufacturingSystemById(id);
+  }
+
+  public addManufacturingSystem(data: any, user?: string) {
+    return this.memDb.addManufacturingSystem(data, user);
+  }
+
+  public updateManufacturingSystem(id: string, updates: any, user?: string) {
+    return this.memDb.updateManufacturingSystem(id, updates, user);
+  }
+
+  public setManufacturingSystemStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user?: string) {
+    return this.memDb.setManufacturingSystemStatus(id, status, user);
+  }
+
+  public getProductMasterRecords(filters?: any) {
+    return this.memDb.getProductMasterRecords(filters);
+  }
+
+  public getProductMasterById(idOrProductId: string) {
+    return this.memDb.getProductMasterById(idOrProductId);
+  }
+
+  public findOrCreateProductMaster(params: any) {
+    return this.memDb.findOrCreateProductMaster(params);
+  }
+
+  public addProductMasterRecord(data: any, user?: string) {
+    return this.memDb.addProductMasterRecord(data, user);
+  }
+
+  public updateProductMasterRecord(id: string, updates: any, user?: string) {
+    return this.memDb.updateProductMasterRecord(id, updates, user);
+  }
+
+  public setProductMasterStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user?: string) {
+    return this.memDb.setProductMasterStatus(id, status, user);
+  }
+
+  public getBOMHeaders(productId?: string) {
+    return this.memDb.getBOMHeaders(productId);
+  }
+
+  public getBOMComponents(bomHeaderId?: string) {
+    return this.memDb.getBOMComponents(bomHeaderId);
+  }
+
+  public getMaterialMaster() {
+    return this.memDb.getMaterialMaster();
+  }
+
   public persist() {
     return this.memDb.persist();
   }

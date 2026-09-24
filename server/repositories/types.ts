@@ -43,6 +43,14 @@ import type {
   ScrapLog,
   CustomerFeedback,
   WarrantyCost,
+  ProductCategoryMaster,
+  BrandMaster,
+  ModelMaster,
+  ManufacturingSystemMaster,
+  ProductMasterRecord,
+  BOMHeader,
+  BOMComponent,
+  MaterialMaster,
 } from '../db/index.js';
 
 // Re-export domain types for consumers of the repository boundary
@@ -84,6 +92,14 @@ export type {
   ScrapLog,
   CustomerFeedback,
   WarrantyCost,
+  ProductCategoryMaster,
+  BrandMaster,
+  ModelMaster,
+  ManufacturingSystemMaster,
+  ProductMasterRecord,
+  BOMHeader,
+  BOMComponent,
+  MaterialMaster,
 };
 
 /**

@@ -415,22 +415,22 @@ export class ProductionDataProvider {
       }
     }
 
-    // Fallback or Simulated Mode
-    const spData = SharePointProvider.fetchSharePointMasterData();
-    const result = await this.executeImport(
-      'SharePoint',
-      SharePointProvider.SYNC_FILE_NAME,
-      spData.records,
-      performedBy,
-      spData.fileHash
-    );
-
+    // Fallback Mode - No fake order generation per Phase 8D instructions
     return {
-      ...result,
-      sourceOrigin: 'نموذج محاكاة الإنتاج التراكمي (Production Master Model)',
-      urlUsed: targetUrl || 'لم يتم تحديد رابط - وضع المحاكاة النشط',
-      syncNote:
-        'المصدر الحالي: تم الاستيراد عبر محاكي خطوط الإنتاج السحابي المتوافق، لعدم توفر ربط حي مع Microsoft Graph أو رابط ملف مباشر مصرح به.',
+      importId: `SYNC_${Date.now()}`,
+      sourceType: 'SharePoint',
+      fileName: 'SharePoint_Config',
+      totalRead: 0,
+      importedCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+      executionTimeMs: 10,
+      status: 'FAILED',
+      errors: ['تكامل SharePoint غير متصل - ميزة مخطط لها (PLANNED FEATURE). يرجى ضبط الرابط المباشر وتصريح Microsoft Graph API.'],
+      sampleImported: [],
+      sourceOrigin: 'PLANNED_FEATURE (غير متصل)',
+      urlUsed: targetUrl || 'لم يتم ضبط الرابط',
+      syncNote: 'ميزة مخطط لها: لا يوجد اتصال حي بمكتبة مستندات SharePoint حالياً.',
     };
   }
 
@@ -523,22 +523,22 @@ export class ProductionDataProvider {
       }
     }
 
-    // Fallback or Simulated Mode
-    const sapOrders = SAPProvider.fetchProductionOrders();
-    const result = await this.executeImport(
-      'SAP',
-      'SAP_S4HANA_ProductionOrder_OData',
-      sapOrders,
-      performedBy,
-      `SAP_${Date.now()}`
-    );
-
+    // Fallback Mode - No fake order generation per Phase 8D instructions
     return {
-      ...result,
-      sourceOrigin: 'كتالوج محاكاة أوامر شغل SAP S/4HANA المعتمدة',
-      urlUsed: targetUrl || 'لم يتم تحديد نقطة نهاية حية - وضع المحاكاة النشط',
-      syncNote:
-        'المصدر الحالي: تم سحب السجلات من كتالوج موديلات ومواصفات SAP المهيأ، تمهيداً للربط مع OData Gateway مستقبلاً.',
+      importId: `SYNC_${Date.now()}`,
+      sourceType: 'SAP',
+      fileName: 'SAP_S4HANA_Config',
+      totalRead: 0,
+      importedCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+      executionTimeMs: 10,
+      status: 'FAILED',
+      errors: ['تكامل SAP غير متصل - ميزة مخطط لها (PLANNED FEATURE). يرجى ضبط خادم OData Gateway واختبار الاتصال أولاً.'],
+      sampleImported: [],
+      sourceOrigin: 'PLANNED_FEATURE (غير متصل)',
+      urlUsed: targetUrl || 'لم يتم ضبط الرابط',
+      syncNote: 'ميزة مخطط لها: لا يوجد استجابة حية من خادم SAP S/4HANA حالياً.',
     };
   }
 }

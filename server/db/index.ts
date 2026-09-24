@@ -86,6 +86,16 @@ export interface Product {
   batch_no?: string;
   image_url?: string;
   created_at?: string;
+  // Phase 9 Master Data linkages
+  product_id?: string;
+  category_id?: string;
+  category_name?: string;
+  brand_id?: string;
+  brand_name?: string;
+  model_id?: string;
+  manufacturing_system_id?: string;
+  manufacturing_system_name?: string;
+  internal_product_code?: string;
   production_status?: 'Produced' | 'Quality Approved' | 'Packed' | 'Shipped' | 'Delivered';
   source_system?: 'Excel' | 'CSV' | 'SharePoint' | 'OneDrive' | 'SAP' | 'Manual';
   sap_production_order?: string;
@@ -96,6 +106,108 @@ export interface Product {
   shift?: string;
   operator?: string;
   remarks?: string;
+}
+
+// ----------------------------------------------------
+// PHASE 9: PRODUCT MASTER & OPERATIONS FOUNDATION ARCHITECTURE
+// ----------------------------------------------------
+
+export interface ProductCategoryMaster {
+  id: string;
+  code: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_at: string;
+  updated_at: string;
+  notes?: string;
+}
+
+export interface BrandMaster {
+  id: string;
+  code: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_at: string;
+  updated_at: string;
+  notes?: string;
+}
+
+export interface ModelMaster {
+  id: string;
+  brand_id: string;
+  code: string;
+  name: string;
+  warranty_years?: number;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_at: string;
+  updated_at: string;
+  notes?: string;
+}
+
+export interface ManufacturingSystemMaster {
+  id: string;
+  code: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_at: string;
+  updated_at: string;
+  notes?: string;
+}
+
+export interface ProductMasterRecord {
+  id: string;
+  product_id: string;
+  category_id: string;
+  brand_id: string;
+  model_id: string;
+  manufacturing_system_id: string;
+  internal_product_code: string;
+  sap_material_code?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_date: string;
+  updated_date: string;
+  notes?: string;
+  category_name?: string;
+  brand_name?: string;
+  model_name?: string;
+  manufacturing_system_name?: string;
+  default_size?: string;
+  warranty_years?: number;
+  bom_header_id?: string;
+  bom_version?: string;
+  bom_status?: 'DRAFT' | 'APPROVED' | 'NOT_CONFIGURED';
+}
+
+export interface BOMHeader {
+  id: string;
+  product_id: string;
+  version: string;
+  status: 'Active' | 'Draft' | 'Archived';
+  sap_bom_number?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BOMComponent {
+  id: string;
+  bom_header_id: string;
+  material_code: string;
+  material_name: string;
+  quantity: number;
+  unit_of_measure: string;
+  scrap_factor_percent: number;
+  sap_component_code?: string;
+  notes?: string;
+}
+
+export interface MaterialMaster {
+  id: string;
+  code: string;
+  name: string;
+  category: 'RAW_MATERIAL' | 'SEMI_FINISHED' | 'PACKAGING' | 'CHEMICALS';
+  standard_cost?: number;
+  sap_material_code?: string;
+  status: 'Active' | 'Inactive';
 }
 
 export interface ProductModel {
@@ -194,17 +306,36 @@ export interface ZebraLabelData {
   zpl_code: string;
 }
 
+export type ProductionOrderSource = 'MANUAL' | 'EXCEL' | 'SAP' | 'SHAREPOINT';
+
 export interface ProductionOrder {
   id: string;
   orderNumber: string;
   batchNumber: string;
-  status: 'Draft' | 'Approved' | 'Serial Generated' | 'Printed' | 'Completed' | 'Closed' | 'Archived';
+  status: 'Draft' | 'Approved' | 'Ready For Serials' | 'Serial Generated' | 'Printed' | 'Completed' | 'Closed' | 'Archived' | 'Cancelled';
   productionDate: string;
+  
+  // Phase 9 Master Data linkages
+  productId?: string;
+  categoryId?: string;
+  categoryName?: string;
+  brandId?: string;
+  brandName?: string;
+  modelId?: string;
+  modelName?: string;
+  manufacturingSystemId?: string;
+  manufacturingSystemName?: string;
+  internalProductCode?: string;
+  sapMaterialCode?: string;
+
   mattressModel: string;
   mattressSize?: string;
   warrantyYears?: number;
   productionQuantity: number;
   productionLine?: string;
+  notes?: string;
+  sourceType: ProductionOrderSource;
+  sourceReference?: string;
   createdBy: string;
   createdAt: string;
   modifiedBy?: string;
@@ -212,6 +343,8 @@ export interface ProductionOrder {
   approvalUser?: string;
   approvalDate?: string;
   statusHistory?: Array<{ status: string; date: string; user: string; notes?: string }>;
+  generatedSerials?: string[];
+  printedCount?: number;
 }
 
 export interface Serial {
@@ -223,6 +356,13 @@ export interface Serial {
   size?: string;
   productionDate?: string;
   warrantyYears?: number;
+  // Phase 9 Master Data linkages
+  productId?: string;
+  categoryId?: string;
+  brandId?: string;
+  modelId?: string;
+  manufacturingSystemId?: string;
+  internalProductCode?: string;
   status: 'Generated' | 'Locked' | 'Printed' | 'Shipped' | 'Cancelled' | 'Replaced';
   createdAt: string;
   createdBy: string;
@@ -505,6 +645,15 @@ interface DatabaseData {
   serials: Serial[];
   print_jobs: PrintJob[];
   audit_logs: AuditLog[];
+  // Phase 9 Master Data tables
+  product_categories: ProductCategoryMaster[];
+  brands: BrandMaster[];
+  models: ModelMaster[];
+  manufacturing_systems: ManufacturingSystemMaster[];
+  product_master: ProductMasterRecord[];
+  bom_headers?: BOMHeader[];
+  bom_components?: BOMComponent[];
+  material_master?: MaterialMaster[];
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -1359,6 +1508,292 @@ const INITIAL_ATTACHMENTS: Attachment[] = [
   },
 ];
 
+// ----------------------------------------------------
+// PHASE 9: INITIAL MASTER DATA FOUNDATIONS
+// ----------------------------------------------------
+
+export const INITIAL_PRODUCT_CATEGORIES: ProductCategoryMaster[] = [
+  { id: 'CAT-01', code: 'MATTRESS', name: 'مرتبة', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'مراتب سوست وفوم بجميع المقاسات والمواصفات' },
+  { id: 'CAT-02', code: 'PILLOW', name: 'مخدة', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'مخدات فايبر وميموري فوم ولاتكس' },
+  { id: 'CAT-03', code: 'CUSHION', name: 'خدادية', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'خداديات ديكور ودعم قطني' },
+  { id: 'CAT-04', code: 'PROTECTOR', name: 'واقي مرتبة', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'أوقية ضد السوائل والبكتيريا' },
+  { id: 'CAT-05', code: 'BED', name: 'سرير', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'قواعد وأسرة خشبية ومعدنية وفندقية' },
+  { id: 'CAT-06', code: 'ACCESSORY', name: 'إكسسوار', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'ملحقات ومستلزمات غرف النوم' },
+];
+
+export const INITIAL_BRANDS: BrandMaster[] = [
+  { id: 'BRD-01', code: 'SLEEPEE', name: 'Sleepee', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'العلامة الفاخرة الرئيسية للمصنع' },
+  { id: 'BRD-02', code: 'SH', name: 'SH', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'علامة مراتب ومفروشات إس إتش' },
+  { id: 'BRD-03', code: 'RICH_HOUSE', name: 'Rich House', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'علامة ريتش هاوس للأثاث والمفروشات' },
+  { id: 'BRD-04', code: 'COMFORT_SH', name: 'Comfort SH', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'علامة كومفورت إس إتش الطبية' },
+];
+
+export const INITIAL_MODELS: ModelMaster[] = [
+  // Brand: Sleepee (BRD-01)
+  { id: 'MOD-01', brand_id: 'BRD-01', code: 'ROYAL_POCKET', name: 'رويال بوكيت', warranty_years: 10, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'سوست منفصلة بوكيت مع طبقات راحة فندقية' },
+  { id: 'MOD-02', brand_id: 'BRD-01', code: 'SUPER_MEMORY', name: 'سوبر ميموري فوم', warranty_years: 10, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'ميموري فوم حراري يتشكل مع حركة الجسم' },
+  { id: 'MOD-03', brand_id: 'BRD-01', code: 'ORTHOPEDIC', name: 'أورثوبيديك', warranty_years: 5, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'دعم طبي للعمود الفقري ومستوى صلابة متوازن' },
+  { id: 'MOD-04', brand_id: 'BRD-01', code: 'CLOUD_PILLOW', name: 'كلاود بيلو توب', warranty_years: 10, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'طبقة علوية مدمجة لمزيد من النعومة' },
+  { id: 'MOD-05', brand_id: 'BRD-01', code: 'FIBER_CROWN', name: 'فايبر كراون', warranty_years: 3, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'مخدة فايبر هولوكون معالج ضد الحساسية' },
+  { id: 'MOD-06', brand_id: 'BRD-01', code: 'WATERPROOF_MELTON', name: 'واقي ميلتون عازل', warranty_years: 2, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'واقي ميلتون قطني مع طبقة TPU عازلة' },
+  { id: 'MOD-07', brand_id: 'BRD-01', code: 'CLASSIC_CAPITONE', name: 'سرير كابيتونيه كلاسيك', warranty_years: 5, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'شاسيه خشب زان مجفف مع تنجيد فاخر' },
+  // Brand: SH (BRD-02)
+  { id: 'MOD-08', brand_id: 'BRD-02', code: 'SH_PREMIUM', name: 'إس إتش بريميوم', warranty_years: 5, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'مرتبة متوازنة بخامات أصلية' },
+  { id: 'MOD-09', brand_id: 'BRD-02', code: 'SH_CLASSIC', name: 'إس إتش كلاسيك', warranty_years: 5, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'سوست متصلة قياسية متينة' },
+  { id: 'MOD-10', brand_id: 'BRD-02', code: 'SH_MEDICAL_PILLOW', name: 'إس إتش مخدة طبية', warranty_years: 2, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'مخدة فوم لتصحيح وضعية الرقبة' },
+  // Brand: Rich House (BRD-03)
+  { id: 'MOD-11', brand_id: 'BRD-03', code: 'RICH_GOLD', name: 'ريتش جولد', warranty_years: 10, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'مرتبة فخمة متعددة الطبقات' },
+  { id: 'MOD-12', brand_id: 'BRD-03', code: 'RICH_SOFT', name: 'ريتش سوفت', warranty_years: 7, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'إحساس فندقي فائق الليونة' },
+  // Brand: Comfort SH (BRD-04)
+  { id: 'MOD-13', brand_id: 'BRD-04', code: 'COMFORT_PLUS', name: 'كومفورت بلس', warranty_years: 5, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'عزل حركة ممتاز ونوم هادئ' },
+  { id: 'MOD-14', brand_id: 'BRD-04', code: 'COMFORT_MAX', name: 'كومفورت ماكس', warranty_years: 5, status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'كثافة عالية تتحمل الأوزان الثقيلة' },
+];
+
+export const INITIAL_MANUFACTURING_SYSTEMS: ManufacturingSystemMaster[] = [
+  { id: 'MFS-01', code: 'GERMAN', name: 'ألماني', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'تكنولوجيا السوست والماكينات الألمانية Spühl القياسية' },
+  { id: 'MFS-02', code: 'AMERICAN', name: 'أمريكي', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'النظام الأمريكي للزنبرك المستمر والتغليف المتطور' },
+  { id: 'MFS-03', code: 'OTHER', name: 'أخرى', status: 'ACTIVE', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', notes: 'أنظمة تصنيع مخصصة وهجينة ومستلزمات متفرقة' },
+];
+
+export const INITIAL_PRODUCT_MASTER: ProductMasterRecord[] = [
+  {
+    id: 'prm-1',
+    product_id: 'PRD-001',
+    category_id: 'CAT-01',
+    category_name: 'مرتبة',
+    brand_id: 'BRD-01',
+    brand_name: 'Sleepee',
+    model_id: 'MOD-01',
+    model_name: 'رويال بوكيت',
+    manufacturing_system_id: 'MFS-01',
+    manufacturing_system_name: 'ألماني',
+    internal_product_code: 'MAT-SLP-ROY-GER',
+    sap_material_code: 'SAP-MAT-1001',
+    status: 'ACTIVE',
+    default_size: '180x200x30 سم',
+    warranty_years: 10,
+    created_date: '2026-01-01T00:00:00Z',
+    updated_date: '2026-01-01T00:00:00Z',
+    notes: 'المرتبة الأكثر مبيعاً - خط الإنتاج الرئيسي',
+    bom_header_id: 'BOM-001',
+    bom_version: 'V1.0',
+    bom_status: 'APPROVED',
+  },
+  {
+    id: 'prm-2',
+    product_id: 'PRD-002',
+    category_id: 'CAT-01',
+    category_name: 'مرتبة',
+    brand_id: 'BRD-01',
+    brand_name: 'Sleepee',
+    model_id: 'MOD-01',
+    model_name: 'رويال بوكيت',
+    manufacturing_system_id: 'MFS-02',
+    manufacturing_system_name: 'أمريكي',
+    internal_product_code: 'MAT-SLP-ROY-USA',
+    sap_material_code: 'SAP-MAT-1002',
+    status: 'ACTIVE',
+    default_size: '180x200x30 سم',
+    warranty_years: 10,
+    created_date: '2026-01-01T00:00:00Z',
+    updated_date: '2026-01-01T00:00:00Z',
+    notes: 'رويال بوكيت بنظام زنبرك أمريكي',
+  },
+  {
+    id: 'prm-3',
+    product_id: 'PRD-003',
+    category_id: 'CAT-01',
+    category_name: 'مرتبة',
+    brand_id: 'BRD-01',
+    brand_name: 'Sleepee',
+    model_id: 'MOD-02',
+    model_name: 'سوبر ميموري فوم',
+    manufacturing_system_id: 'MFS-01',
+    manufacturing_system_name: 'ألماني',
+    internal_product_code: 'MAT-SLP-MEM-GER',
+    sap_material_code: 'SAP-MAT-1003',
+    status: 'ACTIVE',
+    default_size: '160x200x25 سم',
+    warranty_years: 10,
+    created_date: '2026-01-01T00:00:00Z',
+    updated_date: '2026-01-01T00:00:00Z',
+    notes: 'سوبر ميموري فوم عالي الكثافة',
+  },
+  {
+    id: 'prm-4',
+    product_id: 'PRD-004',
+    category_id: 'CAT-01',
+    category_name: 'مرتبة',
+    brand_id: 'BRD-01',
+    brand_name: 'Sleepee',
+    model_id: 'MOD-03',
+    model_name: 'أورثوبيديك',
+    manufacturing_system_id: 'MFS-01',
+    manufacturing_system_name: 'ألماني',
+    internal_product_code: 'MAT-SLP-ORT-GER',
+    sap_material_code: 'SAP-MAT-1004',
+    status: 'ACTIVE',
+    default_size: '120x200x24 سم',
+    warranty_years: 5,
+    created_date: '2026-01-01T00:00:00Z',
+    updated_date: '2026-01-01T00:00:00Z',
+    notes: 'أورثوبيديك الطبية للعمود الفقري',
+  },
+  {
+    id: 'prm-5',
+    product_id: 'PRD-005',
+    category_id: 'CAT-02',
+    category_name: 'مخدة',
+    brand_id: 'BRD-01',
+    brand_name: 'Sleepee',
+    model_id: 'MOD-05',
+    model_name: 'فايبر كراون',
+    manufacturing_system_id: 'MFS-03',
+    manufacturing_system_name: 'أخرى',
+    internal_product_code: 'PLW-SLP-CRW',
+    sap_material_code: 'SAP-PLW-2001',
+    status: 'ACTIVE',
+    default_size: '50x70 سم',
+    warranty_years: 3,
+    created_date: '2026-01-01T00:00:00Z',
+    updated_date: '2026-01-01T00:00:00Z',
+    notes: 'مخدة فايبر هولوكون معالج',
+  },
+  {
+    id: 'prm-6',
+    product_id: 'PRD-006',
+    category_id: 'CAT-04',
+    category_name: 'واقي مرتبة',
+    brand_id: 'BRD-01',
+    brand_name: 'Sleepee',
+    model_id: 'MOD-06',
+    model_name: 'واقي ميلتون عازل',
+    manufacturing_system_id: 'MFS-03',
+    manufacturing_system_name: 'أخرى',
+    internal_product_code: 'PROT-SLP-MLT',
+    sap_material_code: 'SAP-PRT-3001',
+    status: 'ACTIVE',
+    default_size: '180x200 سم',
+    warranty_years: 2,
+    created_date: '2026-01-01T00:00:00Z',
+    updated_date: '2026-01-01T00:00:00Z',
+    notes: 'واقي ميلتون مقاوم للماء',
+  },
+  {
+    id: 'prm-7',
+    product_id: 'PRD-007',
+    category_id: 'CAT-01',
+    category_name: 'مرتبة',
+    brand_id: 'BRD-02',
+    brand_name: 'SH',
+    model_id: 'MOD-08',
+    model_name: 'إس إتش بريميوم',
+    manufacturing_system_id: 'MFS-02',
+    manufacturing_system_name: 'أمريكي',
+    internal_product_code: 'MAT-SH-PRM-USA',
+    sap_material_code: 'SAP-SH-1001',
+    status: 'ACTIVE',
+    default_size: '160x200x26 سم',
+    warranty_years: 5,
+    created_date: '2026-01-01T00:00:00Z',
+    updated_date: '2026-01-01T00:00:00Z',
+    notes: 'مرتبة إس إتش بريميوم',
+  },
+  {
+    id: 'prm-8',
+    product_id: 'PRD-008',
+    category_id: 'CAT-01',
+    category_name: 'مرتبة',
+    brand_id: 'BRD-03',
+    brand_name: 'Rich House',
+    model_id: 'MOD-11',
+    model_name: 'ريتش جولد',
+    manufacturing_system_id: 'MFS-01',
+    manufacturing_system_name: 'ألماني',
+    internal_product_code: 'MAT-RH-GLD-GER',
+    sap_material_code: 'SAP-RH-1001',
+    status: 'ACTIVE',
+    default_size: '180x200x32 سم',
+    warranty_years: 10,
+    created_date: '2026-01-01T00:00:00Z',
+    updated_date: '2026-01-01T00:00:00Z',
+    notes: 'مرتبة ريتش جولد الفاخرة',
+  },
+  {
+    id: 'prm-9',
+    product_id: 'PRD-009',
+    category_id: 'CAT-01',
+    category_name: 'مرتبة',
+    brand_id: 'BRD-04',
+    brand_name: 'Comfort SH',
+    model_id: 'MOD-13',
+    model_name: 'كومفورت بلس',
+    manufacturing_system_id: 'MFS-02',
+    manufacturing_system_name: 'أمريكي',
+    internal_product_code: 'MAT-CSH-PLS-USA',
+    sap_material_code: 'SAP-CSH-1001',
+    status: 'ACTIVE',
+    default_size: '160x200x25 سم',
+    warranty_years: 5,
+    created_date: '2026-01-01T00:00:00Z',
+    updated_date: '2026-01-01T00:00:00Z',
+    notes: 'مرتبة كومفورت بلس الطبية',
+  },
+];
+
+// Future BOM & Material Master Definitions (Architecture Foundation)
+export const INITIAL_BOM_HEADERS: BOMHeader[] = [
+  {
+    id: 'BOM-001',
+    product_id: 'PRD-001',
+    version: 'V1.0',
+    status: 'Active',
+    sap_bom_number: 'BOM-SAP-1001',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+];
+
+export const INITIAL_BOM_COMPONENTS: BOMComponent[] = [
+  {
+    id: 'BOMC-001',
+    bom_header_id: 'BOM-001',
+    material_code: 'RAW-ST-01',
+    material_name: 'شاسيه سوست بوكيت ألماني كربون معالج',
+    quantity: 1,
+    unit_of_measure: 'PIECE',
+    scrap_factor_percent: 0.5,
+    sap_component_code: 'SAP-RAW-001',
+    notes: 'شاسيه سوست 180×200 ألماني معالج حرارياً',
+  },
+  {
+    id: 'BOMC-002',
+    bom_header_id: 'BOM-001',
+    material_code: 'RAW-FM-02',
+    material_name: 'طبقة ميموري فوم عالية الكثافة D60',
+    quantity: 2,
+    unit_of_measure: 'PIECE',
+    scrap_factor_percent: 1.0,
+    sap_component_code: 'SAP-RAW-002',
+  },
+  {
+    id: 'BOMC-003',
+    bom_header_id: 'BOM-001',
+    material_code: 'RAW-TX-03',
+    material_name: 'قماش دبل نت تركي معالج بكتيريا',
+    quantity: 4.5,
+    unit_of_measure: 'METER',
+    scrap_factor_percent: 2.0,
+    sap_component_code: 'SAP-RAW-003',
+  },
+];
+
+export const INITIAL_MATERIAL_MASTER: MaterialMaster[] = [
+  { id: 'MAT-01', code: 'RAW-ST-01', name: 'شاسيه سوست بوكيت ألماني', category: 'RAW_MATERIAL', standard_cost: 1850, sap_material_code: 'SAP-RAW-001', status: 'Active' },
+  { id: 'MAT-02', code: 'RAW-FM-02', name: 'ميموري فوم D60', category: 'RAW_MATERIAL', standard_cost: 650, sap_material_code: 'SAP-RAW-002', status: 'Active' },
+  { id: 'MAT-03', code: 'RAW-TX-03', name: 'قماش دبل نت تركي فاخر', category: 'RAW_MATERIAL', standard_cost: 420, sap_material_code: 'SAP-RAW-003', status: 'Active' },
+];
+
 const INITIAL_PRODUCT_MODELS: ProductModel[] = [
   {
     id: 1,
@@ -1820,6 +2255,8 @@ const INITIAL_PRODUCTION_ORDERS: ProductionOrder[] = [
     warrantyYears: 10,
     productionQuantity: 50,
     productionLine: 'خط الإنتاج الرئيسي (Line A)',
+    sourceType: 'MANUAL',
+    sourceReference: 'إدخال يدوي - مهندس التخطيط',
     status: 'Approved',
     createdBy: 'م. حسام سليمان',
     createdAt: '2026-09-24T08:00:00Z',
@@ -1840,6 +2277,8 @@ const INITIAL_PRODUCTION_ORDERS: ProductionOrder[] = [
     warrantyYears: 10,
     productionQuantity: 30,
     productionLine: 'خط الإنتاج الطبي (Line B)',
+    sourceType: 'EXCEL',
+    sourceReference: 'Production_Master_Aug2026.xlsx',
     status: 'Serial Generated',
     createdBy: 'م. حسام سليمان',
     createdAt: '2026-09-24T10:00:00Z',
@@ -1906,6 +2345,14 @@ export class DatabaseService {
     serials: [],
     print_jobs: [],
     audit_logs: [],
+    product_categories: [],
+    brands: [],
+    models: [],
+    manufacturing_systems: [],
+    product_master: [],
+    bom_headers: [],
+    bom_components: [],
+    material_master: [],
   };
 
   constructor() {
@@ -1944,6 +2391,14 @@ export class DatabaseService {
           serials: parsed.serials || [...INITIAL_SERIALS],
           print_jobs: parsed.print_jobs || [...INITIAL_PRINT_JOBS],
           audit_logs: parsed.audit_logs || [...INITIAL_AUDIT_LOGS],
+          product_categories: parsed.product_categories && parsed.product_categories.length ? parsed.product_categories : [...INITIAL_PRODUCT_CATEGORIES],
+          brands: parsed.brands && parsed.brands.length ? parsed.brands : [...INITIAL_BRANDS],
+          models: parsed.models && parsed.models.length ? parsed.models : [...INITIAL_MODELS],
+          manufacturing_systems: parsed.manufacturing_systems && parsed.manufacturing_systems.length ? parsed.manufacturing_systems : [...INITIAL_MANUFACTURING_SYSTEMS],
+          product_master: parsed.product_master && parsed.product_master.length ? parsed.product_master : [...INITIAL_PRODUCT_MASTER],
+          bom_headers: parsed.bom_headers || [...INITIAL_BOM_HEADERS],
+          bom_components: parsed.bom_components || [...INITIAL_BOM_COMPONENTS],
+          material_master: parsed.material_master || [...INITIAL_MATERIAL_MASTER],
         };
         // Persist if new keys were seeded
         if (
@@ -1955,7 +2410,12 @@ export class DatabaseService {
           !parsed.customer_communications ||
           !parsed.scrap_logs ||
           !parsed.customer_feedback ||
-          !parsed.warranty_costs
+          !parsed.warranty_costs ||
+          !parsed.product_categories ||
+          !parsed.brands ||
+          !parsed.models ||
+          !parsed.manufacturing_systems ||
+          !parsed.product_master
         ) {
           this.persist();
         }
@@ -1985,6 +2445,14 @@ export class DatabaseService {
           serials: [...INITIAL_SERIALS],
           print_jobs: [...INITIAL_PRINT_JOBS],
           audit_logs: [...INITIAL_AUDIT_LOGS],
+          product_categories: [...INITIAL_PRODUCT_CATEGORIES],
+          brands: [...INITIAL_BRANDS],
+          models: [...INITIAL_MODELS],
+          manufacturing_systems: [...INITIAL_MANUFACTURING_SYSTEMS],
+          product_master: [...INITIAL_PRODUCT_MASTER],
+          bom_headers: [...INITIAL_BOM_HEADERS],
+          bom_components: [...INITIAL_BOM_COMPONENTS],
+          material_master: [...INITIAL_MATERIAL_MASTER],
         };
         this.persist();
         this.migrateAttachments();
@@ -2014,6 +2482,14 @@ export class DatabaseService {
         serials: [...INITIAL_SERIALS],
         print_jobs: [...INITIAL_PRINT_JOBS],
         audit_logs: [...INITIAL_AUDIT_LOGS],
+        product_categories: [...INITIAL_PRODUCT_CATEGORIES],
+        brands: [...INITIAL_BRANDS],
+        models: [...INITIAL_MODELS],
+        manufacturing_systems: [...INITIAL_MANUFACTURING_SYSTEMS],
+        product_master: [...INITIAL_PRODUCT_MASTER],
+        bom_headers: [...INITIAL_BOM_HEADERS],
+        bom_components: [...INITIAL_BOM_COMPONENTS],
+        material_master: [...INITIAL_MATERIAL_MASTER],
       };
     }
   }
@@ -4500,6 +4976,14 @@ export class DatabaseService {
       serials: [...INITIAL_SERIALS],
       print_jobs: [...INITIAL_PRINT_JOBS],
       audit_logs: [...INITIAL_AUDIT_LOGS],
+      product_categories: [...INITIAL_PRODUCT_CATEGORIES],
+      brands: [...INITIAL_BRANDS],
+      models: [...INITIAL_MODELS],
+      manufacturing_systems: [...INITIAL_MANUFACTURING_SYSTEMS],
+      product_master: [...INITIAL_PRODUCT_MASTER],
+      bom_headers: [...INITIAL_BOM_HEADERS],
+      bom_components: [...INITIAL_BOM_COMPONENTS],
+      material_master: [...INITIAL_MATERIAL_MASTER],
     };
     this.persist();
     return true;
@@ -5229,13 +5713,22 @@ in
 
   public createProductionOrder(
     payload: {
-      mattressModel: string;
+      productId?: string;
+      categoryId?: string;
+      brandId?: string;
+      modelId?: string;
+      manufacturingSystemId?: string;
+      productionQuantity: number;
+      productionDate?: string;
+      notes?: string;
+      mattressModel?: string;
       mattressSize?: string;
       warrantyYears?: number;
-      productionQuantity: number;
       productionLine?: string;
-      productionDate?: string;
       batchNumber?: string;
+      sourceType?: ProductionOrderSource;
+      sourceReference?: string;
+      status?: 'Draft' | 'Approved' | 'Ready For Serials';
     },
     user = 'المشغل'
   ): ProductionOrder {
@@ -5243,22 +5736,86 @@ in
     const orderNumber = `PO-2026-${seq}`;
     const batchNumber = payload.batchNumber || `B26-${String(seq).slice(-4)}`;
     const now = new Date().toISOString();
+    const sourceType: ProductionOrderSource = payload.sourceType || 'MANUAL';
+    const sourceReference = payload.sourceReference || (sourceType === 'MANUAL' ? 'إدخال يدوي' : sourceType);
+    const initialStatus = payload.status || 'Draft';
+
+    // Resolve Category from DB
+    const category = (this.data.product_categories || []).find(
+      c => c.id === payload.categoryId || c.code === payload.categoryId
+    );
+    // Resolve Brand from DB
+    const brand = (this.data.brands || []).find(
+      b => b.id === payload.brandId || b.code === payload.brandId
+    );
+    // Resolve Model from DB
+    const model = (this.data.models || []).find(
+      m => m.id === payload.modelId || m.code === payload.modelId
+    );
+    // Resolve Manufacturing System from DB
+    const system = (this.data.manufacturing_systems || []).find(
+      s => s.id === payload.manufacturingSystemId || s.code === payload.manufacturingSystemId
+    );
+
+    // Find or create Product Master Record
+    let productMaster: ProductMasterRecord | null = null;
+    if (category && brand && model && system) {
+      productMaster = this.findOrCreateProductMaster({
+        categoryId: category.id,
+        brandId: brand.id,
+        modelId: model.id,
+        manufacturingSystemId: system.id,
+        notes: payload.notes,
+        warrantyYears: payload.warrantyYears || model.warranty_years || 10,
+        defaultSize: payload.mattressSize,
+      });
+    } else if (payload.productId) {
+      productMaster = this.getProductMasterById(payload.productId);
+    }
+
+    const categoryId = category?.id || productMaster?.category_id || payload.categoryId;
+    const categoryName = category?.name || productMaster?.category_name || 'مرتبة';
+    const brandId = brand?.id || productMaster?.brand_id || payload.brandId;
+    const brandName = brand?.name || productMaster?.brand_name || 'Sleepee';
+    const modelId = model?.id || productMaster?.model_id || payload.modelId;
+    const modelName = model?.name || productMaster?.model_name || payload.mattressModel || 'رويال بوكيت';
+    const manufacturingSystemId = system?.id || productMaster?.manufacturing_system_id || payload.manufacturingSystemId;
+    const manufacturingSystemName = system?.name || productMaster?.manufacturing_system_name || 'ألماني';
+    const productId = productMaster?.product_id || payload.productId || `PRD-${Date.now().toString().slice(-4)}`;
+    const internalProductCode = productMaster?.internal_product_code || `PRD-${brand?.code || 'SLP'}-${model?.code || 'MOD'}-${system?.code || 'SYS'}`;
+    const sapMaterialCode = productMaster?.sap_material_code || '';
+    const resolvedModelName = payload.mattressModel || `${brandName} - ${modelName} (${manufacturingSystemName})`;
+
     const newOrder: ProductionOrder = {
       id: `po-${Date.now()}`,
       orderNumber,
       batchNumber,
-      status: 'Draft',
+      status: initialStatus,
       productionDate: payload.productionDate || now.split('T')[0],
-      mattressModel: payload.mattressModel,
-      mattressSize: payload.mattressSize || '180x200x30 سم',
-      warrantyYears: payload.warrantyYears || 10,
+      productId,
+      categoryId,
+      categoryName,
+      brandId,
+      brandName,
+      modelId,
+      modelName,
+      manufacturingSystemId,
+      manufacturingSystemName,
+      internalProductCode,
+      sapMaterialCode,
+      mattressModel: resolvedModelName,
+      mattressSize: payload.mattressSize || productMaster?.default_size || '180x200x30 سم',
+      warrantyYears: payload.warrantyYears || model?.warranty_years || productMaster?.warranty_years || 10,
       productionQuantity: Number(payload.productionQuantity) || 1,
       productionLine: payload.productionLine || 'خط الإنتاج الرئيسي',
+      notes: payload.notes || '',
+      sourceType,
+      sourceReference,
       createdBy: user,
       createdAt: now,
       modifiedBy: user,
       modifiedAt: now,
-      statusHistory: [{ status: 'Draft', date: now, user }],
+      statusHistory: [{ status: initialStatus, date: now, user }],
     };
     if (!this.data.production_orders) this.data.production_orders = [];
     this.data.production_orders.unshift(newOrder);
@@ -5267,7 +5824,7 @@ in
       action: 'إنشاء أمر إنتاج جديد',
       actor: user,
       category: 'CREATE',
-      details: `أمر رقم ${orderNumber} - الموديل: ${payload.mattressModel} - الكمية: ${payload.productionQuantity}`,
+      details: `أمر رقم ${orderNumber} - المنتج: ${resolvedModelName} - كود: ${internalProductCode} - الكمية: ${payload.productionQuantity}`,
       afterValue: newOrder,
     });
 
@@ -5399,6 +5956,10 @@ in
     const order = this.getProductionOrderById(orderId);
     if (!order) throw new Error('أمر الإنتاج غير موجود');
 
+    if (order.status !== 'Approved' && order.status !== 'Ready For Serials' && order.status !== 'Serial Generated') {
+      throw new Error(`لا يمكن توليد السيريالات إلا لأمر إنتاج معتمد (الحالة الحالية: ${order.status})`);
+    }
+
     const qty = order.productionQuantity;
     const now = new Date().toISOString();
     const currentSerials = this.data.serials || [];
@@ -5419,6 +5980,12 @@ in
         size: order.mattressSize,
         productionDate: order.productionDate,
         warrantyYears: order.warrantyYears,
+        productId: order.productId,
+        categoryId: order.categoryId,
+        brandId: order.brandId,
+        modelId: order.modelId,
+        manufacturingSystemId: order.manufacturingSystemId,
+        internalProductCode: order.internalProductCode,
         status: 'Generated',
         createdAt: now,
         createdBy: user,
@@ -5439,6 +6006,15 @@ in
           batch_no: order.batchNumber,
           created_at: now,
           production_status: 'Produced',
+          product_id: order.productId,
+          category_id: order.categoryId,
+          category_name: order.categoryName,
+          brand_id: order.brandId,
+          brand_name: order.brandName,
+          model_id: order.modelId,
+          manufacturing_system_id: order.manufacturingSystemId,
+          manufacturing_system_name: order.manufacturingSystemName,
+          internal_product_code: order.internalProductCode,
         });
       }
 
@@ -5573,6 +6149,437 @@ in
       claimsList: claims,
       timelineEvents: timeline,
     };
+  }
+
+  // ====================================================
+  // PHASE 9: PRODUCT MASTER & OPERATIONS FOUNDATION CRUD
+  // ====================================================
+
+  // --- 1. PRODUCT CATEGORIES ---
+  public getProductCategories(): ProductCategoryMaster[] {
+    return this.data.product_categories || [];
+  }
+
+  public getProductCategoryById(id: string): ProductCategoryMaster | null {
+    return (this.data.product_categories || []).find(c => c.id === id || c.code === id) || null;
+  }
+
+  public addProductCategory(data: Partial<ProductCategoryMaster>, user = 'مدير النظام'): ProductCategoryMaster {
+    const now = new Date().toISOString();
+    const id = data.id || `CAT-${String((this.data.product_categories || []).length + 1).padStart(2, '0')}`;
+    const newCategory: ProductCategoryMaster = {
+      id,
+      code: (data.code || data.name || id).trim().toUpperCase().replace(/\s+/g, '_'),
+      name: data.name?.trim() || 'فئة جديدة',
+      status: data.status || 'ACTIVE',
+      created_at: now,
+      updated_at: now,
+      notes: data.notes || '',
+    };
+    if (!this.data.product_categories) this.data.product_categories = [];
+    this.data.product_categories.push(newCategory);
+    this.addAuditLog({
+      action: 'إضافة فئة منتج',
+      actor: user,
+      category: 'CREATE',
+      details: `إضافة فئة جديدة: ${newCategory.name} (${newCategory.code})`,
+      afterValue: newCategory,
+    });
+    this.persist();
+    return newCategory;
+  }
+
+  public updateProductCategory(id: string, updates: Partial<ProductCategoryMaster>, user = 'مدير النظام'): ProductCategoryMaster {
+    const list = this.data.product_categories || [];
+    const index = list.findIndex(c => c.id === id || c.code === id);
+    if (index === -1) throw new Error(`فئة المنتج غير موجودة (${id})`);
+    const old = list[index];
+    const updated: ProductCategoryMaster = {
+      ...old,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    list[index] = updated;
+    this.addAuditLog({
+      action: 'تعديل فئة منتج',
+      actor: user,
+      category: 'UPDATE',
+      details: `تحديث فئة ${updated.name}`,
+      beforeValue: old,
+      afterValue: updated,
+    });
+    this.persist();
+    return updated;
+  }
+
+  public setProductCategoryStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user = 'مدير النظام'): ProductCategoryMaster {
+    return this.updateProductCategory(id, { status }, user);
+  }
+
+  // --- 2. BRANDS ---
+  public getBrands(): BrandMaster[] {
+    return this.data.brands || [];
+  }
+
+  public getBrandById(id: string): BrandMaster | null {
+    return (this.data.brands || []).find(b => b.id === id || b.code === id) || null;
+  }
+
+  public addBrand(data: Partial<BrandMaster>, user = 'مدير النظام'): BrandMaster {
+    const now = new Date().toISOString();
+    const id = data.id || `BRD-${String((this.data.brands || []).length + 1).padStart(2, '0')}`;
+    const newBrand: BrandMaster = {
+      id,
+      code: (data.code || data.name || id).trim().toUpperCase().replace(/\s+/g, '_'),
+      name: data.name?.trim() || 'علامة تجارية جديدة',
+      status: data.status || 'ACTIVE',
+      created_at: now,
+      updated_at: now,
+      notes: data.notes || '',
+    };
+    if (!this.data.brands) this.data.brands = [];
+    this.data.brands.push(newBrand);
+    this.addAuditLog({
+      action: 'إضافة علامة تجارية',
+      actor: user,
+      category: 'CREATE',
+      details: `إضافة علامة تجارية: ${newBrand.name} (${newBrand.code})`,
+      afterValue: newBrand,
+    });
+    this.persist();
+    return newBrand;
+  }
+
+  public updateBrand(id: string, updates: Partial<BrandMaster>, user = 'مدير النظام'): BrandMaster {
+    const list = this.data.brands || [];
+    const index = list.findIndex(b => b.id === id || b.code === id);
+    if (index === -1) throw new Error(`العلامة التجارية غير موجودة (${id})`);
+    const old = list[index];
+    const updated: BrandMaster = {
+      ...old,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    list[index] = updated;
+    this.addAuditLog({
+      action: 'تعديل علامة تجارية',
+      actor: user,
+      category: 'UPDATE',
+      details: `تحديث علامة ${updated.name}`,
+      beforeValue: old,
+      afterValue: updated,
+    });
+    this.persist();
+    return updated;
+  }
+
+  public setBrandStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user = 'مدير النظام'): BrandMaster {
+    return this.updateBrand(id, { status }, user);
+  }
+
+  // --- 3. MODELS (Linked to Brand only) ---
+  public getModels(brandId?: string): ModelMaster[] {
+    const list = this.data.models || [];
+    if (brandId) {
+      return list.filter(m => m.brand_id === brandId);
+    }
+    return list;
+  }
+
+  public getModelById(id: string): ModelMaster | null {
+    return (this.data.models || []).find(m => m.id === id || m.code === id) || null;
+  }
+
+  public addModel(data: Partial<ModelMaster>, user = 'مدير النظام'): ModelMaster {
+    const now = new Date().toISOString();
+    const id = data.id || `MOD-${String((this.data.models || []).length + 1).padStart(2, '0')}`;
+    const newModel: ModelMaster = {
+      id,
+      brand_id: data.brand_id || 'BRD-01',
+      code: (data.code || data.name || id).trim().toUpperCase().replace(/\s+/g, '_'),
+      name: data.name?.trim() || 'موديل جديد',
+      warranty_years: Number(data.warranty_years) || 10,
+      status: data.status || 'ACTIVE',
+      created_at: now,
+      updated_at: now,
+      notes: data.notes || '',
+    };
+    if (!this.data.models) this.data.models = [];
+    this.data.models.push(newModel);
+    this.addAuditLog({
+      action: 'إضافة موديل',
+      actor: user,
+      category: 'CREATE',
+      details: `إضافة موديل جديد: ${newModel.name} للعلامة ${newModel.brand_id}`,
+      afterValue: newModel,
+    });
+    this.persist();
+    return newModel;
+  }
+
+  public updateModel(id: string, updates: Partial<ModelMaster>, user = 'مدير النظام'): ModelMaster {
+    const list = this.data.models || [];
+    const index = list.findIndex(m => m.id === id || m.code === id);
+    if (index === -1) throw new Error(`الموديل غير موجود (${id})`);
+    const old = list[index];
+    const updated: ModelMaster = {
+      ...old,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    list[index] = updated;
+    this.addAuditLog({
+      action: 'تعديل موديل',
+      actor: user,
+      category: 'UPDATE',
+      details: `تحديث موديل ${updated.name}`,
+      beforeValue: old,
+      afterValue: updated,
+    });
+    this.persist();
+    return updated;
+  }
+
+  public setModelStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user = 'مدير النظام'): ModelMaster {
+    return this.updateModel(id, { status }, user);
+  }
+
+  // --- 4. MANUFACTURING SYSTEMS ---
+  public getManufacturingSystems(): ManufacturingSystemMaster[] {
+    return this.data.manufacturing_systems || [];
+  }
+
+  public getManufacturingSystemById(id: string): ManufacturingSystemMaster | null {
+    return (this.data.manufacturing_systems || []).find(s => s.id === id || s.code === id) || null;
+  }
+
+  public addManufacturingSystem(data: Partial<ManufacturingSystemMaster>, user = 'مدير النظام'): ManufacturingSystemMaster {
+    const now = new Date().toISOString();
+    const id = data.id || `MFS-${String((this.data.manufacturing_systems || []).length + 1).padStart(2, '0')}`;
+    const newSys: ManufacturingSystemMaster = {
+      id,
+      code: (data.code || data.name || id).trim().toUpperCase().replace(/\s+/g, '_'),
+      name: data.name?.trim() || 'نظام تصنيع جديد',
+      status: data.status || 'ACTIVE',
+      created_at: now,
+      updated_at: now,
+      notes: data.notes || '',
+    };
+    if (!this.data.manufacturing_systems) this.data.manufacturing_systems = [];
+    this.data.manufacturing_systems.push(newSys);
+    this.addAuditLog({
+      action: 'إضافة نظام تصنيع',
+      actor: user,
+      category: 'CREATE',
+      details: `إضافة نظام تصنيع: ${newSys.name}`,
+      afterValue: newSys,
+    });
+    this.persist();
+    return newSys;
+  }
+
+  public updateManufacturingSystem(id: string, updates: Partial<ManufacturingSystemMaster>, user = 'مدير النظام'): ManufacturingSystemMaster {
+    const list = this.data.manufacturing_systems || [];
+    const index = list.findIndex(s => s.id === id || s.code === id);
+    if (index === -1) throw new Error(`نظام التصنيع غير موجود (${id})`);
+    const old = list[index];
+    const updated: ManufacturingSystemMaster = {
+      ...old,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    list[index] = updated;
+    this.addAuditLog({
+      action: 'تعديل نظام تصنيع',
+      actor: user,
+      category: 'UPDATE',
+      details: `تحديث نظام ${updated.name}`,
+      beforeValue: old,
+      afterValue: updated,
+    });
+    this.persist();
+    return updated;
+  }
+
+  public setManufacturingSystemStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user = 'مدير النظام'): ManufacturingSystemMaster {
+    return this.updateManufacturingSystem(id, { status }, user);
+  }
+
+  // --- 5. PRODUCT MASTER DATABASE ---
+  public getProductMasterRecords(filters?: {
+    categoryId?: string;
+    brandId?: string;
+    modelId?: string;
+    systemId?: string;
+    search?: string;
+  }): ProductMasterRecord[] {
+    let list = this.data.product_master || [];
+    if (filters?.categoryId) {
+      list = list.filter(p => p.category_id === filters.categoryId);
+    }
+    if (filters?.brandId) {
+      list = list.filter(p => p.brand_id === filters.brandId);
+    }
+    if (filters?.modelId) {
+      list = list.filter(p => p.model_id === filters.modelId);
+    }
+    if (filters?.systemId) {
+      list = list.filter(p => p.manufacturing_system_id === filters.systemId);
+    }
+    if (filters?.search) {
+      const q = filters.search.trim().toLowerCase();
+      list = list.filter(
+        p =>
+          p.product_id.toLowerCase().includes(q) ||
+          p.internal_product_code.toLowerCase().includes(q) ||
+          (p.sap_material_code && p.sap_material_code.toLowerCase().includes(q)) ||
+          (p.model_name && p.model_name.toLowerCase().includes(q)) ||
+          (p.brand_name && p.brand_name.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }
+
+  public getProductMasterById(idOrProductId: string): ProductMasterRecord | null {
+    return (
+      (this.data.product_master || []).find(
+        p => p.id === idOrProductId || p.product_id === idOrProductId || p.internal_product_code === idOrProductId
+      ) || null
+    );
+  }
+
+  public findOrCreateProductMaster(params: {
+    categoryId: string;
+    brandId: string;
+    modelId: string;
+    manufacturingSystemId: string;
+    sapMaterialCode?: string;
+    notes?: string;
+    defaultSize?: string;
+    warrantyYears?: number;
+  }): ProductMasterRecord {
+    const list = this.data.product_master || [];
+    const existing = list.find(
+      p =>
+        p.category_id === params.categoryId &&
+        p.brand_id === params.brandId &&
+        p.model_id === params.modelId &&
+        p.manufacturing_system_id === params.manufacturingSystemId
+    );
+    if (existing) return existing;
+
+    const category = this.getProductCategoryById(params.categoryId);
+    const brand = this.getBrandById(params.brandId);
+    const model = this.getModelById(params.modelId);
+    const system = this.getManufacturingSystemById(params.manufacturingSystemId);
+
+    const now = new Date().toISOString();
+    const seq = list.length + 1;
+    const productId = `PRD-${String(seq).padStart(3, '0')}`;
+    const catCode = category?.code.slice(0, 3) || 'MAT';
+    const brdCode = brand?.code.slice(0, 3) || 'SLP';
+    const modCode = model?.code.slice(0, 3) || 'MOD';
+    const sysCode = system?.code.slice(0, 3) || 'GER';
+    const internalProductCode = `${catCode}-${brdCode}-${modCode}-${sysCode}`;
+
+    const newRecord: ProductMasterRecord = {
+      id: `prm-${Date.now()}`,
+      product_id: productId,
+      category_id: params.categoryId,
+      brand_id: params.brandId,
+      model_id: params.modelId,
+      manufacturing_system_id: params.manufacturingSystemId,
+      internal_product_code: internalProductCode,
+      sap_material_code: params.sapMaterialCode || '',
+      status: 'ACTIVE',
+      created_date: now,
+      updated_date: now,
+      notes: params.notes || '',
+      category_name: category?.name || 'مرتبة',
+      brand_name: brand?.name || 'Sleepee',
+      model_name: model?.name || 'موديل',
+      manufacturing_system_name: system?.name || 'ألماني',
+      default_size: params.defaultSize || '180x200x30 سم',
+      warranty_years: params.warrantyYears || model?.warranty_years || 10,
+      bom_status: 'NOT_CONFIGURED',
+    };
+
+    if (!this.data.product_master) this.data.product_master = [];
+    this.data.product_master.push(newRecord);
+    this.persist();
+    return newRecord;
+  }
+
+  public addProductMasterRecord(data: Partial<ProductMasterRecord>, user = 'مدير النظام'): ProductMasterRecord {
+    if (!data.category_id || !data.brand_id || !data.model_id || !data.manufacturing_system_id) {
+      throw new Error('الفئة، العلامة التجارية، الموديل، ونظام التصنيع حقول إلزامية لتعريف المنتج الماستر');
+    }
+    const record = this.findOrCreateProductMaster({
+      categoryId: data.category_id,
+      brandId: data.brand_id,
+      modelId: data.model_id,
+      manufacturingSystemId: data.manufacturing_system_id,
+      sapMaterialCode: data.sap_material_code,
+      notes: data.notes,
+      defaultSize: data.default_size,
+      warrantyYears: data.warranty_years,
+    });
+    this.addAuditLog({
+      action: 'إضافة منتج ماستر',
+      actor: user,
+      category: 'CREATE',
+      details: `تسجيل منتج ماستر: ${record.internal_product_code} (${record.brand_name} - ${record.model_name})`,
+      afterValue: record,
+    });
+    return record;
+  }
+
+  public updateProductMasterRecord(id: string, updates: Partial<ProductMasterRecord>, user = 'مدير النظام'): ProductMasterRecord {
+    const list = this.data.product_master || [];
+    const index = list.findIndex(p => p.id === id || p.product_id === id);
+    if (index === -1) throw new Error(`سجل المنتج الماستر غير موجود (${id})`);
+    const old = list[index];
+    const updated: ProductMasterRecord = {
+      ...old,
+      ...updates,
+      updated_date: new Date().toISOString(),
+    };
+    list[index] = updated;
+    this.addAuditLog({
+      action: 'تعديل منتج ماستر',
+      actor: user,
+      category: 'UPDATE',
+      details: `تحديث منتج ماستر ${updated.internal_product_code}`,
+      beforeValue: old,
+      afterValue: updated,
+    });
+    this.persist();
+    return updated;
+  }
+
+  public setProductMasterStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user = 'مدير النظام'): ProductMasterRecord {
+    return this.updateProductMasterRecord(id, { status }, user);
+  }
+
+  // --- 6. FUTURE BOM ARCHITECTURE ---
+  public getBOMHeaders(productId?: string): BOMHeader[] {
+    const list = this.data.bom_headers || [];
+    if (productId) {
+      return list.filter(b => b.product_id === productId);
+    }
+    return list;
+  }
+
+  public getBOMComponents(bomHeaderId?: string): BOMComponent[] {
+    const list = this.data.bom_components || [];
+    if (bomHeaderId) {
+      return list.filter(c => c.bom_header_id === bomHeaderId);
+    }
+    return list;
+  }
+
+  public getMaterialMaster(): MaterialMaster[] {
+    return this.data.material_master || [];
   }
 }
 

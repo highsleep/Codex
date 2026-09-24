@@ -480,9 +480,179 @@
         }
       },
       "required": ["attachment_id", "entity_type", "entity_id", "file_name", "file_type", "file_size", "uploaded_by", "uploaded_at", "storage_url"]
+    },
+    "ProductCategory": {
+      "title": "ProductCategory",
+      "description": "Product category classification (Mattress, Pillow, Cushion, Protector, Bed, Accessory)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["code", "name", "status"]
+    },
+    "Brand": {
+      "title": "Brand",
+      "description": "Brand master records (Sleepee, SH, Rich House, Comfort SH)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["code", "name", "status"]
+    },
+    "Model": {
+      "title": "Model",
+      "description": "Product models linked directly to Brand only",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "brand_id": { "type": "string" },
+        "code": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 128 },
+        "warranty_years": { "type": "number" },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["brand_id", "code", "name", "status"]
+    },
+    "ManufacturingSystem": {
+      "title": "ManufacturingSystem",
+      "description": "Manufacturing system master (German, American, Other)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["code", "name", "status"]
+    },
+    "ProductMaster": {
+      "title": "ProductMaster",
+      "description": "Central enterprise product master records linking Category, Brand, Model, and Manufacturing System",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "product_id": { "type": "string" },
+        "category_id": { "type": "string" },
+        "brand_id": { "type": "string" },
+        "model_id": { "type": "string" },
+        "manufacturing_system_id": { "type": "string" },
+        "internal_product_code": { "type": "string" },
+        "sap_material_code": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+        "created_date": { "type": "string" },
+        "updated_date": { "type": "string" },
+        "notes": { "type": "string" },
+        "category_name": { "type": "string" },
+        "brand_name": { "type": "string" },
+        "model_name": { "type": "string" },
+        "manufacturing_system_name": { "type": "string" },
+        "default_size": { "type": "string" },
+        "warranty_years": { "type": "number" },
+        "bom_header_id": { "type": "string" },
+        "bom_version": { "type": "string" },
+        "bom_status": { "type": "string" }
+      },
+      "required": ["product_id", "category_id", "brand_id", "model_id", "manufacturing_system_id", "internal_product_code", "status"]
+    },
+    "BOMHeader": {
+      "title": "BOMHeader",
+      "description": "Bill of Materials header architecture foundation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "product_id": { "type": "string" },
+        "version": { "type": "string" },
+        "status": { "type": "string" },
+        "sap_bom_number": { "type": "string" },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" }
+      },
+      "required": ["product_id", "version", "status"]
+    },
+    "BOMComponent": {
+      "title": "BOMComponent",
+      "description": "Bill of Materials components and material consumption",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bom_header_id": { "type": "string" },
+        "material_code": { "type": "string" },
+        "material_name": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unit_of_measure": { "type": "string" },
+        "scrap_factor_percent": { "type": "number" },
+        "sap_component_code": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["bom_header_id", "material_code", "material_name", "quantity", "unit_of_measure"]
+    },
+    "MaterialMaster": {
+      "title": "MaterialMaster",
+      "description": "Raw material and packaging items master registry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "standard_cost": { "type": "number" },
+        "sap_material_code": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["code", "name", "category", "status"]
     }
   },
   "firestore": {
+    "/product_categories/{categoryId}": {
+      "schema": "ProductCategory",
+      "description": "Product categories master"
+    },
+    "/brands/{brandId}": {
+      "schema": "Brand",
+      "description": "Brand master"
+    },
+    "/models/{modelId}": {
+      "schema": "Model",
+      "description": "Model master linked to brand"
+    },
+    "/manufacturing_systems/{systemId}": {
+      "schema": "ManufacturingSystem",
+      "description": "Manufacturing system master"
+    },
+    "/product_master/{masterId}": {
+      "schema": "ProductMaster",
+      "description": "Enterprise product master records"
+    },
+    "/bom_headers/{bomId}": {
+      "schema": "BOMHeader",
+      "description": "BOM headers"
+    },
+    "/bom_components/{componentId}": {
+      "schema": "BOMComponent",
+      "description": "BOM components"
+    },
+    "/material_master/{materialId}": {
+      "schema": "MaterialMaster",
+      "description": "Material master"
+    },
     "/production_orders/{orderId}": {
       "schema": "ProductionOrder",
       "description": "Factory production orders"

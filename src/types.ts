@@ -13,6 +13,152 @@ export type SourceSystem =
   | 'SAP'
   | 'Manual';
 
+export type ProductionOrderSource = 'MANUAL' | 'EXCEL' | 'SAP' | 'SHAREPOINT';
+
+// ----------------------------------------------------
+// PHASE 9: PRODUCT MASTER ARCHITECTURE & FOUNDATION
+// ----------------------------------------------------
+
+export interface ProductCategoryMaster {
+  id: string;
+  code: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_at: string;
+  updated_at: string;
+  notes?: string;
+}
+
+export interface BrandMaster {
+  id: string;
+  code: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_at: string;
+  updated_at: string;
+  notes?: string;
+}
+
+export interface ModelMaster {
+  id: string;
+  brand_id: string;
+  code: string;
+  name: string;
+  warranty_years?: number;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_at: string;
+  updated_at: string;
+  notes?: string;
+}
+
+export interface ManufacturingSystemMaster {
+  id: string;
+  code: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_at: string;
+  updated_at: string;
+  notes?: string;
+}
+
+export interface ProductMasterRecord {
+  id: string;
+  product_id: string;
+  category_id: string;
+  brand_id: string;
+  model_id: string;
+  manufacturing_system_id: string;
+  internal_product_code: string;
+  sap_material_code?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_date: string;
+  updated_date: string;
+  notes?: string;
+  // Denormalized convenience names for fast search & offline rendering
+  category_name?: string;
+  brand_name?: string;
+  model_name?: string;
+  manufacturing_system_name?: string;
+  default_size?: string;
+  warranty_years?: number;
+  // Future BOM Assignment
+  bom_header_id?: string;
+  bom_version?: string;
+  bom_status?: 'DRAFT' | 'APPROVED' | 'NOT_CONFIGURED';
+}
+
+// Future BOM & Material Master Architecture (Foundation Ready)
+export interface BOMHeader {
+  id: string;
+  product_id: string;
+  version: string;
+  status: 'Active' | 'Draft' | 'Archived';
+  sap_bom_number?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BOMComponent {
+  id: string;
+  bom_header_id: string;
+  material_code: string;
+  material_name: string;
+  quantity: number;
+  unit_of_measure: string;
+  scrap_factor_percent: number;
+  sap_component_code?: string;
+  notes?: string;
+}
+
+export interface MaterialMaster {
+  id: string;
+  code: string;
+  name: string;
+  category: 'RAW_MATERIAL' | 'SEMI_FINISHED' | 'PACKAGING' | 'CHEMICALS';
+  standard_cost?: number;
+  sap_material_code?: string;
+  status: 'Active' | 'Inactive';
+}
+
+export interface ProductionOrder {
+  id: string;
+  orderNumber: string;
+  batchNumber: string;
+  status: 'Draft' | 'Approved' | 'Ready For Serials' | 'Serial Generated' | 'Printed' | 'Completed' | 'Closed' | 'Archived' | 'Cancelled';
+  productionDate: string;
+  
+  // Phase 9 Master Data linkages
+  productId?: string;
+  categoryId?: string;
+  categoryName?: string;
+  brandId?: string;
+  brandName?: string;
+  modelId?: string;
+  modelName?: string;
+  manufacturingSystemId?: string;
+  manufacturingSystemName?: string;
+  internalProductCode?: string;
+  sapMaterialCode?: string;
+
+  mattressModel: string;
+  mattressSize?: string;
+  warrantyYears?: number;
+  productionQuantity: number;
+  productionLine?: string;
+  notes?: string;
+  sourceType: ProductionOrderSource;
+  sourceReference?: string;
+  createdBy: string;
+  createdAt: string;
+  modifiedBy?: string;
+  modifiedAt?: string;
+  approvalUser?: string;
+  approvalDate?: string;
+  statusHistory?: Array<{ status: string; date: string; user: string; notes?: string }>;
+  generatedSerials?: string[];
+  printedCount?: number;
+}
+
 export interface Product {
   id: number | string;
   serial_number: string;
@@ -28,6 +174,16 @@ export interface Product {
   is_activated?: boolean;
   warranty_id?: string;
   activation?: WarrantyActivation;
+  // Phase 9 Master Data linkages
+  product_id?: string;
+  category_id?: string;
+  category_name?: string;
+  brand_id?: string;
+  brand_name?: string;
+  model_id?: string;
+  manufacturing_system_id?: string;
+  manufacturing_system_name?: string;
+  internal_product_code?: string;
   // Extended Production Fields
   production_status?: ProductionStatus;
   source_system?: SourceSystem;

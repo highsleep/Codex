@@ -520,12 +520,24 @@ export const TraceabilityAndPrintingCenter: React.FC<TraceabilityAndPrintingCent
                     <div>
                       <div className="flex items-center gap-2">
                         <Award className="w-5 h-5 text-[#D62828]" />
-                        <span className="text-sm font-black text-slate-900 tracking-wide">مصنع المراتب والأسرة - Sleepee</span>
+                        <span className="text-sm font-black text-slate-900 tracking-wide">
+                          {selectedProduct.brand_name || 'سليبي'} - ({selectedProduct.category_name || 'مرتبة'})
+                        </span>
+                        {selectedProduct.manufacturing_system_name && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                            نظام: {selectedProduct.manufacturing_system_name}
+                          </span>
+                        )}
                       </div>
-                      <h4 className="text-lg font-black text-slate-900 mt-1">{selectedProduct.name}</h4>
+                      <h4 className="text-lg font-black text-slate-900 mt-1">{selectedProduct.model || (selectedProduct as any).name}</h4>
                       <p className="text-xs text-slate-600 font-bold mt-0.5">
-                        المقاس والمواصفة: {selectedProduct.dimensions || 'مواصفة مصنعية قياسية'} | ضمان: {selectedProduct.warranty_years} سنوات
+                        المقاس: {selectedProduct.size || (selectedProduct as any).dimensions || '180×200 سم'} | ضمان: {selectedProduct.warranty_years || 10} سنوات
                       </p>
+                      {selectedProduct.internal_product_code && (
+                        <p className="text-[11px] font-mono font-bold text-slate-500 mt-0.5">
+                          كود الماستر: {selectedProduct.internal_product_code}
+                        </p>
+                      )}
                     </div>
 
                     <div className="text-left bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">

@@ -6,6 +6,10 @@ export interface ZebraLabelParams {
   productionDate: string;
   productionOrder: string;
   batchNo: string;
+  category?: string;
+  brand?: string;
+  manufacturingSystem?: string;
+  internalProductCode?: string;
   hotline?: string;
   verificationUrl?: string;
 }
@@ -14,20 +18,27 @@ export class ZebraZPLGenerator {
   /**
    * Generates standard ZPL II code for Zebra ZD220 (203 DPI / 8 dots per mm).
    * Formatted for standard mattress tag (e.g. 4x6 inch or 4x3 inch thermal label).
-   * Includes:
-   * - Company Header (SLEEPEE MATTRESSES - مصانع مراتب سليبي)
-   * - Model & Dimensions
-   * - Code 128 High-Density Barcode of Serial Number
-   * - 2D QR Code linking to online warranty verification portal
-   * - Batch, Production Order, and Warranty duration
+   * Pulls directly from Product Master:
+   * - Category
+   * - Brand
+   * - Model
+   * - Manufacturing System
+   * - Production Date
+   * - Serial
+   * - QR Code
+   * - Barcode Code 128
    * - Official Support Hotline: 19707
    */
   public static generateZPL(params: ZebraLabelParams): string {
     const cleanSerial = params.serialNumber.trim().toUpperCase();
     const cleanModel = params.model.replace(/[\r\n"]/g, '');
     const cleanSize = params.size.replace(/[\r\n"]/g, '');
+    const cleanBrand = (params.brand || 'Sleepee').replace(/[\r\n"]/g, '');
+    const cleanCategory = (params.category || 'مرتبة').replace(/[\r\n"]/g, '');
+    const cleanSystem = (params.manufacturingSystem || 'ألماني').replace(/[\r\n"]/g, '');
+    const cleanCode = (params.internalProductCode || '').replace(/[\r\n"]/g, '');
     const hotline = params.hotline || '19707';
-    const verifyUrl = params.verificationUrl || `https://ais-dev-64nwfnmlh27kui4aoo4n3r-633317479505.europe-west2.run.app/?serial=${cleanSerial}`;
+    const verifyUrl = params.verificationUrl || `https://ais-dev-oivpum3czxe4y4prejmcv3-633317479505.europe-west2.run.app/?verify=${cleanSerial}`;
 
     // ZPL II Script
     const zpl = [
@@ -43,12 +54,13 @@ export class ZebraZPLGenerator {
       
       // Header banner box (Inverted black bar)
       '^FO20,20^GB772,80,80^FS',
-      '^FO40,40^FR^A0N,38,38^FDSLEEPEE MATTRESS - FACTORY CERTIFIED^FS',
+      '^FO40,40^FR^A0N,38,38^FD' + cleanBrand.toUpperCase() + ' - FACTORY CERTIFIED (' + cleanCategory + ')^FS',
       '^FO580,42^FR^A0N,28,28^FDHOTLINE: ' + hotline + '^FS',
 
-      // Model Name and Size
-      '^FO40,120^A0N,32,32^FDMODEL: ' + cleanModel.slice(0, 45) + '^FS',
-      '^FO40,165^A0N,28,28^FDDIMENSIONS: ' + cleanSize + '^FS',
+      // Model Name, System and Size
+      '^FO40,115^A0N,30,30^FDMODEL: ' + cleanModel.slice(0, 42) + '^FS',
+      '^FO40,152^A0N,24,24^FDSYSTEM: ' + cleanSystem + '  |  DIMENSIONS: ' + cleanSize + '^FS',
+      cleanCode ? '^FO40,182^A0N,20,20^FDPRODUCT MASTER CODE: ' + cleanCode + '^FS' : '^FO40,182^A0N,20,20^FDTRACEABILITY MASTER VERIFIED^FS',
 
       // Divider Line
       '^FO40,205^GB732,2,2^FS',
@@ -70,8 +82,8 @@ export class ZebraZPLGenerator {
 
       // Bottom Safety & Anti-counterfeiting Note
       '^FO40,490^GB732,2,2^FS',
-      '^FO40,510^A0N,20,20^FDGUARANTEED BY SLEEPEE EGYPT - DO NOT REMOVE THIS CERTIFIED SERIAL TAG^FS',
-      '^FO40,538^A0N,18,18^FDSUPPORT: support@sleepee.com | TEL: 19707 | ISO 9001 QUALITY ASSURED^FS',
+      '^FO40,510^A0N,20,20^FDGUARANTEED BY ' + cleanBrand.toUpperCase() + ' - DO NOT REMOVE THIS CERTIFIED SERIAL TAG^FS',
+      '^FO40,538^A0N,18,18^FDSUPPORT: support@sleepee.com | TEL: ' + hotline + ' | ISO 9001 QUALITY ASSURED^FS',
       
       '^XZ'
     ].join('\n');

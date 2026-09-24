@@ -93,6 +93,20 @@ export function apiSecurity(req: Request, res: Response, next: NextFunction) {
       : ['SUPER_ADMIN', 'PLANT_MANAGER', 'PRODUCTION'])(req, res, next);
   }
 
+  if (
+    path.startsWith('/product-categories') ||
+    path.startsWith('/brands') ||
+    path.startsWith('/models') ||
+    path.startsWith('/manufacturing-systems') ||
+    path.startsWith('/product-master') ||
+    path.startsWith('/production-orders') ||
+    path.startsWith('/serials')
+  ) {
+    return protect(method === 'GET'
+      ? INTERNAL_ROLES
+      : ['SUPER_ADMIN', 'PLANT_MANAGER', 'PRODUCTION'])(req, res, next);
+  }
+
   if (path.startsWith('/warranty')) {
     return protect(INTERNAL_ROLES)(req, res, next);
   }

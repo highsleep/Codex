@@ -281,5 +281,38 @@ service cloud.firestore {
           exists(/databases/$(database)/documents/warranty_claims/$(existing().entity_id)) &&
           get(/databases/$(database)/documents/warranty_claims/$(existing().entity_id)).data.claim_status in ['Approved', 'Closed']);
     }
+
+    // -------------------------------------------------------------------------
+    // Phase 9: Product Master & Operations Foundation Collections
+    // -------------------------------------------------------------------------
+    match /product_categories/{categoryId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(categoryId) && canManageProducts();
+      allow delete: if false;
+    }
+
+    match /brands/{brandId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(brandId) && canManageProducts();
+      allow delete: if false;
+    }
+
+    match /models/{modelId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(modelId) && canManageProducts();
+      allow delete: if false;
+    }
+
+    match /manufacturing_systems/{systemId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(systemId) && canManageProducts();
+      allow delete: if false;
+    }
+
+    match /product_master/{productId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(productId) && canManageProducts();
+      allow delete: if false;
+    }
   }
 }

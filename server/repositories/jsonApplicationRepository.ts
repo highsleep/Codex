@@ -550,6 +550,123 @@ export class JsonApplicationRepository implements IApplicationRepository {
     return this.db.getProduct360(identifier);
   }
 
+  // ==================== Product Master Repository ====================
+  public getProductCategories() {
+    return this.db.getProductCategories();
+  }
+
+  public getProductCategoryById(id: string) {
+    return this.db.getProductCategoryById(id);
+  }
+
+  public addProductCategory(data: any, user?: string) {
+    return this.db.addProductCategory(data, user);
+  }
+
+  public updateProductCategory(id: string, updates: any, user?: string) {
+    return this.db.updateProductCategory(id, updates, user);
+  }
+
+  public setProductCategoryStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user?: string) {
+    return this.db.setProductCategoryStatus(id, status, user);
+  }
+
+  public getBrands() {
+    return this.db.getBrands();
+  }
+
+  public getBrandById(id: string) {
+    return this.db.getBrandById(id);
+  }
+
+  public addBrand(data: any, user?: string) {
+    return this.db.addBrand(data, user);
+  }
+
+  public updateBrand(id: string, updates: any, user?: string) {
+    return this.db.updateBrand(id, updates, user);
+  }
+
+  public setBrandStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user?: string) {
+    return this.db.setBrandStatus(id, status, user);
+  }
+
+  public getModels(brandId?: string) {
+    return this.db.getModels(brandId);
+  }
+
+  public getModelById(id: string) {
+    return this.db.getModelById(id);
+  }
+
+  public addModel(data: any, user?: string) {
+    return this.db.addModel(data, user);
+  }
+
+  public updateModel(id: string, updates: any, user?: string) {
+    return this.db.updateModel(id, updates, user);
+  }
+
+  public setModelStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user?: string) {
+    return this.db.setModelStatus(id, status, user);
+  }
+
+  public getManufacturingSystems() {
+    return this.db.getManufacturingSystems();
+  }
+
+  public getManufacturingSystemById(id: string) {
+    return this.db.getManufacturingSystemById(id);
+  }
+
+  public addManufacturingSystem(data: any, user?: string) {
+    return this.db.addManufacturingSystem(data, user);
+  }
+
+  public updateManufacturingSystem(id: string, updates: any, user?: string) {
+    return this.db.updateManufacturingSystem(id, updates, user);
+  }
+
+  public setManufacturingSystemStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user?: string) {
+    return this.db.setManufacturingSystemStatus(id, status, user);
+  }
+
+  public getProductMasterRecords(filters?: any) {
+    return this.db.getProductMasterRecords(filters);
+  }
+
+  public getProductMasterById(idOrProductId: string) {
+    return this.db.getProductMasterById(idOrProductId);
+  }
+
+  public findOrCreateProductMaster(params: any) {
+    return this.db.findOrCreateProductMaster(params);
+  }
+
+  public addProductMasterRecord(data: any, user?: string) {
+    return this.db.addProductMasterRecord(data, user);
+  }
+
+  public updateProductMasterRecord(id: string, updates: any, user?: string) {
+    return this.db.updateProductMasterRecord(id, updates, user);
+  }
+
+  public setProductMasterStatus(id: string, status: 'ACTIVE' | 'INACTIVE', user?: string) {
+    return this.db.setProductMasterStatus(id, status, user);
+  }
+
+  public getBOMHeaders(productId?: string) {
+    return this.db.getBOMHeaders(productId);
+  }
+
+  public getBOMComponents(bomHeaderId?: string) {
+    return this.db.getBOMComponents(bomHeaderId);
+  }
+
+  public getMaterialMaster() {
+    return this.db.getMaterialMaster();
+  }
+
   public persist() {
     return this.db.persist();
   }
